@@ -1,0 +1,1 @@
+// VibeOS Mobile — Supabase Client

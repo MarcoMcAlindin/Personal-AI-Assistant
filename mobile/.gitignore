@@ -1,0 +1,30 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Android / iOS build artifacts
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+android/
+ios/
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db

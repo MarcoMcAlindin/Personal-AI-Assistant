@@ -1,0 +1,21 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Vite
+dist/
+.cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db

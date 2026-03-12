@@ -1,0 +1,41 @@
+# VibeOS — Automated Daily Health Analysis
+# Runs every day at 8:00 AM GMT
+# Pulls latest Samsung Watch data from Supabase → sends to Qwen 3.5 → stores analysis
+
+name: Daily Health Analysis
+
+on:
+  schedule:
+    # 8:00 AM GMT every day
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Allow manual trigger for testing
+
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  QWEN_ENDPOINT_URL: ${{ secrets.QWEN_ENDPOINT_URL }}
+  QWEN_MODEL_NAME: ${{ secrets.QWEN_MODEL_NAME }}
+
+jobs:
+  health-analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Run health analysis script
+        run: |
+          # TODO: Create and reference the health analysis script
+          # python backend/scripts/daily_health_analysis.py
+          echo "Health analysis script placeholder"

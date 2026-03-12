@@ -1,0 +1,27 @@
+# VibeOS Cloud Backend — Python Dependencies
+
+# Web Framework
+fastapi==0.115.*
+uvicorn[standard]==0.34.*
+
+# Supabase
+supabase==2.13.*
+
+# Google APIs (Gmail OAuth)
+google-api-python-client==2.160.*
+google-auth-httplib2==0.2.*
+google-auth-oauthlib==1.2.*
+
+# HTTP Client
+httpx==0.28.*
+
+# Feed Parsing
+feedparser==6.0.*
+
+# AI / Embeddings
+openai==1.60.*
+
+# Environment & Config
+python-dotenv==1.0.*
+pydantic==2.10.*
+pydantic-settings==2.7.*
