@@ -175,3 +175,24 @@ p {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Nav & Stats */
+.nav-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: var(--spacing-sm);
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.nav-link:hover {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent-secondary);
+  margin: var(--spacing-xs) 0;
+}
