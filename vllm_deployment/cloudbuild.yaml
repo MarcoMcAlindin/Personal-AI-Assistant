@@ -1,0 +1,41 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', '$_REGION-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest', '.']
+
+  # Push the container image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '$_REGION-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest']
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'vibeos-qwen'
+      - '--image'
+      - '$_REGION-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest'
+      - '--region'
+      - '$_REGION'
+      - '--gpu'
+      - '1'
+      - '--gpu-type'
+      - 'nvidia-l4'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '1'
+      - '--memory'
+      - '32Gi'
+      - '--cpu'
+      - '8'
+      - '--no-allow-unauthenticated'
+      - '--timeout'
+      - '3600' # Model loading can be slow
+
+substitutions:
+  _REGION: europe-west1
+
+images:
+  - '$_REGION-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest'
