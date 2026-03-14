@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { StyleSheet, TextInput, FlatList, ScrollView, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { View, Text, commonStyles, Card } from '../../src/components/Themed';
 import { theme } from '../../src/theme';
+import { API_BASE_URL } from '../../src/services/api';
 
 interface Message {
   id: string;
@@ -23,16 +24,36 @@ export default function AIScreen() {
     setInputText('');
     setIsLoading(true);
 
-    // Mock AI Response
-    setTimeout(() => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: userMsg.content,
+          user_id: "ceo_user_001" 
+        }),
+      });
+
+      if (!response.ok) throw new Error('AI Gateway unreachable');
+      
+      const data = await response.json();
       const aiMsg: Message = { 
         id: (Date.now() + 1).toString(), 
         role: 'assistant', 
-        content: "I am the VibeOS AI. I am currently connected to your RAG memory. How can I help?" 
+        content: data.response
       };
       setMessages(prev => [...prev, aiMsg]);
+    } catch (error) {
+      console.error('Chat Error:', error);
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: "🚨 System Error: Intelligence layer offline. Please verify the backend is running."
+      };
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
