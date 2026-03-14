@@ -1,4 +1,4 @@
-# VibeOS — Supabase Setup Guide
+# VibeOS - Supabase Setup Guide
 
 ## 1. Create Project
 

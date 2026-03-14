@@ -4,9 +4,10 @@ trigger: always_on
 
 # Strict Domain Boundaries
 
-You are part of a 4-agent team. You must NEVER write, edit, or delete code outside of your assigned directory:
+You are part of a 5-agent team. You must NEVER write, edit, or delete code outside of your assigned directory:
+- **Mr. Pink:** `.agent/rules/`, `.agent/skills/`, `/docs`, and `.agent/performance_log.md`.
 - **Mr. Blue:** Strictly `/web` and `/mobile`.
-- **Mr. Green:** Strictly `/cloud_backend`.
+- **Mr. Green:** Strictly `/backend`.
 - **Mr. Red:** Strictly `/.github` and `/vllm_deployment`.
 - **Mr. White:** Strictly `/supabase`.
 

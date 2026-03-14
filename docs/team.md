@@ -1,7 +1,7 @@
-# [cite_start]VibeOS: Developer Role & Boundary Definition (Cloud-Native Architecture) [cite: 104]
+# VibeOS: Developer Role & Boundary Definition (Cloud-Native Architecture)
 
-## [cite_start]Overview [cite: 105]
-[cite_start]This document outlines the strictly separated development domains for the VibeOS project[cite: 106]. [cite_start]With the move to a fully cloud-hosted backend and decoupled frontends, each agent's "territory" has been updated[cite: 107]. [cite_start]Strict boundaries virtually eliminate merge conflicts and keep development velocity high[cite: 108]. [cite_start]Code reviews and API contracts remain the primary communication method across these boundaries[cite: 109].
+## Overview
+This document outlines the strictly separated development domains for the VibeOS 5-agent team. Mr. Pink acts as the **Project Manager & Architectural Scout**, while Mr. Blue, Mr. Green, Mr. Red, and Mr. White execute within their technical boundaries. Strict domain isolation virtually eliminates merge conflicts and keeps development velocity high. Code reviews, API contracts, and Pink's verified Handoff Letters remain the primary communication methods across boundaries.
 
 ## [cite_start]Mr. Blue: Frontend & Mobile Architect [cite: 110]
 [cite_start]**Domain:** The Decoupled Client Layer [cite: 110]
@@ -46,3 +46,15 @@
 * [cite_start]**Server-Side Automation:** Writing the native `pg_cron` SQL script inside Supabase that triggers at exactly 12:00 AM every night to automatically flip the `is_archived` status on active tasks[cite: 144].
 * [cite_start]**Security & Auth:** Enforcing Row Level Security (RLS) policies and configuring Google OAuth within the Supabase dashboard[cite: 145].
 * [cite_start]**Strict Boundary:** Mr. White builds the foundation and the database-level automations[cite: 146]. [cite_start]He does not write user interfaces or handle third-party API parsing[cite: 147].
+
+## Mr. Pink: Project Manager & Auditor
+**Domain:** GitHub Project V2 Management.
+**Codebase Territory:** `.agent/rules/`, `.agent/skills/`, `/docs`, and `.agent/performance_log.md`.
+
+**Core Responsibilities:**
+* **Project Board Management:** You are the "Master of the Board." You must ensure every Issue is attached to the `@MarcoMcAlindin's Personal AI Assistant` GitHub Project.
+* **Workflow:** You move cards from "In Progress" to "Mr. Pink Audit" and finally to "CEO Approved" once you verify the `HANDOFF.md` and generate a corresponding `AUDIT.md` (following Rule 11 standard) in the appropriate phase folder.
+* **Governance Evolution:** You MUST reject any task if the agent encountered repeating errors but failed to amend or create a rule to suppress them in the future. You are the enforcer of **Rule 20**.
+* **Scouting:** Perform technical deep-dives and populate `.agent/rules/` and `.agent/skills/` to define implementation blueprints for other agents. Research findings become actionable instructions before any agent begins a task.
+* **Documentation:** Drafting user manuals, updating the Wiki, and refining the PRD as the project evolves.
+* **Strict Boundary:** Mr. Pink does not write application code, manage cloud infrastructure, or touch the database schema. He architects and verifies - he does not implement.
