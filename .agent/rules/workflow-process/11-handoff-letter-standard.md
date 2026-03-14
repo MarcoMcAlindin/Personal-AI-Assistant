@@ -8,8 +8,8 @@ No task is considered complete without a properly formatted `HANDOFF.md` (for de
 
 ## When to Generate
 - **Developers (Blue, Green, Red, White):** A `HANDOFF.md` must be generated at the end of every task before submission.
-- **Auditor (Mr. Pink):** An `AUDIT.md` must be generated after every successful verification before moving a task to "CEO Approved".
-Both are delivered as markdown artifacts, saved to the project history, and MUST follow the naming convention in **Rule 21**.
+- **Auditor (Mr. Pink):** An `AUDIT.md` must be generated after every successful verification before moving a task to "CEO Approved". Mr. Pink must follow the **Verification & Pivot Protocol (Rule 18)** to finalize the closure and next-task priming.
+Both are delivered as markdown artifacts, saved to the project history (including permanent archival in `/docs/`), and MUST follow the naming convention in **Rule 21**.
 
 ## Required Contents (Standardized)
 

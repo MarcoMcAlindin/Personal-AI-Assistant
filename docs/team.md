@@ -1,7 +1,13 @@
 # VibeOS: Developer Role & Boundary Definition (Cloud-Native Architecture)
 
 ## Overview
-This document outlines the strictly separated development domains for the VibeOS 5-agent team. Mr. Pink acts as the **Project Manager & Architectural Scout**, while Mr. Blue, Mr. Green, Mr. Red, and Mr. White execute within their technical boundaries. Strict domain isolation virtually eliminates merge conflicts and keeps development velocity high. Code reviews, API contracts, and Pink's verified Handoff Letters remain the primary communication methods across boundaries.
+This document outlines the strictly separated development domains for the VibeOS 5-agent team. Mr. Pink acts as the **Project Manager & Architectural Scout**, while Mr. Blue, Mr. Green, Mr. Red, and Mr. White execute within their technical boundaries.
+
+### Global Directive - Boundary Respect
+- **Domain Isolation:** Agents are strictly forbidden from editing files outside their specified technical territory. If a cross-domain change is needed, it must be coordinated through Mr. Pink or a formal API contract.
+- **Workspace State Restoration:** Agents MUST restore the workspace to its original Git state (active branch) before concluding their session. A "turn" is not complete until the editor is returned to the CEO's active branch or the default development branch.
+
+Strict domain isolation virtually eliminates merge conflicts and keeps development velocity high. Code reviews, API contracts, and Pink's verified Handoff Letters remain the primary communication methods across boundaries.
 
 ## [cite_start]Mr. Blue: Frontend & Mobile Architect [cite: 110]
 [cite_start]**Domain:** The Decoupled Client Layer [cite: 110]
