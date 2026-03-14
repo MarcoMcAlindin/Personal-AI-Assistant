@@ -1,4 +1,4 @@
-# VibeOS — Supabase Schema Reference
+# VibeOS - Supabase Schema Reference
 
 Full database schema derived from the PRD data model.
 
@@ -8,7 +8,7 @@ Full database schema derived from the PRD data model.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| `id` | `uuid` | PK, default `auth.uid()` | Supabase Auth user ID |
+| `id` | `uuid` | PK, default `auth.uid)` | Supabase Auth user ID |
 | `email` | `text` | NOT NULL | User email |
 | `display_name` | `text` | | User display name |
 | `avatar_url` | `text` | | Profile picture URL |

@@ -1,4 +1,4 @@
-# VibeOS — MCP Tools Guide
+# VibeOS - MCP Tools Guide
 
 This guide covers how to use the available MCP (Model Context Protocol) tools during VibeOS development. These tools allow direct interaction with Supabase and Google Cloud Run from your development environment.
 

@@ -1,4 +1,4 @@
-# VibeOS — Cloud Run Deployment Guide
+# VibeOS - Cloud Run Deployment Guide
 
 ## 1. Prerequisites
 

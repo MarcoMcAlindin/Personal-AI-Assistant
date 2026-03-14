@@ -66,3 +66,9 @@ htmlcov/
 # ----- Misc -----
 *.bak
 *.tmp
+
+# ----- GitHub CLI & Workflow Artifacts -----
+gh_2.45.0_linux_amd64/
+gh_*.tar.gz
+gh-workflow-list.txt
+gh-workflow-list.*
