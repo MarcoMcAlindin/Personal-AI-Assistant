@@ -1,0 +1,35 @@
+name: VibeOS Governance & Full-Stack Test
+
+on:
+  pull_request:
+    branches: [ staging ]
+
+jobs:
+  governance:
+    name: Rule Enforcement Checklist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Verify Domain Isolation (Rule 1)
+        run: python3 scripts/verify_domains.py
+
+      - name: Verify Naming Conventions (Rule 21)
+        run: python3 scripts/verify_naming.py
+
+  # Placeholder for future backend/frontend tests
+  test:
+    name: Full-Stack Integration
+    needs: governance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder Test
+        run: echo "Governance passed. Integration tests would run here."
