@@ -18,5 +18,40 @@ The VOS-001 task ("Schema Design: Create All Supabase Tables") is complete. The 
 ## Security Considerations
 Both scripts must be executed against the **AI Personal Assistant** project, conforming to Rule 28. Row Level Security blocks all database interactions from the client unless `auth.uid()` corresponds exactly with the object's parent owner. 
 
+## Verification Instructions (Pink Protocol Rule 18)
+To verify the schema and RLS policies either locally or against the staging environment, execute the following exact commands:
+
+1. **Apply Migrations (Local Test):**
+   ```bash
+   # From the project root, start local supabase database
+   supabase start
+
+   # Reset the database to apply all pending 'Up' migrations cleanly
+   supabase db reset
+   ```
+
+2. **Verify Schema (Via CLI):**
+   Run the following query to ensure all 5 tables exist:
+   ```bash
+   supabase db query "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('users', 'chat_history', 'email_whitelist', 'health_metrics', 'tasks');"
+   ```
+
+3. **Verify RLS Policies:**
+   Ensure RLS is active and policies are correctly mapped:
+   ```bash
+   # Check RLS enabled
+   supabase db query "SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'public';"
+
+   # Check policies
+   supabase db query "SELECT * FROM pg_policies WHERE schemaname = 'public';"
+   ```
+
+4. **Rollback Verification (Testing the Down script):**
+   To verify the down migration functions correctly:
+   ```bash
+   # Execute down migration locally to verify it drops the tables without error
+   supabase migration down
+   ```
+
 ## Next Steps
 This resolves VOS-001. Awaiting Mr. Pink audit. VOS-002 ("Enable pgvector Extension & pg_cron Midnight Archive Job") and VOS-003 ("RLS Policies & Google OAuth Configuration") were largely grouped into the execution of this script due to their tightly coupled nature in PostgreSQL, but may require slight administrative setup (such as the actual OAuth configuration in the Supabase Dashboard, or explicitly running the raw cron select statement).
