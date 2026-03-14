@@ -10,7 +10,8 @@ app = FastAPI(title="VibeOS API Gateway")
 origins = [
     "http://localhost:5173", # Vite Dev
     "http://127.0.0.1:5173",
-    # "https://vibeos-web.vercel.app", # Placeholder for production
+    "http://192.168.0.206:5173", # Mobile/Web Dev IP
+    "http://192.168.0.206:8000",
 ]
 
 app.add_middleware(

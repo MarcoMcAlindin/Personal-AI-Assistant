@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
+import ChatInterface from './components/Chat/ChatInterface';
 import './index.css';
 
 // Placeholder Pages
@@ -19,6 +20,7 @@ const App: React.FC = () => {
           <main style={{ padding: 'var(--spacing-md)', maxWidth: '1200px', margin: '0 auto' }}>
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/chat" element={<ChatInterface />} />
             </Routes>
           </main>
         </div>
