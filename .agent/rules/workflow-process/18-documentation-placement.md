@@ -33,3 +33,6 @@ When an agent creates a `HANDOFF.md` or an `AUDIT.md` to prove completion of a t
 
 ## 4. Why This Matters
 By strictly organizing documentation, we prevent repository bloat and ensure that any agent (or the CEO) dropping into a specific folder instantly knows what features have been implemented and how they work.
+
+## 5. Mandatory Synchronization (Rule 29 Reference)
+All files created or moved within these zones MUST be immediately synchronized to the `staging` branch following the **Staging-First Documentation Protocol (Rule 29)**. This prevents data loss across concurrent agent missions.
