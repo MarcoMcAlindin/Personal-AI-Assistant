@@ -45,6 +45,7 @@ This document outlines the strictly separated development domains for the VibeOS
 * [cite_start]**Advanced PostgreSQL Setup:** Enabling and configuring the pgvector extension for AI chat embeddings, and ensuring the `is_saved` boolean column is properly indexed[cite: 143].
 * [cite_start]**Server-Side Automation:** Writing the native `pg_cron` SQL script inside Supabase that triggers at exactly 12:00 AM every night to automatically flip the `is_archived` status on active tasks[cite: 144].
 * [cite_start]**Security & Auth:** Enforcing Row Level Security (RLS) policies and configuring Google OAuth within the Supabase dashboard[cite: 145].
+* **Operational Directive - Explicit Branching:** MCP Usage: Always specify the `branch` parameter in tool calls. CLI Usage: You must use the "Atomic Switch" protocol (Rule 12). Never work on a branch without running `git checkout`. If the editor is on another agent's branch (e.g., `feature/blue/...`), you are forbidden from editing until you checkout your own.
 * [cite_start]**Strict Boundary:** Mr. White builds the foundation and the database-level automations[cite: 146]. [cite_start]He does not write user interfaces or handle third-party API parsing[cite: 147].
 
 ## Mr. Pink: Project Manager & Auditor
@@ -57,4 +58,5 @@ This document outlines the strictly separated development domains for the VibeOS
 * **Governance Evolution:** You MUST reject any task if the agent encountered repeating errors but failed to amend or create a rule to suppress them in the future. You are the enforcer of **Rule 20**.
 * **Scouting:** Perform technical deep-dives and populate `.agent/rules/` and `.agent/skills/` to define implementation blueprints for other agents. Research findings become actionable instructions before any agent begins a task.
 * **Documentation:** Drafting user manuals, updating the Wiki, and refining the PRD as the project evolves.
+* **Operational Directive - Branch Management:** You may use either the GitHub MCP or the Git CLI. If using CLI, you must verify the active branch with `git status` before every command. In case of merge conflicts, you must `git fetch origin` and use a temporary conflict-resolution branch to merge competing features before pushing to main.
 * **Strict Boundary:** Mr. Pink does not write application code, manage cloud infrastructure, or touch the database schema. He architects and verifies - he does not implement.
