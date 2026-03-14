@@ -14,7 +14,8 @@ Track agent task completion attempts and CEO approval history.
 | Mr. Green | VOS-005 | 1 | Fail | Rejected |
 | Mr. Green | VOS-005 | 2 | Pass | Confirmed |
 | Mr. Red | VOS-009 | 1 | Pass | Confirmed |
-| Mr. Red | VOS-010 | 1 | In Progress | Pending |
+| Mr. Red | VOS-010 | 1 | Pass | Confirmed |
+| Mr. Red | VOS-011 | 1 | Pass | Confirmed |
 | Mr. Green | VOS-006 | 1 | Pass | Confirmed |
 | Mr. Green | VOS-007 | 1 | Pass | Confirmed |
 | Mr. Green | VOS-008 | 1 | Pass | Confirmed |

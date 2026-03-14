@@ -1,30 +1,10 @@
-import { View, Text, StyleSheet } from 'react-native';
-import { palette } from '../../src/theme';
+import { View, Text, commonStyles } from '../../src/components/Themed';
 
-export default function Screen() {
+export default function MailScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Inbox</Text>
-      <Text style={styles.subtext}>Whitelisted Email Client</Text>
+    <View style={commonStyles.container}>
+      <Text style={commonStyles.title}>Inbox</Text>
+      <Text style={commonStyles.subtitle}>Unified Communications</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: palette.bgPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text: {
-    color: palette.textPrimary,
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  subtext: {
-    color: palette.textMuted,
-    fontSize: 16,
-    marginTop: 8,
-  },
-});
