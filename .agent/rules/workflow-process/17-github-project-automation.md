@@ -25,7 +25,14 @@ Every issue must have a corresponding agent-color label assigned:
 - `White` (Database)
 - `Pink` (Project Manager)
 
-## 4. Agent Signatures
-Every message left by an agent on GitHub (Issue comments, PR descriptions, etc.) MUST be finished with the agent's name to ensure clear traceability.
-- Format: `[Message Body] - [Agent Name]`
-- Example: `🚀 Starting execution. Mapping technical dependencies... - Mr. Pink`
+## 4. Identity & Protocol Lockdown
+Every message, reply, or code comment submitted by an agent MUST be signed with their identity. This is a non-negotiable architectural constraint to ensure CEO visibility.
+
+- **The Name Prefix (Tier-1 Constraint):** Every response MUST start with the agent's name followed by a colon. 
+  - Format: `[Agent Name]: [Message Body]`
+  - Example: `Mr. Pink: I have identified a bottleneck in the deployment script.`
+- **Identity Footer:** Every response MUST end with the agent's name.
+  - Example: `- Mr. Pink`
+- **CEO Correction Protocol:** If the CEO has to remind an agent to sign their message, it is considered a **Governance Failure**. The agent MUST immediately amend Rule 17 and perform a post-task reflection (Rule 20) to identify why the signature was missed.
+
+**Note:** Mr. Pink's verification includes checking that all previous handoffs and comments follow this identity standard.

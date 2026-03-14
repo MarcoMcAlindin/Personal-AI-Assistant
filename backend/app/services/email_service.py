@@ -17,6 +17,7 @@ class EmailItem(BaseModel):
 
 class EmailService:
     def __init__(self):
+        # Supabase client setup (assuming env vars exist)
         self.supabase_url = os.environ.get("SUPABASE_URL")
         self.supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
         if self.supabase_url and self.supabase_key:
@@ -25,14 +26,22 @@ class EmailService:
             self.supabase = None
 
     async def get_whitelisted_emails(self, user_id: str) -> List[str]:
-        if not self.supabase: return []
+        """Fetch whitelisted email addresses for a specific user from Supabase."""
+        if not self.supabase:
+            return []
         response = self.supabase.table("email_whitelist").select("email_address").eq("user_id", user_id).execute()
         return [item["email_address"] for item in response.data]
 
     async def get_user_gmail_credentials(self, user_id: str) -> Credentials:
-        if not self.supabase: raise Exception("Supabase not initialized")
+        """Fetch OAuth credentials for the user from Supabase."""
+        if not self.supabase:
+            raise Exception("Supabase not initialized")
+            
+        # This assumes the 'users' table or a dedicated 'tokens' table stores the necessary fields
         response = self.supabase.table("users").select("settings").eq("id", user_id).single().execute()
-        tokens = response.data.get("settings", {}).get("google_tokens", {})
+        settings = response.data.get("settings", {})
+        tokens = settings.get("google_tokens", {})
+        
         return Credentials(
             token=tokens.get("access_token"),
             refresh_token=tokens.get("refresh_token"),
@@ -42,44 +51,81 @@ class EmailService:
         )
 
     async def fetch_inbox(self, user_id: str) -> List[Dict]:
+        """Fetch emails from Gmail but strictly filter via Supabase whitelist."""
         if os.environ.get("MOCK_GMAIL") == "true":
-            return [{"id": "mock_msg_1", "thread_id": "mock_thread_1", "from": "approved@example.com", "subject": "Mock Hello", "snippet": "This is a mock email for testing.", "date": "1710435600000"}]
+            return [
+                {
+                    "id": "mock_msg_1",
+                    "thread_id": "mock_thread_1",
+                    "from": "approved@example.com",
+                    "subject": "Mock Hello",
+                    "snippet": "This is a mock email for testing.",
+                    "date": "1710435600000"
+                }
+            ]
+        
         try:
             creds = await self.get_user_gmail_credentials(user_id)
             service = build('gmail', 'v1', credentials=creds)
+            
+            # Fetch whitelist
             whitelist = await self.get_whitelisted_emails(user_id)
+            
+            # Fetch messages (limited to 20 for proxy)
             results = service.users().messages().list(userId='me', q="in:inbox", maxResults=20).execute()
             messages = results.get('messages', [])
+            
             filtered_emails = []
             for msg in messages:
                 full_msg = service.users().messages().get(userId='me', id=msg['id']).execute()
                 headers = full_msg['payload']['headers']
+                
                 sender = ""
                 subject = ""
                 for header in headers:
-                    if header['name'] == 'From': sender = header['value']
-                    if header['name'] == 'Subject': subject = header['value']
+                    if header['name'] == 'From':
+                        sender = header['value']
+                    if header['name'] == 'Subject':
+                        subject = header['value']
+                
+                # Extract clean email from sender string "Name <email@addr.com>"
                 clean_sender = sender.split("<")[-1].split(">")[0].strip()
+                
                 if clean_sender in whitelist:
-                    filtered_emails.append({"id": full_msg['id'], "thread_id": full_msg['threadId'], "from": sender, "subject": subject, "snippet": full_msg['snippet'], "date": full_msg.get('internalDate')})
+                    filtered_emails.append({
+                        "id": full_msg['id'],
+                        "thread_id": full_msg['threadId'],
+                        "from": sender,
+                        "subject": subject,
+                        "snippet": full_msg['snippet'],
+                        "date": full_msg.get('internalDate')
+                    })
+            
             return filtered_emails
         except Exception as e:
+            # Rule 11: Error Handling for external APIs
             print(f"Error fetching Gmail: {e}")
             return []
 
     async def send_email(self, user_id: str, to: str, subject: str, body: str, thread_id: Optional[str] = None) -> bool:
+        """Proxy email sending to Gmail API."""
         if os.environ.get("MOCK_GMAIL") == "true":
             print(f"MOCK SEND: To: {to}, Subject: {subject}")
             return True
+
         try:
             creds = await self.get_user_gmail_credentials(user_id)
             service = build('gmail', 'v1', credentials=creds)
+            
             message = MIMEText(body)
             message['to'] = to
             message['subject'] = subject
+            
             raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
             body_payload = {'raw': raw}
-            if thread_id: body_payload['threadId'] = thread_id
+            if thread_id:
+                body_payload['threadId'] = thread_id
+
             service.users().messages().send(userId='me', body=body_payload).execute()
             return True
         except Exception as e:

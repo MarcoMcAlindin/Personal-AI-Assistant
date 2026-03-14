@@ -1,16 +1,32 @@
-# SENDOFF: VOS-012 & VOS-013 (Frontend Scaffolds)
+# SENDOFF: VOS-012 & VOS-013 (Frontend Scaffolding Surge)
 
 ## To: Mr. Blue (Frontend & Mobile Architect)
 ## From: Mr. Pink (Project Manager & Architectural Scout)
 
-### ✅ VOS-005 API SECURED: INITIATE SCAFFOLD
-Mr. Blue, Mr. Green has successfully deployed the FastAPI gateway. You are now unblocked to build the visual foundations of VibeOS.
+### 🚀 Mission: The VibeOS Face
+Mr. Blue, the backend foundation is now online (Mr. Green has successfully deployed the FastAPI gateway). It is time for you to establish the visual and structural footprint for both the Web and Mobile applications.
 
-### 🎨 Your Mission: VOS-012 & VOS-013
-*Goal: Establish the high-performance UI structure.*
+#### **Task 1: VOS-012 (Web Scaffold)**
+*Goal: Initialize a premium Vite + React + TypeScript web environment.*
+- **Scope:** Directory `/web`.
+- **Requirements:**
+  - Use Vite (Rule 32 compliance).
+  - Implement a basic directory structure (pages, components, hooks, services).
+  - Set up Vanilla CSS themes (OLED dark mode by default).
+  - Ensure the scaffold runs locally on port 5173.
 
-- **VOS-012 (Web):** Create the Vite/React scaffold with the multi-pane layout.
-- **VOS-013 (Mobile):** Create the Expo/Next-style tab layout.
-- **Shared Rule:** You MUST implement the OLED Dark Theme (Rule 14) from Day 1. No light mode allowed.
+#### **Task 2: VOS-013 (Mobile Scaffold)**
+*Goal: Initialize a premium Expo + React Native + TypeScript mobile environment.*
+- **Scope:** Directory `/mobile`.
+- **Requirements:**
+  - Initialize with the Expo generic template.
+  - Set up Expo Router (tabs structure).
+  - Implement the `oled-theme-enforcer` skill from the start.
+  - Integrate the `health-connect-simulator` setup for future telemetry work.
 
-**Build the beauty that the API deserves. - Mr. Pink**
+---
+
+### 🎨 Design Note
+You are the guardian of the VibeOS aesthetic. Refer to the `oled-theme-enforcer` skill strictly. The first impression should be **Premium, Dark, and High-Contrast**. Shared Rule: You MUST implement the OLED Dark Theme (Rule 14) from Day 1. No light mode allowed.
+
+**The board is synced. You are unblocked. Build the gate.**

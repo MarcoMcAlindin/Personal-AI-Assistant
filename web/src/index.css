@@ -1,0 +1,68 @@
+/* VibeOS OLED Theme Tokens */
+:root {
+  /* Colors */
+  --bg-primary: #000000;      /* True OLED Black */
+  --bg-secondary: #0d0d0d;    /* Deep Slate */
+  --bg-card: #1a1a2e;         /* Elevated Surface */
+  
+  --accent-primary: #7b5ea7;  /* Neon Purple */
+  --accent-secondary: #00d4ff; /* Neon Blue */
+  
+  --text-primary: #f0f0f0;    /* High Contrast White */
+  --text-muted: #808080;      /* Dimmed Grey */
+  
+  --border-color: #333333;
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Typography */
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Global Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* Typography Scale */
+h1, h2, h3, h4, h5, h6 {
+  margin-bottom: var(--spacing-md);
+  font-weight: 700;
+}
+
+p {
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Utilities */
+.card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: var(--spacing-md);
+}
+
+.text-accent {
+  color: var(--accent-primary);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}

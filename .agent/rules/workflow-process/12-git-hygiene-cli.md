@@ -27,4 +27,13 @@ Once you are done with your "turn," you must push your changes so the other agen
 ```bash
 git push origin <your-branch>
 ```
-**Warning:** Never work on a branch belonging to another agent without explicit permission and checkout.
+## 5. Workspace State Restoration
+Drafting or editing on a feature branch is required for work, but **Agents MUST return the editor to the state it was in at the start of the session.**
+- **The "Leave No Trace" Rule:** Before calling `notify_user` or finishing a task, you MUST checkout the branch that was active when you first arrived. 
+- **Check-In/Check-Out Protocol:**
+  1. **Identify Starting Branch:** Run `git branch --show-current` at the very start of the session.
+  2. **Work Phase:** Execute switches as per Rule 12.
+  3. **Finalize Turn:** Push all changes to the origin branch.
+  4. **Restore State:** Run `git checkout <starting-branch-name>` before concluding.
+
+**Warning:** Never leave the editor on a feature branch belonging to another agent.
