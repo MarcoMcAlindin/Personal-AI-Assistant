@@ -1,14 +1,14 @@
 # Rule 24: GCE Multi-GPU Inference Governance
 
 ## Context
-For high-precision models (e.g., Qwen 3.5 27B in 8-bit), multi-GPU Compute Engine (GCE) instances are required to meet VRAM demands (48GB+).
+For high-precision models (e.g., **Qwen/Qwen3.5-27B** in 8-bit), multi-GPU Compute Engine (GCE) instances are required to meet VRAM demands (48GB+).
 
 ## Mandatory Constraints
 1. **Mr. Red (Infrastructure)**:
     - MUST verify region quota (NVIDIA L4 GPUs >= 2) before initiating deployment.
     - MUST use **Spot Instances** (`--provisioning-model=SPOT`) for dev/test to maintain cost efficiency ($0.80/hr vs $2.00/hr).
     - MUST use `g2-standard-24` as the default machine type for 2x L4 deployments.
-    - MUST include `--metadata=install-nvidia-driver=True` in the creation command to ensure CUDA readiness.
+    - MUST include `--metadata=install-nvidia-driver=True" in the creation command to ensure CUDA readiness.
 
 2. **Resource Management**:
     - Instances MUST be created with `--instance-termination-action=STOP` to preserve the boot disk and configuration during spot preemption.
