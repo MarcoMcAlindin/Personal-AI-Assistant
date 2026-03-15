@@ -55,6 +55,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="feeds"
+        options={{
+          title: 'Vibe Feeds',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="newspaper-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="plan"
         options={{
           title: 'Planner',
