@@ -1,0 +1,290 @@
+.health-container {
+  color: var(--text-primary);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.health-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--spacing-xl);
+}
+
+.health-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.last-sync {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dot.pulse {
+  width: 8px;
+  height: 8px;
+  background: #00ff88;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00ff88;
+  animation: pulse 2s infinite;
+}
+
+.health-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: var(--spacing-lg);
+}
+
+.health-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.main-metrics {
+  grid-column: 1 / 2;
+  gap: var(--spacing-lg);
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metric-item .label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.metric-item .value-group {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.metric-item .value {
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.metric-item .unit {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.progress-mini {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-mini .fill {
+  height: 100%;
+  background: var(--accent-primary);
+  border-radius: 2px;
+}
+
+.progress-mini.highlight .fill {
+  background: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%);
+}
+
+.analysis-card {
+  grid-column: 2 / 3;
+  grid-row: 1 / 3;
+  background: linear-gradient(145deg, rgba(20, 20, 20, 1) 0%, rgba(30, 30, 30, 1) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.analysis-card::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(0, 198, 255, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.ai-icon {
+  width: 20px;
+  height: 20px;
+  color: #00c6ff;
+}
+
+.analysis-content {
+  flex: 1;
+  margin-bottom: var(--spacing-lg);
+}
+
+.analysis-text {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #e0e0e0;
+}
+
+.hydration-card {
+  grid-column: 1 / 2;
+  gap: var(--spacing-md);
+}
+
+.hydration-visual {
+  height: 60px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.water-level {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(to top, #0072ff, #00c6ff);
+  transition: height 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.primary-btn {
+  background: transparent;
+  border: 1px solid var(--accent-primary);
+  color: var(--accent-primary);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.primary-btn:hover {
+  background: rgba(0, 212, 255, 0.1);
+}
+
+.secondary-btn {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Full Report Modal */
+.report-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.report-modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.report-header h2 { font-size: 1.1rem; font-weight: 600; }
+
+.report-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+.report-close:hover { color: var(--text-primary); }
+
+.report-body { padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+
+.report-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.report-metric {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.report-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.report-val { font-size: 1.4rem; font-weight: 600; color: var(--accent-primary); }
+.report-val small { font-size: 0.8rem; color: var(--text-muted); font-weight: 400; }
+
+.report-analysis {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.report-analysis h4 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.report-analysis p { font-size: 1rem; line-height: 1.6; color: var(--text-primary); }

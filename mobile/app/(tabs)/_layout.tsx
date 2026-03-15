@@ -19,57 +19,54 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="plan"
         options={{
-          title: 'Dashboard',
+          title: 'Plan',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="apps" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="ai"
-        options={{
-          title: 'AI Box',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble-ellipses" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="mail"
-        options={{
-          title: 'Inbox',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="mail" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="health"
-        options={{
-          title: 'Wellness',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="heart" size={size} color={color} />
+            <Ionicons name="calendar-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="feeds"
         options={{
-          title: 'Vibe Feeds',
+          title: 'Feeds',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="newspaper-outline" size={size} color={color} />
+            <Ionicons name="hardware-chip-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="plan"
+        name="ai"
         options={{
-          title: 'Planner',
+          title: 'AI',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar-outline" size={size} color={color} />
+            <Ionicons name="chatbubble-outline" size={size} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="mail"
+        options={{
+          title: 'Mail',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="mail-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="health"
+        options={{
+          title: 'Health',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="heart-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          href: null, // Hide dashboard from tab bar as per design
         }}
       />
     </Tabs>

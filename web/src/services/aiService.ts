@@ -1,4 +1,9 @@
-import { Message } from './aiService';
+export interface Message {
+  id: string;
+  content: string;
+  sender: 'user' | 'ai';
+  timestamp: string;
+}
 
 const BACKEND_URL = 'http://localhost:8000/api/v1';
 

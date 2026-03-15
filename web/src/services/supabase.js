@@ -1,1 +1,0 @@
-// VibeOS Web — Supabase Client

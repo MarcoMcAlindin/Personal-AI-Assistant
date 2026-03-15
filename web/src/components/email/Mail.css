@@ -1,0 +1,331 @@
+.email-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 40px);
+  padding: 20px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.email-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.email-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.email-layout {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.email-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.email-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.email-item:hover {
+  border-color: var(--accent-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.email-item.selected {
+  border-color: var(--accent-primary);
+  background: rgba(0, 243, 255, 0.05);
+}
+
+.email-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.email-from {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.email-status {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-whitelisted {
+  background: rgba(0, 255, 136, 0.1);
+  color: #00ff88;
+  border: 1px solid rgba(0, 255, 136, 0.2);
+}
+
+.status-pending {
+  background: rgba(255, 184, 0, 0.1);
+  color: #ffb800;
+  border: 1px solid rgba(255, 184, 0, 0.2);
+}
+
+.email-subject {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.email-preview {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.email-view {
+  flex: 2;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.email-view-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.email-view-subject {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.email-view-meta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.email-view-body {
+  padding: 24px;
+  flex: 1;
+  overflow-y: auto;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.empty-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+}
+
+.compose-btn {
+  background: var(--accent-primary);
+  color: #000;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s ease;
+}
+
+.compose-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+/* Unread sender styling */
+.email-from.unread {
+  font-weight: 700;
+}
+
+/* Reading pane action buttons */
+.email-view-actions {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.email-action-btn {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.email-action-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+/* Compose overlay and modal */
+.compose-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 24px;
+  z-index: 100;
+}
+
+.compose-modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 480px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.compose-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.compose-modal-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.compose-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.compose-close-btn:hover {
+  color: var(--text-primary);
+}
+
+.compose-form {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.compose-input {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.compose-input:focus {
+  border-color: var(--accent-primary);
+}
+
+.compose-body {
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.compose-error {
+  color: #ff5050;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.compose-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.compose-cancel-action {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.compose-cancel-action:hover {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+.compose-send-btn {
+  background: var(--accent-primary);
+  color: #000;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+
+.compose-send-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.compose-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

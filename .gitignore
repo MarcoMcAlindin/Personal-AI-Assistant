@@ -19,8 +19,8 @@ Thumbs.db
 # ----- IDEs -----
 .idea/
 .vscode/
-*.code-workspace
 *.iml
+# vibeos.code-workspace is tracked intentionally (Rule 30 multi-root workspace)
 
 # ----- Node (Web & Mobile) -----
 node_modules/
