@@ -1,0 +1,207 @@
+.health-container {
+  color: var(--text-primary);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.health-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--spacing-xl);
+}
+
+.health-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.last-sync {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dot.pulse {
+  width: 8px;
+  height: 8px;
+  background: #00ff88;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00ff88;
+  animation: pulse 2s infinite;
+}
+
+.health-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: var(--spacing-lg);
+}
+
+.health-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.main-metrics {
+  grid-column: 1 / 2;
+  gap: var(--spacing-lg);
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metric-item .label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.metric-item .value-group {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.metric-item .value {
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.metric-item .unit {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.progress-mini {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-mini .fill {
+  height: 100%;
+  background: var(--accent-primary);
+  border-radius: 2px;
+}
+
+.progress-mini.highlight .fill {
+  background: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%);
+}
+
+.analysis-card {
+  grid-column: 2 / 3;
+  grid-row: 1 / 3;
+  background: linear-gradient(145deg, rgba(20, 20, 20, 1) 0%, rgba(30, 30, 30, 1) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.analysis-card::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(0, 198, 255, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.ai-icon {
+  width: 20px;
+  height: 20px;
+  color: #00c6ff;
+}
+
+.analysis-content {
+  flex: 1;
+  margin-bottom: var(--spacing-lg);
+}
+
+.analysis-text {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #e0e0e0;
+}
+
+.hydration-card {
+  grid-column: 1 / 2;
+  gap: var(--spacing-md);
+}
+
+.hydration-visual {
+  height: 60px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.water-level {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(to top, #0072ff, #00c6ff);
+  transition: height 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.primary-btn {
+  background: #fff;
+  color: #000;
+  border: none;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.primary-btn:hover {
+  transform: translateY(-2px);
+}
+
+.secondary-btn {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
