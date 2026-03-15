@@ -25,3 +25,6 @@ openai==1.60.*
 python-dotenv==1.0.*
 pydantic==2.10.*
 pydantic-settings==2.7.*
+
+# Auth (JWT Validation)
+python-jose[cryptography]==3.3.*
