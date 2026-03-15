@@ -1,26 +1,29 @@
-export interface HealthPayload {
-  userId?: string;
-  heartRate: number;
-  sleepHours: number;
-  timestamp: string;
-}
+import { API_BASE_URL } from './api';
+import { supabase } from './supabase';
+import type { HealthSyncPayload } from './healthConnectService';
 
 export const telemetryService = {
-  syncHealthData: async (data: HealthPayload) => {
-    console.log('[TelemetryService] Syncing payload to backend:', JSON.stringify(data, null, 2));
-    
-    // TODO: Connect to Mr. Green's /health-sync endpoint
-    // const response = await fetch('http://localhost:8000/api/v1/health-sync', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(data),
-    // });
-    
-    // if (!response.ok) throw new Error('Failed to sync telemetry');
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    return { success: true, message: 'Health data synced successfully' };
-  }
+  syncHealthData: async (payload: HealthSyncPayload): Promise<{ synced: boolean; date: string }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new Error('No active Supabase session — cannot sync health data');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/health/sync`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Health sync failed (${response.status}): ${text}`);
+    }
+
+    return response.json();
+  },
 };
