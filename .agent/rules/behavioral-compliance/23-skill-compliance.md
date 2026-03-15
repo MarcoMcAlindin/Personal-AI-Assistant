@@ -25,7 +25,7 @@ At the start of every task, the agent must:
 ## Examples
 - Working on a feed parser? → Check `python-feed-parser/SKILL.md` first.
 - Setting up CORS on the backend? → Check `fastapi-cors-shield/SKILL.md` first.
-- Deploying the vLLM container? → Check `vllm-deployment-optimizer/SKILL.md` first.
+- Deploying the vLLM container? → Check `vllm-deployment-optimizer/SKILL.md` first. (Note: `gce-spot-gpu-manager` is DEPRECATED — do not use it.)
 - Writing a Supabase migration? → Check `supabase-rollback-strategist/SKILL.md` first.
 
 ## Violation

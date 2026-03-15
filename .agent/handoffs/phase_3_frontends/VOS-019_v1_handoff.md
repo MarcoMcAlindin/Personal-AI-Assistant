@@ -9,6 +9,7 @@ Implemented the high-signal Feeds UI for both the Web Command Center and the Exp
 
 ## Changed Files
 ### Web (`/web`)
+- [App.tsx](file:///home/marco/Personal%20AI%20Assistant/web/src/App.tsx) — Wired `/planner` route, nav link, and PlannerHub import (missed in VOS-015, remediated per Pink notice).
 - [index.tsx](file:///home/marco/Personal%20AI%20Assistant/web/src/components/feeds/index.tsx) — Main feeds component with tab logic.
 - [Feeds.css](file:///home/marco/Personal%20AI%20Assistant/web/src/components/feeds/Feeds.css) — OLED-optimized styling.
 - [feedService.ts](file:///home/marco/Personal%20AI%20Assistant/web/src/services/feedService.ts) — Data fetching layer.

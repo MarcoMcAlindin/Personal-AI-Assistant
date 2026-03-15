@@ -1,23 +1,13 @@
-# Rule 24: GCE Multi-GPU Inference Governance
+---
+description: DEPRECATED — GCE multi-GPU inference is no longer the deployment target. See updated Rule 23 (Cloud Run GPU Governance) for current architecture.
+trigger: never
+---
 
-## Context
-For high-precision models (e.g., **Qwen/Qwen3.5-27B** in 8-bit), multi-GPU Compute Engine (GCE) instances are required to meet VRAM demands (48GB+).
+# Rule 24: DEPRECATED — GCE Multi-GPU Inference
 
-## Mandatory Constraints
-1. **Mr. Red (Infrastructure)**:
-    - MUST verify region quota (NVIDIA L4 GPUs >= 2) before initiating deployment.
-    - MUST use **Spot Instances** (`--provisioning-model=SPOT`) for dev/test to maintain cost efficiency ($0.80/hr vs $2.00/hr).
-    - MUST use `g2-standard-24` as the default machine type for 2x L4 deployments.
-    - MUST include `--metadata=install-nvidia-driver=True` in the creation command to ensure CUDA readiness.
+**Status:** DEPRECATED as of 2026-03-15.
+**Reason:** Model downgrade from Qwen 3.5 27B (required 2x L4 GPUs / 48GB VRAM) to **Qwen2.5-VL-7B-Instruct** (fits on 1x L4 / 24GB VRAM). GCE Spot instances and tensor parallelism are no longer required.
 
-2. **Resource Management**:
-    - Instances MUST be created with `--instance-termination-action=STOP` to preserve the boot disk and configuration during spot preemption.
-    - Deployment scripts MUST use `pd-balanced` disks with at least 100GB to accommodate large model weights (~29GB for 8-bit).
+**Superseded by:** Rule 23 (`23-cloud-run-gpu-governance.md`) — which now governs the single-GPU Cloud Run deployment.
 
-3. **Inference Logic**:
-    - Python inference code MUST utilize `device_map="auto"` from the `transformers` or `accelerate` library to automatically orchestrate the weight split across multiple GPUs.
-    - Precision MUST be set to `load_in_8bit=True` with `torch_dtype=torch.float16` to ensure the 29GB model fits within the 39GB functional VRAM window.
-
-## Verification Protocol
-- Any new GCE deployment script must be checked for the "GCE Surprise Bill Protector" (auto-shutdown logic).
-- Mr. Red must verify the "Buffer Zone": Ensure at least 5-10GB of VRAM remains free after weights are loaded to accommodate KV Cache during high-context conversations.
+Any agent referencing Rule 24 must redirect to Rule 23. Do not create GCE instances for vLLM inference.

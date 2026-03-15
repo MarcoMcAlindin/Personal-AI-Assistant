@@ -1,0 +1,56 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: vibeos-qwen
+  namespace: "__PROJECT_NUMBER__"
+  annotations:
+    run.googleapis.com/launch-stage: GA
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        # Rule 08: Scale-to-zero -- no idle GPU billing
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "1"
+        # Disable zonal redundancy -- required when GPU quota doesn't include it
+        run.googleapis.com/gpu-zonal-redundancy-disabled: "true"
+        # CPU boost helps faster cold-start model loading
+        run.googleapis.com/startup-cpu-boost: "true"
+        # Gen2 required for Direct VPC (provides outbound internet via Cloud NAT)
+        run.googleapis.com/execution-environment: gen2
+        # Direct VPC with all-traffic egress -- internet access goes through Cloud NAT (vibeos-nat)
+        run.googleapis.com/network-interfaces: '[{"network":"default","subnetwork":"default"}]'
+        run.googleapis.com/vpc-access-egress: all-traffic
+    spec:
+      containerConcurrency: 16
+      timeoutSeconds: 3600
+      containers:
+        - image: __IMAGE_REF__
+          ports:
+            - name: http1
+              containerPort: 8080
+          resources:
+            limits:
+              cpu: "8"
+              memory: 32Gi
+              nvidia.com/gpu: "1"
+          env:
+            - name: MODEL_NAME
+              value: "Qwen/Qwen3.5-27B"
+          # Startup probe: allows up to 3660s (~61 min) for model download + GPU load on cold start
+          # Rule 23: initialDelaySeconds >= 60 required for LLM containers.
+          # Use /v1/models (NOT /health): /health returns 200 immediately on server start;
+          # /v1/models only returns 200 after the model is fully loaded and ready to serve.
+          # Total budget: 60s delay + (120 failures * 30s period) = 3660s max (~61 min)
+          startupProbe:
+            httpGet:
+              path: /v1/models
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 30
+            failureThreshold: 120
+  traffic:
+    - percent: 100
+      latestRevision: true

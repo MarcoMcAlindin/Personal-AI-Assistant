@@ -1,20 +1,16 @@
 # Start with the official vLLM OpenAI-compatible server image
 FROM vllm/vllm-openai:latest
 
-# The model name as an environment variable (can be overridden)
+# Rule 24: Qwen3.5-27B at 8-bit (~27GB weights) exceeds a single L4 (24GB).
+# Deployed on GCE g2-standard-24 (2x L4 = 48GB VRAM) via deploy.sh.
+# --tensor-parallel-size 2: splits model weights evenly across both L4s
+# --quantization bitsandbytes: INT8 quantization -- 27B model fits with ~21GB VRAM headroom
+# --dtype float16: required; bitsandbytes 8-bit does not support bfloat16
+# --max-model-len 8192: caps context window to preserve KV cache buffer (Rule 24 buffer zone)
+# --gpu-memory-utilization 0.90: ~43GB functional VRAM, 5GB+ buffer across both GPUs
+# --max-num-seqs 16: limits concurrency for stability
+# --trust-remote-code: required for Qwen models
 ENV MODEL_NAME="Qwen/Qwen3.5-27B"
 
-# Set reasonable defaults for Cloud Run
-# 8080 is the standard port for Cloud Run
-ENV PORT=8080
-
-# Use the vllm-openai entrypoint with optimized parameters
-# --model: The Hugging Face model ID
-# --port: The port to serve on
-# --max-model-len: Adjust based on L4 GPU memory (24GB) to prevent OOM
-# --gpu-memory-utilization: Reserve enough memory for the engine
-# --quantization: Use FP8 for L4 GPUs (Ada Lovelace) to fit 27B model in 24GB VRAM
-# --max-num-seqs: Limit concurrency to maintain stability on single GPU
-# --trust-remote-code: Required for Qwen models
 ENTRYPOINT ["python3", "-m", "vllm.entrypoints.openai.api_server"]
-CMD ["--model", "Qwen/Qwen3.5-27B", "--port", "8080", "--trust-remote-code", "--max-model-len", "8192", "--gpu-memory-utilization", "0.90", "--quantization", "fp8", "--max-num-seqs", "16"]
+CMD ["--model", "Qwen/Qwen3.5-27B", "--port", "8080", "--trust-remote-code", "--tensor-parallel-size", "2", "--quantization", "bitsandbytes", "--dtype", "float16", "--max-model-len", "8192", "--gpu-memory-utilization", "0.90", "--max-num-seqs", "16"]

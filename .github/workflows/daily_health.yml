@@ -8,9 +8,19 @@ on:
 jobs:
   analyze-health:
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # Hard cap -- prevents hung process draining resources (Rule 08)
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
 
       - name: Set up Python
         uses: actions/setup-python@v5
