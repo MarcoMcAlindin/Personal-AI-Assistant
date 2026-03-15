@@ -8,6 +8,7 @@ const FeedsHub = (): JSX.Element => {
   const [techArticles, setTechArticles] = useState<TechArticle[]>([]);
   const [concerts, setConcerts] = useState<Concert[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [concertView, setConcertView] = useState<'list' | 'grid'>('list');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -93,7 +94,7 @@ const FeedsHub = (): JSX.Element => {
               </div>
             </div>
             <div className="view-toggle">
-              <button className="toggle-btn active">
+              <button className={`toggle-btn ${concertView === 'list' ? 'active' : ''}`} onClick={() => setConcertView('list')} title="List view">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}>
                   <line x1="8" y1="6" x2="21" y2="6"></line>
                   <line x1="8" y1="12" x2="21" y2="12"></line>
@@ -103,7 +104,7 @@ const FeedsHub = (): JSX.Element => {
                   <circle cx="3" cy="18" r="1"></circle>
                 </svg>
               </button>
-              <button className="toggle-btn">
+              <button className={`toggle-btn ${concertView === 'grid' ? 'active' : ''}`} onClick={() => setConcertView('grid')} title="Grid view">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}>
                   <rect x="3" y="3" width="7" height="7"></rect>
                   <rect x="14" y="3" width="7" height="7"></rect>
@@ -120,7 +121,7 @@ const FeedsHub = (): JSX.Element => {
             <p className="text-muted">Loading your vibe...</p>
           </div>
         ) : (
-          <div className="feed-list animate-in">
+          <div className={`feed-list animate-in ${activeTab === 'concerts' && concertView === 'grid' ? 'concert-grid' : ''}`}>
             {activeTab === 'tech' ? (
               techArticles.map((article, idx) => (
                 <a key={article.id || idx} href={article.url} target="_blank" rel="noopener noreferrer" className="feed-card-link" style={{ textDecoration: 'none' }}>

@@ -14,6 +14,7 @@ const PlannerHub = (): JSX.Element => {
   const [formTime, setFormTime] = useState('');
   const [formDuration, setFormDuration] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const fetchTasks = async () => {
     try {
@@ -49,6 +50,7 @@ const PlannerHub = (): JSX.Element => {
     e.preventDefault();
     if (!formTitle.trim()) return;
     setSubmitting(true);
+    setFormError(null);
     try {
       const today = new Date().toISOString().split('T')[0];
       await taskService.createTask({
@@ -66,6 +68,7 @@ const PlannerHub = (): JSX.Element => {
       await fetchTasks();
     } catch (err) {
       console.error('Failed to create task:', err);
+      setFormError('Failed to save task. Check your connection and try again.');
     } finally {
       setSubmitting(false);
     }
@@ -218,6 +221,7 @@ const PlannerHub = (): JSX.Element => {
               min={1}
             />
           </div>
+          {formError && <p className="form-error">{formError}</p>}
           <div className="form-actions">
             <button type="button" className="form-cancel-btn" onClick={resetAddForm}>
               Cancel

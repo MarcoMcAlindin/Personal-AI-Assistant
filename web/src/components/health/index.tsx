@@ -21,6 +21,7 @@ const HealthHub: React.FC = () => {
 
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [showReport, setShowReport] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -134,7 +135,9 @@ const HealthHub: React.FC = () => {
               <p className="analysis-text">{aiAnalysis}</p>
             )}
           </div>
-          <button className="primary-btn">Generate Full Report</button>
+          <button className="primary-btn" onClick={() => setShowReport(true)} disabled={loading}>
+            Generate Full Report
+          </button>
         </div>
 
         <div className="health-card hydration-card">
@@ -150,6 +153,39 @@ const HealthHub: React.FC = () => {
           </button>
         </div>
       </div>
+      {showReport && (
+        <div className="report-overlay" onClick={() => setShowReport(false)}>
+          <div className="report-modal" onClick={e => e.stopPropagation()}>
+            <div className="report-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ai-icon">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <h2>Full Biometric Report</h2>
+              </div>
+              <button className="report-close" onClick={() => setShowReport(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}>
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="report-body">
+              <div className="report-metrics-grid">
+                <div className="report-metric"><span className="report-label">Heart Rate</span><span className="report-val">{stats.heartRate} <small>bpm</small></span></div>
+                <div className="report-metric"><span className="report-label">Activity</span><span className="report-val">{stats.steps.toLocaleString()} <small>steps</small></span></div>
+                <div className="report-metric"><span className="report-label">Sleep</span><span className="report-val">{stats.sleep} <small>hrs</small></span></div>
+                <div className="report-metric"><span className="report-label">HRV</span><span className="report-val">{stats.hrv} <small>ms</small></span></div>
+                <div className="report-metric"><span className="report-label">Hydration</span><span className="report-val">{stats.water} <small>/ 3.0L</small></span></div>
+              </div>
+              <div className="report-analysis">
+                <h4>AI Analysis</h4>
+                <p>{aiAnalysis}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
