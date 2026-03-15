@@ -1,15 +1,16 @@
 export const palette = {
-  bgPrimary: '#000000',      // True OLED Black
-  bgSecondary: '#0d0d0d',    // Deep Slate
-  bgCard: '#1a1a2e',         // Elevated Surface
+  bgPrimary: '#050508',      // Precise OLED Black
+  bgSecondary: '#0d0d12',    // Refined Slate
+  bgCard: '#13131C',         // Figma AI Card Color
   
-  accentPrimary: '#7b5ea7',  // Neon Purple
-  accentSecondary: '#00d4ff', // Neon Blue
+  accentPrimary: '#00D4FF',  // Figma Accent Blue
+  accentSecondary: '#7b5ea7', // Neon Purple
   
-  textPrimary: '#f0f0f0',    // High Contrast White
-  textMuted: '#808080',      // Dimmed Grey
+  textPrimary: '#E4E4E7',    // Figma Zinc-200
+  textMuted: '#71717A',      // Figma Zinc-500
   
-  borderColor: '#333333',
+  borderColor: 'rgba(255, 255, 255, 0.08)',
+  shadowColor: 'rgba(0, 212, 255, 0.15)', // Blue glow for user bubbles/accents
 };
 
 export const spacing = {

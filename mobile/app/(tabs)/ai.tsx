@@ -132,17 +132,29 @@ const styles = StyleSheet.create({
     maxWidth: '85%',
   },
   userBubble: {
-    backgroundColor: theme.colors.accentPrimary,
+    backgroundColor: 'rgba(0, 212, 255, 0.15)', // User message bg
     borderBottomRightRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 212, 255, 0.3)',
+    shadowColor: theme.colors.shadowColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+    elevation: 5,
   },
   aiBubble: {
     backgroundColor: theme.colors.bgCard,
     borderBottomLeftRadius: 4,
     borderWidth: 1,
     borderColor: theme.colors.borderColor,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 5,
+    elevation: 2,
   },
   userText: {
-    color: '#fff',
+    color: theme.colors.accentPrimary,
   },
   aiText: {
     color: theme.colors.textPrimary,

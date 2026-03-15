@@ -1,33 +1,42 @@
-export interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  isSaved?: boolean;
-}
+import { Message } from './aiService';
+
+const BACKEND_URL = 'http://localhost:8000/api/v1';
 
 export const aiService = {
   sendMessage: async (message: string, onToken: (token: string) => void) => {
-    console.log('[AIService] Sending message:', message);
-    
-    // Simulate streaming SSE response
-    const mockTokens = [
-      "I ", "am ", "VibeOS ", "AI. ", "How ", "can ", "I ", "assist ", "you ", "today?"
-    ];
+    try {
+      const response = await fetch(`${BACKEND_URL}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, user_id: 'ceo_test' })
+      });
 
-    let fullContent = "";
-    for (const token of mockTokens) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      fullContent += token;
-      onToken(token);
+      if (!response.ok) throw new Error('AI Bridge Failed');
+
+      const data = await response.json();
+      const content = data.response;
+
+      // Simulate streaming for the UI since the current backend isn't true SSE yet
+      const tokens = content.split(' ');
+      let current = "";
+      for (const t of tokens) {
+        const token = t + " ";
+        current += token;
+        onToken(token);
+        await new Promise(r => setTimeout(r, 50));
+      }
+
+      return { id: crypto.randomUUID(), content };
+    } catch (error) {
+      console.error('[AIService] Bridge Error:', error);
+      const errorMsg = "I'm having trouble connecting to my neural core. Please ensure the VibeOS backend is running.";
+      onToken(errorMsg);
+      return { id: crypto.randomUUID(), content: errorMsg };
     }
-
-    return { id: crypto.randomUUID(), content: fullContent };
   },
 
   saveMessage: async (messageId: string) => {
-    console.log('[AIService] Pinning message:', messageId);
-    // TODO: PATCH /api/v1/chat/save/:id
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // TODO: Implement save logic in backend
     return { success: true };
   }
 };
