@@ -5,6 +5,7 @@ import ChatInterface from './components/Chat/ChatInterface';
 import HealthHub from './components/health';
 import FeedsHub from './components/feeds';
 import EmailHub from './components/email';
+import PlannerHub from './components/planner';
 import { Link } from 'react-router-dom';
 import './index.css';
 
@@ -28,6 +29,7 @@ const App: React.FC = () => {
             <Link to="/health" className="nav-link">Health Hub</Link>
             <Link to="/feeds" className="nav-link">Vibe Feeds</Link>
             <Link to="/email" className="nav-link">Email</Link>
+            <Link to="/planner" className="nav-link">Planner</Link>
           </nav>
 
           <main style={{ flex: 1, padding: 'var(--spacing-lg)', maxWidth: '1400px', margin: '0 auto', overflowY: 'auto' }}>
@@ -37,6 +39,7 @@ const App: React.FC = () => {
               <Route path="/health" element={<HealthHub />} />
               <Route path="/feeds" element={<FeedsHub />} />
               <Route path="/email" element={<EmailHub />} />
+              <Route path="/planner" element={<PlannerHub />} />
             </Routes>
           </main>
         </div>
