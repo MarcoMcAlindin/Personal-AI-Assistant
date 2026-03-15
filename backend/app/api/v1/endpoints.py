@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from app.services.email_service import EmailService
 from app.services.feed_service import FeedService
 from app.services.rag_service import RAGService
+from app.utils.auth import get_current_user
 import httpx
 import os
 
@@ -20,7 +21,6 @@ class EmailSendRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
-    user_id: str = "placeholder_user_id"
 
 @router.get("/feeds/tech")
 async def get_tech_feeds():
@@ -33,12 +33,12 @@ async def get_concert_feeds():
     return {"concerts": concerts}
 
 @router.get("/email/inbox")
-async def get_email_inbox(user_id: str = "placeholder_user_id"):
+async def get_email_inbox(user_id: str = Depends(get_current_user)):
     emails = await email_service.fetch_inbox(user_id)
     return {"emails": emails}
 
 @router.post("/email/send")
-async def send_email(request: EmailSendRequest, user_id: str = "placeholder_user_id"):
+async def send_email(request: EmailSendRequest, user_id: str = Depends(get_current_user)):
     success = await email_service.send_email(
         user_id=user_id,
         to=request.to,
@@ -51,10 +51,10 @@ async def send_email(request: EmailSendRequest, user_id: str = "placeholder_user
     return {"message": "Email sent successfully"}
 
 @router.post("/chat")
-async def chat_with_ai(request: ChatRequest):
+async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_user)):
     # 1. Build RAG Context
-    context = await rag_service.build_context_block(request.user_id, request.message)
-    
+    context = await rag_service.build_context_block(user_id, request.message)
+
     # 2. Get Qwen Endpoint
     qwen_url = os.environ.get("QWEN_ENDPOINT_URL")
     if not qwen_url:
@@ -81,5 +81,5 @@ async def chat_with_ai(request: ChatRequest):
         raise HTTPException(status_code=500, detail=f"AI Service Error: {str(e)}")
 
 @router.post("/health-sync")
-async def health_sync():
+async def health_sync(user_id: str = Depends(get_current_user)):
     return {"message": "Placeholder: Biometric data synchronization endpoint."}
