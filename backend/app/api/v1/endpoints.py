@@ -3,13 +3,16 @@ from typing import Optional, List
 from pydantic import BaseModel
 from app.services.email_service import EmailService
 from app.services.feed_service import FeedService
+from app.services.health_service import HealthService
 from app.services.rag_service import RAGService
+from app.utils.auth import get_current_user
 import httpx
 import os
 
 router = APIRouter()
 email_service = EmailService()
 feed_service = FeedService()
+health_service = HealthService()
 rag_service = RAGService()
 
 class EmailSendRequest(BaseModel):
@@ -20,7 +23,18 @@ class EmailSendRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
-    user_id: str = "placeholder_user_id"
+
+class HealthSyncPayload(BaseModel):
+    heart_rate: Optional[float] = None
+    sleep_duration: Optional[float] = None
+    avg_heart_rate: Optional[float] = None
+    water_liters: Optional[float] = None
+    raw_watch_data: Optional[dict] = None
+    timestamp: Optional[str] = None
+    date: Optional[str] = None
+
+class WaterLogRequest(BaseModel):
+    amount_liters: float
 
 @router.get("/feeds/tech")
 async def get_tech_feeds():
@@ -33,12 +47,12 @@ async def get_concert_feeds():
     return {"concerts": concerts}
 
 @router.get("/email/inbox")
-async def get_email_inbox(user_id: str = "placeholder_user_id"):
+async def get_email_inbox(user_id: str = Depends(get_current_user)):
     emails = await email_service.fetch_inbox(user_id)
     return {"emails": emails}
 
 @router.post("/email/send")
-async def send_email(request: EmailSendRequest, user_id: str = "placeholder_user_id"):
+async def send_email(request: EmailSendRequest, user_id: str = Depends(get_current_user)):
     success = await email_service.send_email(
         user_id=user_id,
         to=request.to,
@@ -51,10 +65,10 @@ async def send_email(request: EmailSendRequest, user_id: str = "placeholder_user
     return {"message": "Email sent successfully"}
 
 @router.post("/chat")
-async def chat_with_ai(request: ChatRequest):
+async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_user)):
     # 1. Build RAG Context
-    context = await rag_service.build_context_block(request.user_id, request.message)
-    
+    context = await rag_service.build_context_block(user_id, request.message)
+
     # 2. Get Qwen Endpoint
     qwen_url = os.environ.get("QWEN_ENDPOINT_URL")
     if not qwen_url:
@@ -80,6 +94,32 @@ async def chat_with_ai(request: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Service Error: {str(e)}")
 
-@router.post("/health-sync")
-async def health_sync():
-    return {"message": "Placeholder: Biometric data synchronization endpoint."}
+@router.post("/health/sync")
+async def health_sync(
+    payload: HealthSyncPayload,
+    user_id: str = Depends(get_current_user),
+):
+    result = await health_service.sync_biometrics(user_id, payload.model_dump())
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+@router.get("/health/metrics")
+async def get_health_metrics(user_id: str = Depends(get_current_user)):
+    metrics = await health_service.get_metrics(user_id)
+    return {"metrics": metrics}
+
+@router.get("/health/analysis")
+async def get_health_analysis(user_id: str = Depends(get_current_user)):
+    analysis = await health_service.get_analysis(user_id)
+    return {"analysis": analysis}
+
+@router.post("/health/water")
+async def log_water(
+    request: WaterLogRequest,
+    user_id: str = Depends(get_current_user),
+):
+    result = await health_service.log_water(user_id, request.amount_liters)
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
