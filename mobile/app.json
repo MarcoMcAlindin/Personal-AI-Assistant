@@ -21,8 +21,15 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0a0a0f"
       },
-      "package": "com.vibeos.mobile"
+      "package": "com.vibeos.mobile",
+      "permissions": [
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_STEPS"
+      ]
     },
-    "plugins": []
+    "plugins": [
+      "react-native-health-connect"
+    ]
   }
 }
