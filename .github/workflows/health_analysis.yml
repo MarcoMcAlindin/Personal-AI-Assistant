@@ -1,6 +1,6 @@
 # VibeOS — Automated Daily Health Analysis
 # Runs every day at 8:00 AM GMT
-# Pulls latest Samsung Watch data from Supabase → sends to Qwen 3.5 → stores analysis
+# Pulls latest Samsung Watch data from Supabase → sends to Qwen2.5-VL-7B → stores analysis
 
 name: Daily Health Analysis
 
@@ -19,6 +19,7 @@ env:
 jobs:
   health-analysis:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -30,12 +31,15 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: |
-          cd backend
-          pip install -r requirements.txt
+        run: pip install supabase httpx
 
-      - name: Run health analysis script
-        run: |
-          # TODO: Create and reference the health analysis script
-          # python backend/scripts/daily_health_analysis.py
-          echo "Health analysis script placeholder"
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Run health analysis
+        run: python vllm_deployment/scripts/analyze_health.py
