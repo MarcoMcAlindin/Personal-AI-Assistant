@@ -1,7 +1,7 @@
 # Rule 24: GCE Multi-GPU Inference Governance
 
 ## Context
-For high-precision models (e.g., Qwen 3.5 27B in 8-bit), multi-GPU Compute Engine (GCE) instances are required to meet VRAM demands (48GB+).
+For high-precision models (e.g., **Qwen/Qwen3.5-27B** in 8-bit), multi-GPU Compute Engine (GCE) instances are required to meet VRAM demands (48GB+).
 
 ## Mandatory Constraints
 1. **Mr. Red (Infrastructure)**:
