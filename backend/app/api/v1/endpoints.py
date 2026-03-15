@@ -74,13 +74,26 @@ async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_
     if not qwen_url:
         return {"response": f"[MOCK CONTEXT]: {context}\n\n[REPLY]: I am functioning in mock mode because QWEN_ENDPOINT_URL is missing."}
 
-    # 3. Call vLLM Model
+    # 3. Get GCP identity token for IAM-protected vLLM service
+    qwen_base = qwen_url.rstrip("/v1").rstrip("/")
+    headers = {"Content-Type": "application/json"}
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        import google.auth.transport.requests
+        import google.oauth2.id_token
+        auth_req = google.auth.transport.requests.Request()
+        identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
+        headers["Authorization"] = f"Bearer {identity_token}"
+    except Exception:
+        pass  # Local dev without GCP credentials — skip auth
+
+    # 4. Call vLLM Model (300s timeout for cold-start)
+    try:
+        async with httpx.AsyncClient(timeout=300.0) as client:
             ai_response = await client.post(
                 f"{qwen_url}/v1/chat/completions",
+                headers=headers,
                 json={
-                    "model": "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8",
+                    "model": os.environ.get("QWEN_MODEL_NAME", "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8"),
                     "messages": [
                         {"role": "system", "content": "You are VibeOS Assistant. Use the provided context to answer accurately."},
                         {"role": "user", "content": f"{context}\n\nUser Query: {request.message}"}

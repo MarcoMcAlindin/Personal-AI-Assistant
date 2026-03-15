@@ -1,18 +1,14 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.endpoints import router as api_v1_router
 
 app = FastAPI(title="VibeOS API Gateway")
 
-# Mr Pink Scouting: Apply fastapi-cors-shield logic
+# CORS: read from CORS_ORIGINS env var, fall back to dev defaults
 # No Wildcards: never use ["*"]
-# Strict Allowed Origins: Vite production and Expo tunnels
-origins = [
-    "http://localhost:5173", # Vite Dev
-    "http://127.0.0.1:5173",
-    "http://192.168.0.206:5173", # Mobile/Web Dev IP
-    "http://192.168.0.206:8000",
-]
+_default_origins = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000"
+origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", _default_origins).split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
