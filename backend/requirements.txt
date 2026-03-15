@@ -17,6 +17,7 @@ httpx==0.28.*
 
 # Feed Parsing
 feedparser==6.0.*
+beautifulsoup4==4.12.*
 
 # AI / Embeddings
 openai==1.60.*
