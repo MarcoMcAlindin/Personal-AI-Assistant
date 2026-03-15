@@ -22,3 +22,6 @@ Track agent task completion attempts and CEO approval history.
 | Mr. Blue | VOS-016 | 1 | Pass | Confirmed |
 | Mr. Blue | VOS-020 | 1 | Pass | Confirmed |
 | Mr. Blue | VOS-019 | 1 | Pass | Confirmed |
+| Mr. Blue | VOS-015 | 1 | Fail | Pending |
+| Mr. Blue | VOS-017 | 1 | Fail | Pending |
+| Mr. Blue | VOS-018 | 1 | Fail | Pending |

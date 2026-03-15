@@ -21,10 +21,12 @@ description: Establishes the project baseline, agent identity, and recent develo
 * **Priority:** Identify the issue with the highest priority (or lowest ID) in the "Backlog" or "Assigned" column.
 * **Python Logic:** If the GitHub JSON payload is complex, use **Python** to parse and filter the data structure to ensure 100% accuracy in task selection.
 
-### 4. Git Environment & Timeline Audit
-**Action:** Before any file edits, synchronize the local environment.
-* **State Check:** Execute `git branch --show-current` and `git log -n 5 --oneline` in the terminal.
-* **The Atomic Switch:** If the current branch does not match your assigned task, use the CLI to `git checkout` your specific feature branch (or create it from the latest `staging`/`main`).
+### 4. Git Environment & Worktree Activation (Rule 30)
+**Action:** Before any file edits, activate your isolated worktree. NEVER run `git checkout` to switch branches — this contaminates the shared monorepo for all other agents.
+* **Check existing worktrees:** Run `git worktree list` from the main repo.
+* **If your worktree exists:** `cd /home/marco/vibeos-worktrees/<color>` then `git pull origin <your-branch>`.
+* **If your worktree does NOT exist yet:** Run the `git-worktree-setup` skill to create it — `git worktree add /home/marco/vibeos-worktrees/<color> feature/<color>/<branch>`.
+* **Verify:** Confirm `pwd` is your worktree path and `git branch --show-current` matches your task branch before touching any file.
 
 ### 5. The Readiness Pledge
 **Action:** Output a structured acknowledgment containing:

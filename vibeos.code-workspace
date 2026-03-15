@@ -1,0 +1,36 @@
+{
+  "folders": [
+    {
+      "name": "VibeOS — Main (Pink / Staging)",
+      "path": "."
+    },
+    {
+      "name": "Blue — Web & Mobile",
+      "path": "/home/marco/vibeos-worktrees/blue"
+    },
+    {
+      "name": "Green — Backend (FastAPI)",
+      "path": "/home/marco/vibeos-worktrees/green"
+    },
+    {
+      "name": "Red — CI/CD & vLLM",
+      "path": "/home/marco/vibeos-worktrees/red"
+    },
+    {
+      "name": "White — Supabase & Database",
+      "path": "/home/marco/vibeos-worktrees/white"
+    }
+  ],
+  "settings": {
+    "git.autoRepositoryDetection": "subFolders",
+    "git.openRepositoryInParentFolders": "always",
+    "scm.defaultViewMode": "tree",
+    "window.title": "VibeOS [${activeRepositoryBranchName}] — ${activeEditorShort}"
+  },
+  "extensions": {
+    "recommendations": [
+      "eamodio.gitlens",
+      "mhutchie.git-graph"
+    ]
+  }
+}
