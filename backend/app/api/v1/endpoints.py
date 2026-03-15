@@ -66,7 +66,7 @@ async def chat_with_ai(request: ChatRequest):
             ai_response = await client.post(
                 f"{qwen_url}/v1/chat/completions",
                 json={
-                    "model": "Qwen/Qwen3.5-27B",
+                    "model": "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8",
                     "messages": [
                         {"role": "system", "content": "You are VibeOS Assistant. Use the provided context to answer accurately."},
                         {"role": "user", "content": f"{context}\n\nUser Query: {request.message}"}

@@ -1,16 +1,15 @@
 steps:
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', '$_REGION-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest', '.']
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest', '.']
 
   # Push the container image to Artifact Registry
-  # Deployment to GCE (2x L4, g2-standard-24) is handled by deploy.sh.
-  # Rule 24: Cloud Run only supports 1 GPU -- Qwen3.5-27B 8-bit requires 2x L4 (48GB VRAM).
+  # Cloud Run deployment is handled by deploy.sh (gcloud run deploy)
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', '$_REGION-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest']
+    args: ['push', '${_REGION}-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest']
 
 substitutions:
   _REGION: europe-west1
 
 images:
-  - '$_REGION-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest'

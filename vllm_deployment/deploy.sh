@@ -9,12 +9,10 @@ if ! command -v gcloud &>/dev/null; then
 fi
 
 # Configuration
-# Rule 24: Qwen3.5-27B 8-bit requires 2x L4 (48GB VRAM). Cloud Run max is 1 GPU.
-# Deployment target: GCE g2-standard-24 Spot instance (2x L4, europe-west1-b).
+# Rule 23: Single L4 GPU on Cloud Run (scale-to-zero). Rule 24 (GCE) is deprecated.
 PROJECT_ID=$(gcloud config get-value project)
 REGION="europe-west1"
-ZONE="europe-west1-b"
-INSTANCE_NAME="vibeos-qwen-gpu"
+SERVICE_NAME="vibeos-qwen"
 IMAGE_NAME="$REGION-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest"
 
 echo "Starting vLLM Deployment for Project: $PROJECT_ID"
@@ -28,32 +26,31 @@ if ! gcloud artifacts repositories describe vibeos --location=$REGION > /dev/nul
     --description="VibeOS Containerized Services"
 fi
 
-# 2. Build and push container image via Cloud Build
+# 2. Build and push via Cloud Build
 echo "Building and pushing image via Cloud Build..."
 gcloud builds submit --config cloudbuild.yaml .
 
-# 3. Deploy to GCE Spot Instance (Rule 24: g2-standard-24 = 2x L4 = 48GB VRAM)
-echo "Deploying to GCE Spot Instance ($INSTANCE_NAME, $ZONE)..."
-
-if gcloud compute instances describe "$INSTANCE_NAME" --zone="$ZONE" --project="$PROJECT_ID" > /dev/null 2>&1; then
-  # Instance exists -- restart it to pull the latest image via startup script
-  echo "Instance exists. Resetting to pull latest image..."
-  gcloud compute instances reset "$INSTANCE_NAME" \
-    --zone="$ZONE" \
-    --project="$PROJECT_ID"
-else
-  # Create new Spot instance (Rule 24 pattern)
-  echo "Creating new GCE Spot instance..."
-  gcloud compute instances create "$INSTANCE_NAME" \
-    --project="$PROJECT_ID" \
-    --zone="$ZONE" \
-    --machine-type=g2-standard-24 \
-    --provisioning-model=SPOT \
-    --instance-termination-action=STOP \
-    --create-disk=size=100,type=pd-balanced,image-family=pytorch-2-7-cu128-ubuntu-2204-nvidia-570,image-project=deeplearning-platform-release \
-    --scopes=cloud-platform \
-    --metadata-from-file=startup-script="$SCRIPT_DIR/scripts/startup.sh"
-fi
+# 3. Deploy to Cloud Run with single L4 GPU (Rule 23)
+# --gpu 1 --gpu-type nvidia-l4: single L4, 24GB VRAM
+# --min-instances 0: scale-to-zero (Rule 08)
+# --concurrency 16: matches --max-num-seqs in vLLM CMD
+# --no-allow-unauthenticated: IAM-protected, called via identity token
+echo "Deploying to Cloud Run ($SERVICE_NAME, $REGION)..."
+gcloud run deploy "$SERVICE_NAME" \
+  --image "$IMAGE_NAME" \
+  --region "$REGION" \
+  --platform managed \
+  --gpu 1 \
+  --gpu-type nvidia-l4 \
+  --memory 16Gi \
+  --cpu 4 \
+  --max-instances 1 \
+  --min-instances 0 \
+  --timeout 300 \
+  --concurrency 16 \
+  --port 8080 \
+  --no-allow-unauthenticated \
+  --set-env-vars "MODEL_NAME=RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8"
 
 echo "Deployment complete."
-echo "Check instance status: gcloud compute instances describe $INSTANCE_NAME --zone $ZONE"
+echo "Check service: gcloud run services describe $SERVICE_NAME --region $REGION"

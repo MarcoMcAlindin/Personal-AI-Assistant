@@ -1,16 +1,22 @@
-# Start with the official vLLM OpenAI-compatible server image
+# Qwen2.5-VL-7B-Instruct on vLLM (Cloud Run, single L4 GPU)
+# Rule 23: W8A8 pre-quantized -- ~7-9GB weights, fits on L4 with 6-11GB headroom
 FROM vllm/vllm-openai:latest
 
-# Rule 24: Qwen3.5-27B at 8-bit (~27GB weights) exceeds a single L4 (24GB).
-# Deployed on GCE g2-standard-24 (2x L4 = 48GB VRAM) via deploy.sh.
-# --tensor-parallel-size 2: splits model weights evenly across both L4s
-# --quantization bitsandbytes: INT8 quantization -- 27B model fits with ~21GB VRAM headroom
-# --dtype float16: required; bitsandbytes 8-bit does not support bfloat16
-# --max-model-len 8192: caps context window to preserve KV cache buffer (Rule 24 buffer zone)
-# --gpu-memory-utilization 0.90: ~43GB functional VRAM, 5GB+ buffer across both GPUs
-# --max-num-seqs 16: limits concurrency for stability
-# --trust-remote-code: required for Qwen models
-ENV MODEL_NAME="Qwen/Qwen3.5-27B"
+ENV MODEL_NAME="RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8"
 
+# --model: W8A8 pre-quantized variant -- no --quantization flag needed (embedded in weights)
+# --enforce-eager: REQUIRED for VL models -- disables CUDA graph capture which causes vision encoder crashes
+# --limit-mm-per-prompt: Caps image inputs to 2 per request -- each high-res image = up to 16K visual tokens (OOM prevention)
+# --max-model-len: 8192 -- conserves KV cache on single L4; model natively supports 32K
+# --gpu-memory-utilization: 0.90 = ~21.6GB of L4's 24GB -- leaves buffer for vision spikes
+# --max-num-seqs: 16 -- matches Cloud Run containerConcurrency
+# --trust-remote-code: Required for all Qwen architectures
 ENTRYPOINT ["python3", "-m", "vllm.entrypoints.openai.api_server"]
-CMD ["--model", "Qwen/Qwen3.5-27B", "--port", "8080", "--trust-remote-code", "--tensor-parallel-size", "2", "--quantization", "bitsandbytes", "--dtype", "float16", "--max-model-len", "8192", "--gpu-memory-utilization", "0.90", "--max-num-seqs", "16"]
+CMD ["--model", "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8", \
+     "--port", "8080", \
+     "--trust-remote-code", \
+     "--enforce-eager", \
+     "--max-model-len", "8192", \
+     "--gpu-memory-utilization", "0.90", \
+     "--max-num-seqs", "16", \
+     "--limit-mm-per-prompt", "{\"image\":2,\"video\":0}"]
