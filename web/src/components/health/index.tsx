@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { healthService } from '../../services/healthService';
 import './Health.css';
 
 interface HealthStats {
@@ -18,16 +19,48 @@ const HealthHub: React.FC = () => {
     hrv: 65
   });
 
-  const [aiAnalysis, setAiAnalysis] = useState<string>("");
+  const [aiAnalysis, setAiAnalysis] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate fetching morning audit analysis
-    const timer = setTimeout(() => {
-      setAiAnalysis("Your HRV is up 12% today, indicating excellent recovery. Optimal window for high-intensity training is between 10 AM and 1 PM. Hydration is slightly below baseline for this stage of the day.");
-      setLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const fetchData = async () => {
+      const metrics = await healthService.getLatestMetrics();
+
+      if (cancelled) return;
+
+      if (metrics) {
+        setStats(s => ({
+          ...s,
+          heartRate: metrics.avg_heart_rate,
+          water: metrics.water_liters,
+          sleep: metrics.sleep_duration,
+        }));
+
+        if (metrics.ai_analysis) {
+          setAiAnalysis(metrics.ai_analysis);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Fall through to demo state while VOS-027 is not yet live
+      timer = setTimeout(() => {
+        if (!cancelled) {
+          setAiAnalysis('Your HRV is up 12% today, indicating excellent recovery. Optimal window for high-intensity training is between 10 AM and 1 PM. Hydration is slightly below baseline for this stage of the day.');
+          setLoading(false);
+        }
+      }, 1500);
+    };
+
+    fetchData();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   return (
@@ -45,6 +78,16 @@ const HealthHub: React.FC = () => {
 
       <div className="health-grid">
         <div className="health-card main-metrics">
+          <div className="metric-item">
+            <span className="label">Heart Rate</span>
+            <div className="value-group">
+              <span className="value">{stats.heartRate}</span>
+              <span className="unit">bpm</span>
+            </div>
+            <div className="progress-mini">
+              <div className="fill" style={{ width: `${Math.min((stats.heartRate / 120) * 100, 100)}%` }}></div>
+            </div>
+          </div>
           <div className="metric-item">
             <span className="label">Activity</span>
             <div className="value-group">
