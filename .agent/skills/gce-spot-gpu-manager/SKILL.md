@@ -5,7 +5,7 @@ description: Manages high-precision multi-GPU deployments on Compute Engine with
 # GCE Spot GPU Manager
 
 ## When to use this skill
-- When deploying models that exceed 24GB VRAM (e.g., 8-bit Qwen 3.5 27B).
+- When deploying models that exceed 24GB VRAM (e.g., 8-bit **Qwen/Qwen3.5-27B**).
 - When a dedicated VS/Server environment is required instead of Cloud Run.
 
 ## How to use it
@@ -31,6 +31,7 @@ gcloud compute instances create [INSTANCE_NAME] \
 ### 3. Multi-GPU Model Loading (Python)
 Ensure `device_map="auto"` is used to prevent fragmentation:
 ```python
+model_id = "Qwen/Qwen3.5-27B"
 model = AutoModelForCausalLM.from_pretrained(
     model_id,
     load_in_8bit=True,
