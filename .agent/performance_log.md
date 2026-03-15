@@ -25,6 +25,6 @@ Track agent task completion attempts and CEO approval history.
 | Mr. Blue | VOS-015 | 1 | Fail | Rejected |
 | Mr. Blue | VOS-017 | 1 | Fail | Rejected |
 | Mr. Blue | VOS-018 | 1 | Fail | Rejected |
-| Mr. Blue | VOS-015 | 2 | Pass | Pending CEO |
-| Mr. Blue | VOS-017 | 2 | Pass | Pending CEO |
-| Mr. Blue | VOS-018 | 2 | Pass | Pending CEO |
+| Mr. Blue | VOS-015 | 2 | Pass | Confirmed |
+| Mr. Blue | VOS-017 | 2 | Pass | Confirmed |
+| Mr. Blue | VOS-018 | 2 | Pass | Confirmed |
