@@ -1,5 +1,5 @@
 steps:
-  # Build the container image
+  # Build the container image (includes model weight download ~18GB)
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest', '.']
 
@@ -13,3 +13,5 @@ substitutions:
 
 images:
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest'
+
+timeout: 3600s
