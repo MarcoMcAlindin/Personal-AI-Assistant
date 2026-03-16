@@ -1,24 +1,14 @@
 import feedparser
-import requests
-from bs4 import BeautifulSoup
+import httpx
 from typing import List, Dict
 import os
 
+
 class FeedService:
     def __init__(self):
-        # AI/Tech RSS Sources (Example: VentureBeat AI, TechCrunch AI)
         self.tech_feeds = [
             "https://venturebeat.com/category/ai/feed/",
             "https://techcrunch.com/category/artificial-intelligence/feed/"
-        ]
-        
-        # Scottish Concert Sources (Example: Major venues RSS or public pages)
-        # For this implementation, we will mock the "scraping" or API fetch 
-        # as per glasgow-concert-parser skills (Barrowlands, SWG3, O2)
-        self.concert_venues = [
-            {"name": "Barrowlands", "city": "Glasgow", "url": "https://glasgowbarrowland.com/events/"},
-            {"name": "SWG3", "city": "Glasgow", "url": "https://swg3.tv/events"},
-            {"name": "O2 Academy Glasgow", "city": "Glasgow", "url": "https://www.academymusicgroup.com/o2academyglasgow/events/all"}
         ]
 
     async def get_tech_news(self) -> List[Dict]:
@@ -27,47 +17,70 @@ class FeedService:
         for url in self.tech_feeds:
             try:
                 feed = feedparser.parse(url)
-                for entry in feed.entries[:5]: # Top 5 from each
+                for entry in feed.entries[:5]:
                     all_articles.append({
                         "title": entry.title,
                         "url": entry.link,
                         "source": feed.feed.title,
-                        "published_at": entry.get('published', '')
+                        "published_at": entry.get('published', ''),
+                        "description": entry.get('summary', '')[:200],
                     })
             except Exception as e:
                 print(f"Error parsing RSS {url}: {e}")
-        
         return all_articles
 
     async def get_concerts(self) -> List[Dict]:
-        """Fetch and filter Scottish Rock/Metal concerts."""
-        # Standard logic as per glasgow-concert-parser skill:
-        # 1. Target major venues
-        # 2. Strict keyword filtering: Metal, Rock, Heavy Metal
-        
-        # Mocking data for VOS-007 implementation to ensure immediate functionality
-        # In a real scenario, this would involve request + BeautifulSoup filtering
-        mock_concerts = [
-            {
-                "artist": "Sleep Token",
-                "venue": "O2 Academy",
-                "city": "Glasgow",
-                "date": "2026-05-15",
-                "genre": "Alternative Metal",
-                "ticket_url": "https://example.com/tickets/sleeptoken"
-            },
-            {
-                "artist": "Architects",
-                "venue": "Barrowlands",
-                "city": "Glasgow",
-                "date": "2026-06-02",
-                "genre": "Metalcore",
-                "ticket_url": "https://example.com/tickets/architects"
-            }
-        ]
-        
-        # Keyword filtering filter (simulated)
-        keywords = ["Metal", "Rock", "Heavy Metal", "Metalcore"]
-        filtered = [c for c in mock_concerts if any(k in c['genre'] for k in keywords)]
-        
-        return filtered
+        """Fetch Scottish Rock/Metal concerts from Ticketmaster Discovery API."""
+        api_key = os.environ.get("TICKETMASTER_API_KEY")
+        if not api_key:
+            print("[FeedService] TICKETMASTER_API_KEY not set -- returning empty")
+            return []
+
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                response = await client.get(
+                    "https://app.ticketmaster.com/discovery/v2/events.json",
+                    params={
+                        "apikey": api_key,
+                        "countryCode": "GB",
+                        "stateCode": "SCT",
+                        "classificationName": "rock,metal",
+                        "size": 20,
+                        "sort": "date,asc",
+                    }
+                )
+                response.raise_for_status()
+                data = response.json()
+
+            events = data.get("_embedded", {}).get("events", [])
+            concerts = []
+            for event in events:
+                venue_data = event.get("_embedded", {}).get("venues", [{}])[0]
+                price_ranges = event.get("priceRanges", [{}])
+                min_price = price_ranges[0].get("min") if price_ranges else None
+
+                classifications = event.get("classifications", [{}])
+                genre = classifications[0].get("genre", {}).get("name", "Rock") if classifications else "Rock"
+                subgenre = classifications[0].get("subGenre", {}).get("name", "") if classifications else ""
+                genre_display = f"{genre} / {subgenre}" if subgenre and subgenre != genre else genre
+
+                concerts.append({
+                    "artist": event.get("name", "Unknown"),
+                    "venue": venue_data.get("name", "Unknown Venue"),
+                    "city": venue_data.get("city", {}).get("name", "Unknown"),
+                    "date": event.get("dates", {}).get("start", {}).get("localDate", ""),
+                    "genre": genre_display,
+                    "price": f"From \u00a3{min_price:.0f}" if min_price else "See listing",
+                    "ticket_url": event.get("url", ""),
+                })
+
+            metal_keywords = ["metal", "rock", "heavy", "hardcore", "punk", "metalcore",
+                              "doom", "thrash", "death", "black metal", "grunge", "stoner"]
+            filtered = [c for c in concerts if any(k in c["genre"].lower() for k in metal_keywords)]
+
+            # If strict filter removes everything, return all (Ticketmaster already filtered by classification)
+            return filtered if filtered else concerts
+
+        except Exception as e:
+            print(f"[FeedService] Ticketmaster API error: {e}")
+            return []
