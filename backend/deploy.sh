@@ -44,7 +44,7 @@ done
 for pair in \
   "CORS_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:8081" \
   "QWEN_ENDPOINT_URL:https://vibeos-qwen-599152061719.europe-west1.run.app/v1" \
-  "QWEN_MODEL_NAME:RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8"; do
+  "QWEN_MODEL_NAME:Qwen/Qwen3.5-9B-Instruct"; do
   key="${pair%%:*}"
   val="${pair#*:}"
   if grep -q "^$key:" "$ENV_YAML"; then
