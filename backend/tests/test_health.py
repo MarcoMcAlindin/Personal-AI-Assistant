@@ -29,7 +29,7 @@ def _auth_header():
 def test_health_sync_requires_auth(monkeypatch):
     monkeypatch.setattr(settings, "supabase_jwt_secret", TEST_SECRET)
     response = client.post("/api/v1/health/sync", json={"timestamp": "2026-03-15T08:00:00Z"})
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 def test_health_sync_with_valid_token(monkeypatch):
@@ -55,7 +55,7 @@ def test_health_sync_with_valid_token(monkeypatch):
 def test_health_metrics_requires_auth(monkeypatch):
     monkeypatch.setattr(settings, "supabase_jwt_secret", TEST_SECRET)
     response = client.get("/api/v1/health/metrics")
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 def test_health_metrics_with_valid_token(monkeypatch):
@@ -70,7 +70,7 @@ def test_health_metrics_with_valid_token(monkeypatch):
 def test_health_analysis_requires_auth(monkeypatch):
     monkeypatch.setattr(settings, "supabase_jwt_secret", TEST_SECRET)
     response = client.get("/api/v1/health/analysis")
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 def test_health_analysis_with_valid_token(monkeypatch):
@@ -85,7 +85,7 @@ def test_health_analysis_with_valid_token(monkeypatch):
 def test_health_water_requires_auth(monkeypatch):
     monkeypatch.setattr(settings, "supabase_jwt_secret", TEST_SECRET)
     response = client.post("/api/v1/health/water", json={"amount_liters": 0.25})
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 def test_health_water_with_valid_token(monkeypatch):
