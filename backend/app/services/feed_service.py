@@ -42,8 +42,9 @@ class FeedService:
                     "https://app.ticketmaster.com/discovery/v2/events.json",
                     params={
                         "apikey": api_key,
-                        "countryCode": "GB",
-                        "stateCode": "SCT",
+                        "latlong": "55.8642,-4.2518",
+                        "radius": "50",
+                        "unit": "miles",
                         "classificationName": "rock,metal",
                         "size": 20,
                         "sort": "date,asc",
