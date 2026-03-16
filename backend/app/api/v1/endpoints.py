@@ -93,7 +93,7 @@ async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_
                 f"{qwen_url}/v1/chat/completions",
                 headers=headers,
                 json={
-                    "model": os.environ.get("QWEN_MODEL_NAME", "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8"),
+                    "model": os.environ.get("QWEN_MODEL_NAME", "Qwen/Qwen3.5-9B"),
                     "messages": [
                         {"role": "system", "content": "You are VibeOS Assistant. Use the provided context to answer accurately."},
                         {"role": "user", "content": f"{context}\n\nUser Query: {request.message}"}
