@@ -33,10 +33,10 @@ Track agent task completion attempts and CEO approval history.
 | Mr. Green | VOS-025 | 2 | Pass | Confirmed |
 | Mr. Green | VOS-027 | 1 | Pass | Confirmed |
 | Mr. Blue | VOS-028 | 1 | Pass | Confirmed |
-| Mr. Blue | VOS-034 | 1 | Pass | Pending |
-| Mr. Blue | VOS-035 | 1 | Pass | Pending |
-| Mr. Blue | VOS-036 | 1 | Pass | Pending |
-| Mr. Blue | VOS-037 | 1 | Pass | Pending |
+| Mr. Blue | VOS-034 | 1 | Pass | Confirmed |
+| Mr. Blue | VOS-035 | 1 | Pass | Confirmed |
+| Mr. Blue | VOS-036 | 1 | Pass | Confirmed |
+| Mr. Blue | VOS-037 | 1 | Pass | Confirmed |
 | Mr. Green | VOS-039 | 1 | Fail | Rejected — auth bypass leak + double /v1 in Qwen URL |
 | Mr. Green | VOS-040 | 1 | Fail | Rejected — stateCode=SCT returns 0 Ticketmaster results |
 | Mr. Green | VOS-041 | 1 | Pass | Pending — conditional on VOS-039 fixes for AI rewrite |
@@ -45,3 +45,8 @@ Track agent task completion attempts and CEO approval history.
 | Mr. Green | VOS-040 | 2 | Pass | Confirmed |
 | Mr. Green | VOS-041 | 2 | Pass | Confirmed |
 | Mr. Green | VOS-042 | 2 | Pass | Confirmed |
+| Mr. Red | VOS-044 | 1 | Pass | Confirmed |
+| Mr. Red | VOS-045 | 1 | Pass | Confirmed |
+| Mr. Red | VOS-049 | 1 | Pass | Confirmed |
+| Mr. Green | VOS-050 | 1 | Pass | Confirmed |
+| Mr. Red | VOS-051 | 1 | Pass | Confirmed |
