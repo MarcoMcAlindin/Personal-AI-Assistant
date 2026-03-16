@@ -2,6 +2,8 @@
 # Rule 23: W8A8 pre-quantized -- ~7-9GB weights, fits on L4 with 6-11GB headroom
 FROM vllm/vllm-openai:latest
 
+RUN python3 -m pip install huggingface_hub
+RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download('Qwen/Qwen3.5-9B-Instruct')"
 ENV MODEL_NAME="Qwen/Qwen3.5-9B-Instruct"
 
 # --model: W8A8 pre-quantized variant -- no --quantization flag needed (embedded in weights)
