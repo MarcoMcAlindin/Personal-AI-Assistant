@@ -1,14 +1,14 @@
-# HANDOFF: VOS-009 (vLLM Qwen 3.5 & Cloud Run GPU)
+# HANDOFF: VOS-009 (vLLM Qwen3.5-9B-Instruct & Cloud Run GPU)
 
 - **Date:** 2026-03-14
 - **Recipient:** CEO Review / Mr. Pink Audit
 - **Task ID:** VOS-009
 
 ## Summary
-Successfully implemented the deployment infrastructure for the private **Qwen 3.5 27B** model using the **vLLM** engine. The deployment is configured for **Google Cloud Run** with **GPU L4** acceleration, strict **scale-to-zero** compliance (Rule 32), and OpenAI-compatible API endpoints.
+Successfully implemented the deployment infrastructure for the private **Qwen3.5-9B-Instruct** model using the **vLLM** engine. The deployment is configured for **Google Cloud Run** with **GPU L4** acceleration, strict **scale-to-zero** compliance (Rule 32), and OpenAI-compatible API endpoints.
 
 ## Changed Files
-- **[NEW]** [Dockerfile](file:///home/marco/Personal%20AI%20Assistant/vllm_deployment/Dockerfile): Optimized vLLM container for Qwen 3.5.
+- **[NEW]** [Dockerfile](file:///home/marco/Personal%20AI%20Assistant/vllm_deployment/Dockerfile): Optimized vLLM container for Qwen3.5-9B-Instruct.
 - **[NEW]** [cloudbuild.yaml](file:///home/marco/Personal%20AI%20Assistant/vllm_deployment/cloudbuild.yaml): Automated CI/CD pipeline for image building and deployment.
 - **[NEW]** [deploy.sh](file:///home/marco/Personal%20AI%20Assistant/vllm_deployment/deploy.sh): Orchestration script for GCP environment setup and deployment execution.
 - **[NEW]** [VOS-009_v1_plan.md](file:///home/marco/Personal%20AI%20Assistant/.agent/implementation_plans/phase_2_backend_ai/VOS-009_v1_plan.md): Exported implementation plan (Rule 21).
@@ -37,13 +37,13 @@ curl -X GET "https://[YOUR-SERVICE-URL]/health"
 curl -X POST "https://[YOUR-SERVICE-URL]/v1/chat/completions" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "Qwen/Qwen3.5-27B",
+    "model": "Qwen/Qwen3.5-9B-Instruct",
     "messages": [{"role": "user", "content": "Ping!"}]
   }'
 ```
 
 ## Environment Variable Changes
-- `MODEL_NAME`: Defaults to `Qwen/Qwen3.5-27B`.
+- `MODEL_NAME`: Defaults to `Qwen/Qwen3.5-9B-Instruct`.
 - `PORT`: Set to `8080`.
 
 ## API / Database Schema Changes

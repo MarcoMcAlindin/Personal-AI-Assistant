@@ -15,7 +15,7 @@ Mr. Red, this is the final verification layer before Mr. Pink runs the ship audi
 ### Blockers
 
 This is the last task before the final audit. **ALL of the following must be complete first:**
-- VOS-023 (Qwen2.5-VL-7B deployed and live)
+- VOS-023 (Qwen2.5-VL-9B deployed and live)
 - VOS-024 (8AM health workflow verified)
 - VOS-025 (Auth middleware live)
 - VOS-026 (Tasks API live)
@@ -68,7 +68,7 @@ curl -s -X POST $BACKEND_URL/api/v1/chat \
   -H "Content-Type: application/json" \
   -d '{"message":"ping"}' | jq -e '.response | test("MOCK") | not'
 ```
-- Response must NOT contain `[MOCK CONTEXT]` — this confirms Qwen2.5-VL-7B is live.
+- Response must NOT contain `[MOCK CONTEXT]` — this confirms Qwen2.5-VL-9B is live.
 - Response must be non-empty.
 
 #### 5. Task CRUD Cycle

@@ -56,12 +56,12 @@ def analyze_health():
 
         try:
             identity_token = get_identity_token(qwen_endpoint_url)
-            # 300s timeout: cold start ~15-30s for 7B, large buffer for safety
+            # 300s timeout: cold start ~15-30s for 9B, large buffer for safety
             with httpx.Client(timeout=300.0) as client:
                 ai_response = client.post(
                     f"{qwen_endpoint_url}/v1/chat/completions",
                     json={
-                        "model": "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8",
+                        "model": "RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8",
                         "messages": [
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": f"Analyze this biometric data: {json.dumps(data_summary)}"}

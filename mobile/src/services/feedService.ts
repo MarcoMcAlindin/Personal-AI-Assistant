@@ -10,7 +10,7 @@ export const feedService = {
     } catch (error) {
       console.error('[FeedService] Tech Error:', error);
       return [
-        { id: 1, title: "Qwen 3.5 Released", source: "AI Weekly", time: "2h ago", url: "#" },
+        { id: 1, title: "Qwen3.5-9B-Instruct Released", source: "AI Weekly", time: "2h ago", url: "#" },
         { id: 2, title: "Superconductors: New Breakthrough", source: "Science Daily", time: "5h ago", url: "#" }
       ];
     }

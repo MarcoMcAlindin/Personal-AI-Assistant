@@ -25,7 +25,7 @@ Implemented the high-signal Feeds UI for both the Web Command Center and the Exp
 ### Web
 1. Ensure the dev server is running on `http://localhost:5173`.
 2. Navigate to the "Vibe Feeds" tab in the sidebar.
-3. Verify the "Qwen 3.5 Released" item in the Tech tab.
+3. Verify the "Qwen3.5-9B-Instruct Released" item in the Tech tab.
 4. Click "Scottish Concerts" and verify the list updates correctly.
 5. Inspect the background color in the browser console; it must be `#050508`.
 

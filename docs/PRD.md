@@ -12,7 +12,7 @@ The architecture strictly decouples the web and mobile clients for layout flexib
 * **Web Frontend:** React + Vite. Provides blazing-fast build times and complete freedom to design complex, multi-pane desktop command-center layouts.
 * **Cloud Gateway Backend:** Python (FastAPI) deployed on Google Cloud Run. The optimal, 24/7 available choice for securely managing external API keys, parsing feeds, proxying email, and orchestrating AI embeddings without relying on a local PC.
 * **Database & Auth:** Supabase (PostgreSQL). Handles real-time syncing, Row Level Security (RLS) zero-trust authentication, and server-side automation (pg_cron).
-* **Private AI:** Qwen 3.5 27B (via Google Cloud Run). Deployed in a customized vLLM container with GPU allocation for private, highly capable inference.
+* **Private AI:** Qwen3.5-9B-Instruct (via Google Cloud Run). Deployed in a customized vLLM container with GPU allocation for private, highly capable inference.
 * **Cloud Automation:** GitHub Actions. Executes strict time-based workflows (like the 8:00 AM daily health analysis) entirely independent of the user's hardware.
 
 ## 3. Core Features & Functional Requirements
@@ -22,7 +22,7 @@ A consistent, modern aesthetic tailored perfectly to the screen it is displayed 
 * **Cool Dark Theme:** A system-wide, non-negotiable OLED-optimized theme featuring deep blacks, slate grays, and vibrant accent colors (e.g., neon blue or purple) to match the "vibe coding" aesthetic.
 * **Responsive Paradigm:** The web app (Vite) will utilize expansive grid layouts to view multiple modules side-by-side. The mobile app will use a focused, tab-based navigation system optimized for one-handed use.
 
-### 3.2. Private AI Chat & RAG Memory (Qwen 3.5 27B)
+### 3.2. Private AI Chat & RAG Memory (Qwen3.5-9B-Instruct)
 A secure conversational interface with intelligent, cost-effective memory management.
 * **10-Day Rolling Context:** To prevent context limit bloat, the Python backend uses Retrieval-Augmented Generation (RAG) powered by Supabase's pgvector. When chatting, the AI automatically retrieves relevant context strictly from the last 10 days of conversation history.
 * **Permanent "Save" Override:** The UI features a "Save/Pin" button on AI responses. Saved messages bypass the 10-day deletion/ignore rule and are permanently embedded into the AI's core knowledge base, ensuring it never forgets critical insights.
@@ -43,7 +43,7 @@ A focused inbox that completely eliminates spam.
 A dedicated wellness dashboard combining curated advice with automated biometric tracking.
 * **Content Feeds:** Daily water tracking (liter count), health news, meditation benefits, and a library of stretching examples specifically for men.
 * **On-Open Biometric Syncing:** The React Native app natively reads Samsung Watch data (heart rate, sleep stages) via react-native-health-connect. To bypass aggressive Android battery management, this sync fires immediately in the foreground whenever the user opens the mobile app, pushing the latest data to Supabase.
-* **Automated 8:00 AM AI Analysis:** Every day at exactly 8:00 AM GMT, a GitHub Action triggers a Python script. It pulls the most recently synced watch data from Supabase, sends it to Qwen 3.5, and stores the personalized health and sleep analysis in the database, ready for morning review.
+* **Automated 8:00 AM AI Analysis:** Every day at exactly 8:00 AM GMT, a GitHub Action triggers a Python script. It pulls the most recently synced watch data from Supabase, sends it to Qwen3.5-9B-Instruct, and stores the personalized health and sleep analysis in the database, ready for morning review.
 
 ### 3.6. Daily Planner & Task Tracker
 A transient, day-by-day task manager designed to keep focus strictly on the present.
@@ -66,7 +66,7 @@ A transient, day-by-day task manager designed to keep focus strictly on the pres
     * Initialize Supabase. Set up tables, Row Level Security (RLS), Google OAuth, the pgvector extension, and the pg_cron midnight archiving job (Mr. White).
     * Set up the three decoupled GitHub repositories: /mobile (Expo), /web (Vite), and/backend (FastAPI).
 * **Phase 2: The Python Gateway & AI**
-    * Deploy the vLLM Qwen 3.5 container to Google Cloud Run (Mr. Red).
+    * Deploy the vLLM Qwen3.5-9B-Instruct container to Google Cloud Run (Mr. Red).
     * Deploy the Python FastAPI backend to Cloud Run to handle the Gmail proxy, feed parsing, and RAG embedding logic (Mr. Green).
 * **Phase 3: Frontends & Hardware Integration**
     * Build the multi-pane desktop UI in the/web repo and the tabbed mobile UI in the/mobile repo (Mr. Blue).

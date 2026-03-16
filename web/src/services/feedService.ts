@@ -13,7 +13,7 @@ export const feedService = {
       console.error('[FeedService] Tech Error:', error);
       // Return fallback for demo if needed, or rethrow
       return [
-        { id: 1, title: "Qwen 3.5 Released", source: "AI Weekly", time: "2h ago", url: "#" },
+        { id: 1, title: "Qwen3.5-9B-Instruct Released", source: "AI Weekly", time: "2h ago", url: "#" },
         { id: 2, title: "Superconductors: New Breakthrough", source: "Science Daily", time: "5h ago", url: "#" }
       ];
     }

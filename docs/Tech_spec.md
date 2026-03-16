@@ -14,8 +14,8 @@
 
 ## [cite_start]3. Cloud Intelligence & RAG Memory Layer [cite: 87]
 [cite_start]This layer powers the private conversational assistant and handles AI memory management. [cite: 88]
-* [cite_start]**Qwen 3.5 27B (via vLLM):** Hosted on a separate, GPU-enabled Google Cloud Run container. [cite: 89] [cite_start]It scales to zero when idle and activates instantly for chat inference or health analysis. [cite: 90]
-* [cite_start]**GitHub Actions Automation:** Every day at exactly 8:00 AM GMT, a scheduled workflow executes a Python script that pulls whatever health data was most recently synced to Supabase, sends it to Qwen 3.5, and writes the personalized analysis back to the database. [cite: 91]
+* [cite_start]**Qwen3.5-9B-Instruct (via vLLM):** Hosted on a separate, GPU-enabled Google Cloud Run container. [cite: 89] [cite_start]It scales to zero when idle and activates instantly for chat inference or health analysis. [cite: 90]
+* [cite_start]**GitHub Actions Automation:** Every day at exactly 8:00 AM GMT, a scheduled workflow executes a Python script that pulls whatever health data was most recently synced to Supabase, sends it to Qwen3.5-9B-Instruct, and writes the personalized analysis back to the database. [cite: 91]
 * [cite_start]**10-Day RAG Window:** To prevent context bloat, the Python backend uses Retrieval-Augmented Generation (RAG). [cite: 92] [cite_start]When you chat with Qwen, the system only pulls embeddings from the last 10 days of chat_history to provide recent context. [cite: 93]
 * [cite_start]**"Saved" AI Answers:** The UI includes a "Save/Pin" button for important AI responses. [cite: 94] [cite_start]Saved messages bypass the 10-day deletion rule and are permanently embedded into the AI's RAG knowledge base, ensuring it never forgets critical insights. [cite: 95]
 

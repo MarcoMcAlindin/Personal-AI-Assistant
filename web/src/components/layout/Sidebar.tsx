@@ -157,7 +157,7 @@ const Sidebar: React.FC = () => {
                   <span className="settings-value online">Active</span>
                 </div>
                 <div className="settings-row">
-                  <span>Qwen 3.5 27B</span>
+                  <span>Qwen3.5-9B-Instruct</span>
                   <span className="settings-value pending">Pending Deploy</span>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-# Model Migration: Qwen 3.5 27B → Qwen2.5-VL-7B-Instruct
+# Model Migration: Qwen3.5-9B-Instruct → Qwen3.5-9B-Instruct
 
 **Date:** 2026-03-15
 **Decision By:** CEO
@@ -8,11 +8,11 @@
 
 ## Migration Summary
 
-| Property | Old (Qwen 3.5 27B) | New (Qwen2.5-VL-7B-Instruct) |
+| Property | Old (Qwen3.5-9B-Instruct) | New (Qwen3.5-9B-Instruct) |
 |----------|---------------------|-------------------------------|
-| HuggingFace Model ID | `Qwen/Qwen3.5-27B` | `Qwen/Qwen2.5-VL-7B-Instruct` |
-| Production Model ID | N/A (never deployed) | `RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8` |
-| Parameters | 27B | 7B |
+| HuggingFace Model ID | `Qwen/Qwen3.5-9B-Instruct` | `Qwen/Qwen3.5-9B-Instruct` |
+| Production Model ID | N/A (never deployed) | `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8` |
+| Parameters | 9B | 9B |
 | Modality | Text only | Text + Image + Video |
 | GPU Requirement | 2x NVIDIA L4 (48GB VRAM) | 1x NVIDIA L4 (24GB VRAM) |
 | Deployment Platform | GCE Spot VM (g2-standard-24) | Cloud Run (scale-to-zero) |
@@ -25,17 +25,17 @@
 
 ## Reason for Change
 
-GPU quota constraint: unable to obtain 2x NVIDIA L4 GPUs required for the 27B model in `europe-west1`.
+GPU quota constraint: unable to obtain 2x NVIDIA L4 GPUs required for the 29B model in `europe-west1`.
 
 ## Governance Changes
 
 | Item | Action |
 |------|--------|
 | Rule 24 (GCE Multi-GPU) | DEPRECATED |
-| Rule 23 (Cloud Run GPU Governance) | REWRITTEN for 7B model |
+| Rule 23 (Cloud Run GPU Governance) | REWRITTEN for 9B model |
 | Rule 08 (Scale-to-Zero) | Updated cold start estimate |
 | Rule 21 (AI Behavioral Consistency) | Updated model identity section |
-| Skill: `vllm-deployment-optimizer` | REWRITTEN for Cloud Run + 7B |
+| Skill: `vllm-deployment-optimizer` | REWRITTEN for Cloud Run + 9B |
 | Skill: `gce-spot-gpu-manager` | DEPRECATED |
 | Skill: `rag-context-manager` | Model name updated |
 | Rule: `skill-compliance` | Deprecation notice for GCE skill |

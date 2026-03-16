@@ -7,11 +7,11 @@
 **PR:** https://github.com/MarcoMcAlindin/Personal-AI-Assistant/pull/35
 ---
 
-# Handoff: VOS-023 v2 — Deploy Qwen2.5-VL-7B-Instruct on Cloud Run (Single L4)
+# Handoff: VOS-023 v2 — Deploy Qwen3.5-9B-Instruct on Cloud Run (Single L4)
 
 ## 1. Summary
 
-CEO-directed model downgrade complete. Replaced the deprecated Qwen3.5-27B GCE Spot deployment (Rule 24, 2x L4) with **Qwen2.5-VL-7B-Instruct W8A8** on Cloud Run with a single NVIDIA L4 GPU (Rule 23). The 7B model fits comfortably within 24GB VRAM (~13-18GB total footprint at 8192 context, 16 sequences).
+CEO-directed model downgrade complete. Replaced the deprecated Qwen3.5-9B-Instruct GCE Spot deployment (Rule 24, 2x L4) with **Qwen3.5-9B-Instruct W8A8** on Cloud Run with a single NVIDIA L4 GPU (Rule 23). The 9B model fits comfortably within 24GB VRAM (~13-18GB total footprint at 8192 context, 16 sequences).
 
 The Cloud Run service `vibeos-qwen` is live, healthy, and serving inference. AI chat and health analysis workflows are **fully operational** as of 2026-03-15.
 
@@ -40,7 +40,7 @@ TOKEN=$(gcloud auth print-identity-token)
 curl -s -X POST "$SERVICE_URL/v1/chat/completions" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"model":"RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8","messages":[{"role":"user","content":"ping"}],"max_tokens":20}'
+  -d '{"model":"RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8","messages":[{"role":"user","content":"ping"}],"max_tokens":20}'
 ```
 
 **Expected:** JSON response with `choices[0].message.content` populated and `finish_reason: "stop"`.
@@ -48,7 +48,7 @@ curl -s -X POST "$SERVICE_URL/v1/chat/completions" \
 **Actual result (2026-03-15):**
 ```json
 {
-  "model": "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8",
+  "model": "RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8",
   "choices": [{"message": {"content": "Pong!"}, "finish_reason": "stop"}]
 }
 ```
@@ -84,14 +84,14 @@ gh secret list --repo MarcoMcAlindin/Personal-AI-Assistant | grep QWEN
 
 | Variable | Old Value | New Value |
 |----------|-----------|-----------|
-| `QWEN_MODEL_NAME` | `Qwen/Qwen3.5-27B` | `RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8` |
+| `QWEN_MODEL_NAME` | `Qwen/Qwen3.5-9B-Instruct` | `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8` |
 | `QWEN_ENDPOINT_URL` | (GCE IP) | `https://vibeos-qwen-599152061719.europe-west1.run.app` |
 
 Both set as GitHub Actions secrets on 2026-03-15.
 
 ## 5. API / Database Schema Changes
 
-None. The vLLM OpenAI-compatible API contract is identical (`/v1/chat/completions`). Model name in request body changed to `RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8` — this is the only breaking change for any caller that hardcoded the old model ID.
+None. The vLLM OpenAI-compatible API contract is identical (`/v1/chat/completions`). Model name in request body changed to `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8` — this is the only breaking change for any caller that hardcoded the old model ID.
 
 ## 6. Notes for Next Agent
 
@@ -103,7 +103,7 @@ None. The vLLM OpenAI-compatible API contract is identical (`/v1/chat/completion
 
 | Rule | Action | Reason |
 |------|--------|--------|
-| Rule 23 | Rewritten (GCE → Cloud Run 7B) | Model downgrade changed entire deployment architecture |
+| Rule 23 | Rewritten (GCE → Cloud Run 9B) | Model downgrade changed entire deployment architecture |
 | Rule 24 | Deprecated | GCE multi-GPU no longer applicable |
 | No new rules created | — | All failure modes handled by existing Rule 23 constraints (`--enforce-eager`, `--limit-mm-per-prompt`) |
 

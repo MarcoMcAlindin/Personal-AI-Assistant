@@ -50,7 +50,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --concurrency 16 \
   --port 8080 \
   --no-allow-unauthenticated \
-  --set-env-vars "MODEL_NAME=RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8"
+  --set-env-vars "MODEL_NAME=RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8"
 
 echo "Deployment complete."
 echo "Check service: gcloud run services describe $SERVICE_NAME --region $REGION"

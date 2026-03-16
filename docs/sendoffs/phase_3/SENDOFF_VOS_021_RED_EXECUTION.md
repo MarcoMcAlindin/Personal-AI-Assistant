@@ -94,7 +94,7 @@ Verify these exist in the repository settings (Settings → Secrets → Actions)
 | `GCP_SA_KEY` | Service account JSON for Cloud Run deployments |
 | `SUPABASE_URL` | Supabase project URL |
 | `SUPABASE_KEY` | Supabase service role key |
-| `QWEN_ENDPOINT_URL` | Live Cloud Run URL for Qwen2.5-VL-7B |
+| `QWEN_ENDPOINT_URL` | Live Cloud Run URL for Qwen2.5-VL-9B |
 | `SUPABASE_JWT_SECRET` | JWT validation secret (VOS-025) |
 
 ### What NOT to Do
