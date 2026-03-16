@@ -38,6 +38,14 @@ class HealthSyncPayload(BaseModel):
 class WaterLogRequest(BaseModel):
     amount_liters: float
 
+class WhitelistAddRequest(BaseModel):
+    email_address: str
+    contact_name: Optional[str] = None
+
+class EmailRewriteRequest(BaseModel):
+    body: str
+    tone: Optional[str] = "professional"
+
 @router.get("/feeds/tech")
 async def get_tech_feeds():
     news = await feed_service.get_tech_news()
@@ -65,6 +73,92 @@ async def send_email(request: EmailSendRequest, user_id: str = Depends(get_curre
     if not success:
         raise HTTPException(status_code=500, detail="Failed to send email via proxy")
     return {"message": "Email sent successfully"}
+
+
+# -- Email Whitelist -------------------------------------------------------
+
+@router.get("/email/whitelist")
+async def get_email_whitelist(user_id: str = Depends(get_current_user)):
+    """Return all whitelisted email addresses for the current user."""
+    entries = await email_service.get_whitelist_entries(user_id)
+    return {"whitelist": entries}
+
+@router.post("/email/whitelist")
+async def add_to_whitelist(
+    request: WhitelistAddRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Add an email address to the user's whitelist."""
+    result = await email_service.add_to_whitelist(
+        user_id, request.email_address, request.contact_name
+    )
+    if "error" in result and "already" not in result["error"]:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+@router.delete("/email/whitelist/{entry_id}")
+async def remove_from_whitelist(
+    entry_id: str,
+    user_id: str = Depends(get_current_user),
+):
+    """Remove an email from the user's whitelist."""
+    result = await email_service.remove_from_whitelist(user_id, entry_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+# -- Email AI Rewrite ------------------------------------------------------
+
+@router.post("/email/rewrite")
+async def rewrite_email(
+    request: EmailRewriteRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """AI-powered email rewrite using Qwen."""
+    qwen_url = os.environ.get("QWEN_ENDPOINT_URL")
+    if not qwen_url:
+        return {"rewritten": request.body, "note": "AI unavailable -- returned original"}
+
+    headers = {"Content-Type": "application/json"}
+    try:
+        import google.auth.transport.requests
+        import google.oauth2.id_token
+        auth_req = google.auth.transport.requests.Request()
+        qwen_base = qwen_url.rstrip("/v1").rstrip("/")
+        identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
+        headers["Authorization"] = f"Bearer {identity_token}"
+    except Exception:
+        pass
+
+    system_prompt = (
+        f"You are an email writing assistant. Rewrite the following email draft "
+        f"to be more {request.tone}. Preserve the core message and intent. "
+        f"Return ONLY the rewritten email body -- no preamble, no explanation."
+    )
+
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{qwen_url.rstrip('/')}/chat/completions",
+                headers=headers,
+                json={
+                    "model": os.environ.get("QWEN_MODEL_NAME", "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8"),
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": request.body},
+                    ],
+                    "stream": False,
+                    "max_tokens": 1024,
+                    "temperature": 0.7,
+                }
+            )
+            response.raise_for_status()
+            data = response.json()
+            return {"rewritten": data["choices"][0]["message"]["content"]}
+    except Exception as e:
+        return {"rewritten": request.body, "error": f"AI rewrite failed: {str(e)}"}
+
 
 @router.post("/chat")
 async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_user)):

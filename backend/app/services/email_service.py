@@ -32,6 +32,57 @@ class EmailService:
         response = self.supabase.table("email_whitelist").select("email_address").eq("user_id", user_id).execute()
         return [item["email_address"] for item in response.data]
 
+    async def get_whitelist_entries(self, user_id: str) -> List[Dict]:
+        """Fetch full whitelist entries (id, email, contact_name) for a user."""
+        if not self.supabase:
+            return []
+        response = self.supabase.table("email_whitelist") \
+            .select("id, email_address, contact_name") \
+            .eq("user_id", user_id) \
+            .order("contact_name", desc=False) \
+            .execute()
+        return response.data
+
+    async def add_to_whitelist(self, user_id: str, email_address: str, contact_name: str = None) -> dict:
+        """Add an email to the user's whitelist. Returns the created entry."""
+        if not self.supabase:
+            return {"error": "Supabase not initialized"}
+
+        normalized = email_address.lower().strip()
+        existing = self.supabase.table("email_whitelist") \
+            .select("id") \
+            .eq("user_id", user_id) \
+            .eq("email_address", normalized) \
+            .execute()
+
+        if existing.data:
+            return {"error": "Email already whitelisted", "id": existing.data[0]["id"]}
+
+        result = self.supabase.table("email_whitelist") \
+            .insert({
+                "user_id": user_id,
+                "email_address": normalized,
+                "contact_name": contact_name or normalized.split("@")[0],
+            }) \
+            .execute()
+
+        return {"added": True, "entry": result.data[0] if result.data else None}
+
+    async def remove_from_whitelist(self, user_id: str, entry_id: str) -> dict:
+        """Remove an entry from the user's whitelist by ID."""
+        if not self.supabase:
+            return {"error": "Supabase not initialized"}
+
+        result = self.supabase.table("email_whitelist") \
+            .delete() \
+            .eq("id", entry_id) \
+            .eq("user_id", user_id) \
+            .execute()
+
+        if not result.data:
+            return {"error": "Whitelist entry not found"}
+        return {"removed": True, "id": entry_id}
+
     async def get_user_gmail_credentials(self, user_id: str) -> Credentials:
         """Fetch OAuth credentials for the user from Supabase."""
         if not self.supabase:
