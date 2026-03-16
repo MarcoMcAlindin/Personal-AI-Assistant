@@ -15,14 +15,16 @@ def get_current_user(
     Validates a Supabase-issued JWT and returns the verified user UUID (str).
     Raises HTTP 401 on any validation failure.
     """
-    if os.environ.get("VIBEOS_DEV_MODE") == "true":
-        return os.environ.get("VIBEOS_DEV_USER_ID", "ceo-dev-user")
-
     if credentials is None:
+        if os.environ.get("VIBEOS_DEV_MODE") == "true":
+            return os.environ.get("VIBEOS_DEV_USER_ID", "ceo-dev-user")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing Authorization header.",
         )
+
+    if os.environ.get("VIBEOS_DEV_MODE") == "true":
+        return os.environ.get("VIBEOS_DEV_USER_ID", "ceo-dev-user")
 
     token = credentials.credentials
     secret = settings.supabase_jwt_secret

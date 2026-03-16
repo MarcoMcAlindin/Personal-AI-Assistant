@@ -92,7 +92,7 @@ async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_
     try:
         async with httpx.AsyncClient(timeout=300.0) as client:
             ai_response = await client.post(
-                f"{qwen_url}/v1/chat/completions",
+                f"{qwen_url.rstrip('/')}/chat/completions",
                 headers=headers,
                 json={
                     "model": os.environ.get("QWEN_MODEL_NAME", "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8"),
