@@ -21,10 +21,10 @@ spec:
         run.googleapis.com/execution-environment: gen2
         # Direct VPC with all-traffic egress -- internet access goes through Cloud NAT (vibeos-nat)
         run.googleapis.com/network-interfaces: '[{"network":"default","subnetwork":"default"}]'
-        run.googleapis.com/vpc-access-egress: all-traffic
+        run.googleapis.com/vpc-access-egress: private-ranges-only
     spec:
       containerConcurrency: 16
-      timeoutSeconds: 3600
+      timeoutSeconds: 300
       containers:
         - image: __IMAGE_REF__
           ports:
@@ -32,12 +32,12 @@ spec:
               containerPort: 8080
           resources:
             limits:
-              cpu: "8"
-              memory: 32Gi
+              cpu: "4"
+              memory: 16Gi
               nvidia.com/gpu: "1"
           env:
             - name: MODEL_NAME
-              value: "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8"
+              value: "Qwen/Qwen3.5-9B-Instruct"
           # Startup probe: allows up to 3660s (~61 min) for model download + GPU load on cold start
           # Rule 23: initialDelaySeconds >= 60 required for LLM containers.
           # Use /v1/models (NOT /health): /health returns 200 immediately on server start;
