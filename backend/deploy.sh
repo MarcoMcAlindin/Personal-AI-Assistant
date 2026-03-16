@@ -67,7 +67,7 @@ fi
 
 # 2. Build and push
 echo "Building container..."
-gcloud builds submit --tag "$IMAGE" .
+gcloud builds submit --tag "$IMAGE" "$SCRIPT_DIR"
 
 # 3. Deploy to Cloud Run
 echo "Deploying to Cloud Run..."
