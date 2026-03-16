@@ -7,6 +7,7 @@ from app.services.email_service import EmailService
 from app.services.feed_service import FeedService
 from app.services.health_service import HealthService
 from app.services.rag_service import RAGService
+from app.services.task_service import TaskService
 from app.utils.auth import get_current_user
 import httpx
 import os
@@ -16,6 +17,7 @@ email_service = EmailService()
 feed_service = FeedService()
 health_service = HealthService()
 rag_service = RAGService()
+task_service = TaskService()
 
 class EmailSendRequest(BaseModel):
     to: str
@@ -45,6 +47,21 @@ class WhitelistAddRequest(BaseModel):
 class EmailRewriteRequest(BaseModel):
     body: str
     tone: Optional[str] = "professional"
+
+class TaskCreateRequest(BaseModel):
+    title: str
+    description: Optional[str] = None
+    duration: Optional[int] = None
+    time: Optional[str] = None
+    date: Optional[str] = None
+
+class TaskUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    duration: Optional[int] = None
+    time: Optional[str] = None
+    status: Optional[str] = None
+    is_archived: Optional[bool] = None
 
 @router.get("/feeds/tech")
 async def get_tech_feeds():
@@ -243,6 +260,55 @@ async def log_water(
     result = await health_service.log_water(user_id, request.amount_liters)
     if "error" in result:
         raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+
+# -- Tasks -----------------------------------------------------------------
+
+@router.get("/tasks")
+async def get_tasks(
+    date: Optional[str] = None,
+    include_archived: bool = False,
+    user_id: str = Depends(get_current_user),
+):
+    """Get tasks for a date (defaults to today). Pass ?include_archived=true for archive view."""
+    tasks = await task_service.get_tasks(user_id, task_date=date, include_archived=include_archived)
+    return {"tasks": tasks}
+
+@router.post("/tasks")
+async def create_task(
+    request: TaskCreateRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Create a new task for the planner."""
+    result = await task_service.create_task(user_id, request.model_dump())
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+@router.patch("/tasks/{task_id}")
+async def update_task(
+    task_id: str,
+    request: TaskUpdateRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Update a task (toggle status, edit fields, archive)."""
+    result = await task_service.update_task(user_id, task_id, request.model_dump())
+    if "error" in result:
+        if result["error"] == "Task not found":
+            raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+@router.delete("/tasks/{task_id}")
+async def delete_task(
+    task_id: str,
+    user_id: str = Depends(get_current_user),
+):
+    """Delete a task permanently."""
+    result = await task_service.delete_task(user_id, task_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
     return result
 
 
