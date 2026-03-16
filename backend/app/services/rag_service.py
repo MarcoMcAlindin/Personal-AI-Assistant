@@ -8,11 +8,16 @@ class RAGService:
         self.supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
         if self.supabase_url and self.supabase_key:
             self.supabase: Client = create_client(self.supabase_url, self.supabase_key)
+        else:
+            self.supabase = None
 
     async def get_10_day_history(self, user_id: str) -> str:
         """Fetch chat and health context for the last 10 days."""
+        if not self.supabase:
+            return "No historical context available."
+
         ten_days_ago = (datetime.now() - timedelta(days=10)).isoformat()
-        
+
         try:
             # Fetch Chat History
             chat_resp = self.supabase.table("chat_history") \
@@ -46,8 +51,9 @@ class RAGService:
 
     async def search_pinned_wisdom(self, user_id: str, query: str) -> str:
         """Search for 'Pinned' messages related to the query."""
-        # Note: In a full production app, we would use pgvector similarity search here.
-        # For this phase, we fetch the 3 most recently pinned 'wisdom' messages.
+        if not self.supabase:
+            return ""
+
         try:
             pinned_resp = self.supabase.table("chat_history") \
                 .select("message, timestamp") \

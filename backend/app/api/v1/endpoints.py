@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional, List
 from pydantic import BaseModel
@@ -103,7 +105,19 @@ async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_
             )
             ai_response.raise_for_status()
             data = ai_response.json()
-            return {"response": data["choices"][0]["message"]["content"]}
+            ai_content = data["choices"][0]["message"]["content"]
+
+            # Store both user message and AI response in chat_history
+            try:
+                now = datetime.now(timezone.utc).isoformat()
+                rag_service.supabase.table("chat_history").insert([
+                    {"user_id": user_id, "role": "user", "message": request.message, "timestamp": now},
+                    {"user_id": user_id, "role": "assistant", "message": ai_content, "timestamp": now},
+                ]).execute()
+            except Exception:
+                pass  # Don't fail the chat response if storage fails
+
+            return {"response": ai_content}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Service Error: {str(e)}")
 
@@ -136,3 +150,25 @@ async def log_water(
     if "error" in result:
         raise HTTPException(status_code=500, detail=result["error"])
     return result
+
+
+# -- Chat Save/Pin --------------------------------------------------------
+
+@router.patch("/chat/save/{message_id}")
+async def save_chat_message(message_id: str, user_id: str = Depends(get_current_user)):
+    """Pin an AI response to permanent RAG memory by setting is_saved=true."""
+    if not rag_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not available")
+    try:
+        result = rag_service.supabase.table("chat_history") \
+            .update({"is_saved": True}) \
+            .eq("id", message_id) \
+            .eq("user_id", user_id) \
+            .execute()
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Message not found")
+        return {"saved": True, "message_id": message_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save message: {str(e)}")

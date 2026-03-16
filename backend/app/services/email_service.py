@@ -46,8 +46,8 @@ class EmailService:
             token=tokens.get("access_token"),
             refresh_token=tokens.get("refresh_token"),
             token_uri="https://oauth2.googleapis.com/token",
-            client_id=os.environ.get("GOOGLE_CLIENT_ID"),
-            client_secret=os.environ.get("GOOGLE_CLIENT_SECRET")
+            client_id=os.environ.get("GMAIL_CLIENT_ID"),
+            client_secret=os.environ.get("GMAIL_CLIENT_SECRET")
         )
 
     async def fetch_inbox(self, user_id: str) -> List[Dict]:
