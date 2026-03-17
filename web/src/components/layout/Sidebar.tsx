@@ -1,10 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
+import { fetchVllmStatus, triggerVllmWarmup, VllmStatus } from '../../services/vllmService';
+
+const VLLM_STATUS_LABELS: Record<VllmStatus, string> = {
+  offline: 'Qwen: Offline',
+  warming: 'Qwen: Warming Up...',
+  online: 'Qwen: Online',
+};
+
+const VLLM_DOT_COLORS: Record<VllmStatus, string> = {
+  offline: '#ef4444',
+  warming: '#eab308',
+  online: '#4ade80',
+};
 
 const Sidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [vllmStatus, setVllmStatus] = useState<VllmStatus>('offline');
+  const [vllmLoading, setVllmLoading] = useState(false);
+
+  const pollVllmStatus = useCallback(async () => {
+    try {
+      const { status } = await fetchVllmStatus();
+      setVllmStatus(status);
+    } catch {
+      setVllmStatus('offline');
+    }
+  }, []);
+
+  useEffect(() => {
+    pollVllmStatus();
+    const interval = setInterval(pollVllmStatus, 15000);
+    return () => clearInterval(interval);
+  }, [pollVllmStatus]);
+
+  const handleWarmup = async () => {
+    if (vllmStatus !== 'offline' || vllmLoading) return;
+    setVllmLoading(true);
+    try {
+      await triggerVllmWarmup();
+      setVllmStatus('warming');
+    } catch {
+      // status poll will correct itself
+    } finally {
+      setVllmLoading(false);
+    }
+  };
 
   return (
     <>
@@ -107,18 +150,47 @@ const Sidebar: React.FC = () => {
             </button>
           </div>
 
-          {!collapsed && (
-            <div className="status-indicator">
-              <div className="status-item">
-                <span className="dot"></span>
-                Cloud Run: Active
-              </div>
-              <div className="status-item">
-                <span className="dot"></span>
-                Supabase: Connected
-              </div>
+          <div className="status-indicator">
+            {!collapsed && (
+              <>
+                <div className="status-item">
+                  <span className="dot"></span>
+                  Cloud Run: Active
+                </div>
+                <div className="status-item">
+                  <span className="dot"></span>
+                  Supabase: Connected
+                </div>
+              </>
+            )}
+            <div className={`qwen-chip qwen-chip--${vllmStatus}${collapsed ? ' qwen-chip--icon-only' : ''}`}>
+              <span
+                className={`qwen-dot qwen-dot--${vllmStatus}`}
+                style={{ backgroundColor: VLLM_DOT_COLORS[vllmStatus] }}
+              />
+              {!collapsed && (
+                <>
+                  <span className="qwen-label">{VLLM_STATUS_LABELS[vllmStatus]}</span>
+                  <button
+                    className="qwen-power-btn"
+                    onClick={handleWarmup}
+                    disabled={vllmStatus !== 'offline' || vllmLoading}
+                    title={vllmStatus === 'offline' ? 'Wake up Qwen' : undefined}
+                    aria-label="Trigger vLLM warmup"
+                  >
+                    {vllmStatus === 'warming' ? (
+                      <span className="qwen-spinner" />
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 12, height: 12 }}>
+                        <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                        <line x1="12" y1="2" x2="12" y2="12" />
+                      </svg>
+                    )}
+                  </button>
+                </>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </aside>
 
@@ -158,7 +230,11 @@ const Sidebar: React.FC = () => {
                 </div>
                 <div className="settings-row">
                   <span>Qwen3.5-9B-Instruct</span>
-                  <span className="settings-value pending">Pending Deploy</span>
+                  <span
+                    className={`settings-value ${vllmStatus === 'online' ? 'online' : vllmStatus === 'warming' ? 'pending' : 'offline'}`}
+                  >
+                    {VLLM_STATUS_LABELS[vllmStatus]}
+                  </span>
                 </div>
               </div>
               <div className="settings-section">

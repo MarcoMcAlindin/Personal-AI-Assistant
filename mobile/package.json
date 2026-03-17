@@ -5,9 +5,12 @@
   "main": "index.js",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "lint": "eslint ."
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "lint": "eslint .",
+    "build:android:debug": "cd android && ./gradlew assembleDebug",
+    "build:android:release": "cd android && ./gradlew assembleRelease",
+    "install:android": "adb install -r android/app/build/outputs/apk/debug/app-debug.apk"
   },
   "dependencies": {
     "@react-navigation/bottom-tabs": "^7.15.5",

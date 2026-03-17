@@ -1,5 +1,5 @@
 // VibeOS Mobile -- AI Chat Screen
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, TextInput, FlatList, TouchableOpacity,
   KeyboardAvoidingView, Platform, ActivityIndicator,
@@ -7,7 +7,55 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../components/Themed';
 import { palette, spacing } from '../theme';
-import { sendChat } from '../services/api';
+import { sendChat, fetchVllmStatus, triggerVllmWarmup } from '../services/api';
+
+const VLLM_CHIP_COLORS = {
+  offline: '#ef4444',
+  warming: '#eab308',
+  online: '#4ade80',
+};
+
+const VLLM_CHIP_LABELS = {
+  offline: 'AI Offline',
+  warming: 'AI Warming Up...',
+  online: 'AI Online',
+};
+
+function VllmStatusChip({ status, onWarmup, warming }) {
+  const color = VLLM_CHIP_COLORS[status] || '#ef4444';
+  const label = VLLM_CHIP_LABELS[status] || 'AI Offline';
+  const tappable = status === 'offline' && !warming;
+
+  return (
+    <TouchableOpacity
+      onPress={tappable ? onWarmup : undefined}
+      disabled={!tappable}
+      activeOpacity={tappable ? 0.7 : 1}
+      style={{
+        flexDirection: 'row', alignItems: 'center',
+        alignSelf: 'center',
+        backgroundColor: `${color}18`,
+        borderRadius: 20, borderWidth: 1,
+        borderColor: `${color}55`,
+        paddingHorizontal: spacing.md, paddingVertical: 5,
+        marginBottom: spacing.sm,
+      }}
+    >
+      {status === 'warming' ? (
+        <ActivityIndicator size="small" color={color} style={{ marginRight: 6 }} />
+      ) : (
+        <View style={{
+          width: 7, height: 7, borderRadius: 4,
+          backgroundColor: color, marginRight: 6,
+        }} />
+      )}
+      <Text style={{ color, fontSize: 12, fontWeight: '600' }}>{label}</Text>
+      {tappable && (
+        <Text style={{ color: `${color}99`, fontSize: 11, marginLeft: 6 }}>Tap to wake</Text>
+      )}
+    </TouchableOpacity>
+  );
+}
 
 function ChatHeader() {
   return (
@@ -58,6 +106,35 @@ export default function ChatScreen() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const flatListRef = useRef(null);
+  const [vllmStatus, setVllmStatus] = useState('offline');
+  const [vllmWarming, setVllmWarming] = useState(false);
+
+  const pollVllmStatus = useCallback(async () => {
+    try {
+      const { status } = await fetchVllmStatus();
+      setVllmStatus(status);
+    } catch {
+      setVllmStatus('offline');
+    }
+  }, []);
+
+  useEffect(() => {
+    pollVllmStatus();
+    const interval = setInterval(pollVllmStatus, 15000);
+    return () => clearInterval(interval);
+  }, [pollVllmStatus]);
+
+  const handleWarmup = async () => {
+    setVllmWarming(true);
+    try {
+      await triggerVllmWarmup();
+      setVllmStatus('warming');
+    } catch {
+      // poll will recover
+    } finally {
+      setVllmWarming(false);
+    }
+  };
 
   const getTimestamp = () => {
     const d = new Date();
@@ -157,6 +234,7 @@ export default function ChatScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bgPrimary }} edges={['top']}>
       <ChatHeader />
+      <VllmStatusChip status={vllmStatus} onWarmup={handleWarmup} warming={vllmWarming} />
 
       <FlatList
         ref={flatListRef}
