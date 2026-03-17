@@ -62,8 +62,12 @@ def analyze_health():
             # 300s timeout: cold start ~15-30s for 9B, large buffer for safety
             with httpx.Client(timeout=300.0) as client:
                 qwen_model_name = os.environ.get("QWEN_MODEL_NAME", "Qwen/Qwen3.5-9B-Instruct")
+                # Normalize URL: ensure /v1 is always present regardless of what QWEN_ENDPOINT_URL contains
+                qwen_base = qwen_endpoint_url.rstrip('/')
+                if not qwen_base.endswith('/v1'):
+                    qwen_base = f"{qwen_base}/v1"
                 ai_response = client.post(
-                    f"{qwen_endpoint_url.rstrip('/')}/chat/completions",
+                    f"{qwen_base}/chat/completions",
                     json={
                         "model": qwen_model_name,
                         "messages": [
