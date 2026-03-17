@@ -58,10 +58,11 @@ def analyze_health():
             identity_token = get_identity_token(qwen_endpoint_url)
             # 300s timeout: cold start ~15-30s for 9B, large buffer for safety
             with httpx.Client(timeout=300.0) as client:
+                qwen_model_name = os.environ.get("QWEN_MODEL_NAME", "Qwen/Qwen3.5-9B-Instruct")
                 ai_response = client.post(
-                    f"{qwen_endpoint_url}/v1/chat/completions",
+                    f"{qwen_endpoint_url.rstrip('/')}/chat/completions",
                     json={
-                        "model": "Qwen/Qwen3.5-9B-Instruct",
+                        "model": qwen_model_name,
                         "messages": [
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": f"Analyze this biometric data: {json.dumps(data_summary)}"}
