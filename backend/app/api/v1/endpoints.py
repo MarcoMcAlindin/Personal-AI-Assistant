@@ -250,6 +250,10 @@ async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_
                 data = ai_response.json()
                 ai_content = data["choices"][0]["message"]["content"]
 
+                # Strip Qwen chain-of-thought <think>...</think> blocks
+                import re as _re
+                ai_content = _re.sub(r'<think>.*?</think>', '', ai_content, flags=_re.DOTALL).strip()
+
                 # Store both user message and AI response in chat_history
                 try:
                     now = datetime.now(timezone.utc).isoformat()
