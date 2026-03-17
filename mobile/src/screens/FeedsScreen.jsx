@@ -21,8 +21,8 @@ export default function FeedsScreen() {
         fetchTechFeeds().catch(() => []),
         fetchConcerts().catch(() => []),
       ]);
-      setTechArticles(Array.isArray(techData) ? techData : []);
-      setConcerts(Array.isArray(concertData) ? concertData : []);
+      setTechArticles(Array.isArray(techData?.articles) ? techData.articles : []);
+      setConcerts(Array.isArray(concertData?.concerts) ? concertData.concerts : []);
     } finally {
       setLoading(false);
       setRefreshing(false);
