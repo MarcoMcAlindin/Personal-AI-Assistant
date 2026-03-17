@@ -55,7 +55,10 @@ def analyze_health():
         print(f"Prompting Qwen for user: {user_id}")
 
         try:
-            identity_token = get_identity_token(qwen_endpoint_url)
+            # Audience must be the bare Cloud Run service URL (no /v1 path suffix)
+            # Cloud Run rejects identity tokens whose audience includes a path component
+            qwen_audience = qwen_endpoint_url.rstrip("/v1").rstrip("/")
+            identity_token = get_identity_token(qwen_audience)
             # 300s timeout: cold start ~15-30s for 9B, large buffer for safety
             with httpx.Client(timeout=300.0) as client:
                 qwen_model_name = os.environ.get("QWEN_MODEL_NAME", "Qwen/Qwen3.5-9B-Instruct")
