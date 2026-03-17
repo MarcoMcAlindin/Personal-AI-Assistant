@@ -24,12 +24,12 @@ function MetricCard({ label, value, unit, delta }) {
         <Text style={{ color: palette.textMuted, fontSize: 11 }}>{label}</Text>
       </View>
       <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{value ?? '--'}</Text>
-      {delta !== undefined && (
+      {delta != null && (
         <Text style={{
-          color: delta >= 0 ? palette.accentPrimary : '#ff6b6b',
+          color: palette.textMuted,
           fontSize: 11, marginTop: 2,
         }}>
-          {delta >= 0 ? '+' : ''}{delta}
+          {delta}
         </Text>
       )}
     </Card>
@@ -46,8 +46,9 @@ export default function HealthScreen() {
   const loadData = async () => {
     try {
       const result = await fetchHealth();
-      setData(result);
-      if (result?.water_liters) setWaterIntake(result.water_liters);
+      const latest = result?.metrics?.[0] ?? null;
+      setData(latest);
+      if (latest?.water_liters) setWaterIntake(latest.water_liters);
     } catch {
       setData(null);
     } finally {
@@ -71,6 +72,16 @@ export default function HealthScreen() {
   const sleepHrs = data?.sleep_duration ? Math.floor(data.sleep_duration) : null;
   const sleepMin = data?.sleep_duration ? Math.round((data.sleep_duration % 1) * 60) : null;
   const sleepDisplay = sleepHrs != null ? `${sleepHrs}h ${sleepMin}m` : '--';
+
+  const deepSleepRaw = data?.raw_watch_data?.deep_sleep_hours ?? null;
+  const deepSleepDisplay = deepSleepRaw != null
+    ? `${Math.floor(deepSleepRaw)}h ${Math.round((deepSleepRaw % 1) * 60)}m`
+    : '--';
+
+  const remRaw = data?.raw_watch_data?.rem_sleep_hours ?? null;
+  const remDisplay = remRaw != null
+    ? `${Math.floor(remRaw)}h ${Math.round((remRaw % 1) * 60)}m`
+    : '--';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bgPrimary }} edges={['top']}>
@@ -109,12 +120,12 @@ export default function HealthScreen() {
 
         {/* Metric cards 2x2 grid */}
         <View style={{ flexDirection: 'row', marginBottom: spacing.xs }}>
-          <MetricCard label="Sleep" value={sleepDisplay} delta={data?.sleep_duration ? '+18m' : undefined} />
-          <MetricCard label="Avg HR" value={data?.avg_heart_rate ? `${data.avg_heart_rate} bpm` : '--'} delta={data?.avg_heart_rate ? -2 : undefined} />
+          <MetricCard label="Sleep" value={sleepDisplay} />
+          <MetricCard label="Avg HR" value={data?.avg_heart_rate ? `${data.avg_heart_rate} bpm` : '--'} />
         </View>
         <View style={{ flexDirection: 'row', marginBottom: spacing.md }}>
-          <MetricCard label="Deep Sleep" value="1h 48m" delta="+12%" />
-          <MetricCard label="REM" value="1h 32m" delta="+5%" />
+          <MetricCard label="Deep Sleep" value={deepSleepDisplay} />
+          <MetricCard label="REM" value={remDisplay} />
         </View>
 
         {/* Water Intake */}
