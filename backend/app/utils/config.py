@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str = ""
     qwen_endpoint_url: str = ""
     qwen_model_name: str = "Qwen/Qwen3.5-9B-Instruct"
+    ollama_endpoint_url: str = ""
+    ollama_model_name: str = "qwen2.5:7b"
     cors_origins: str = ""
     gmail_client_id: str = ""
     gmail_client_secret: str = ""
