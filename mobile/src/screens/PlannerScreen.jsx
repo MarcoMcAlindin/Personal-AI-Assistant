@@ -141,7 +141,7 @@ export default function PlannerScreen() {
             <View>
               <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Daily Planner</Text>
               <Text style={{ color: palette.textMuted, fontSize: 11 }}>
-                {formatDate()} {'\u2022'} Auto-{'\n'}archives at midnight
+                {formatDate()} {'\u2022'} Auto-archives at midnight
               </Text>
             </View>
             <View style={{ flexDirection: 'row', marginLeft: spacing.sm, marginRight: spacing.sm }}>

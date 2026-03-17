@@ -1,7 +1,7 @@
 // VibeOS Mobile -- Email Screen
 import React, { useState, useEffect } from 'react';
 import {
-  View, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl,
+  View, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../components/Themed';
@@ -100,10 +100,13 @@ export default function EmailScreen() {
               </Text>
             </View>
           </View>
-          <TouchableOpacity style={{
-            backgroundColor: palette.accentPrimary, borderRadius: 8,
-            paddingHorizontal: 16, paddingVertical: 8,
-          }}>
+          <TouchableOpacity
+            style={{
+              backgroundColor: palette.accentPrimary, borderRadius: 8,
+              paddingHorizontal: 16, paddingVertical: 8,
+            }}
+            onPress={() => Alert.alert('Coming Soon', 'Compose email feature is under development.')}
+          >
             <Text style={{ color: '#000', fontWeight: '600', fontSize: 13 }}>Compose</Text>
           </TouchableOpacity>
         </View>
