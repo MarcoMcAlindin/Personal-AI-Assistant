@@ -1,7 +1,8 @@
 // VibeOS Mobile -- Bottom Tab Navigator
 import React from 'react';
+import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { palette } from '../theme';
 
 import ChatScreen from '../screens/ChatScreen';
@@ -12,11 +13,33 @@ import PlannerScreen from '../screens/PlannerScreen';
 
 const Tab = createBottomTabNavigator();
 
-const tabIcon = (label) => ({ focused }) => (
-  <Text style={{ fontSize: 20, color: focused ? palette.accentPrimary : palette.textMuted }}>
-    {label}
-  </Text>
-);
+const ICON_MAP = {
+  Plan:   { inactive: 'calendar-outline',    active: 'calendar'    },
+  Feeds:  { inactive: 'newspaper-outline',   active: 'newspaper'   },
+  AI:     { inactive: 'chatbubble-outline',  active: 'chatbubble'  },
+  Mail:   { inactive: 'mail-outline',        active: 'mail'        },
+  Health: { inactive: 'heart-outline',       active: 'heart'       },
+};
+
+function tabIcon(tabName) {
+  return ({ focused }) => {
+    const icons = ICON_MAP[tabName];
+    const iconName = focused ? icons.active : icons.inactive;
+    const color = focused ? palette.accentPrimary : palette.textMuted;
+    return (
+      <View style={{ alignItems: 'center' }}>
+        <Ionicons name={iconName} size={22} color={color} />
+        {focused && (
+          <View style={{
+            width: 4, height: 4, borderRadius: 2,
+            backgroundColor: palette.accentPrimary,
+            marginTop: 3,
+          }} />
+        )}
+      </View>
+    );
+  };
+}
 
 export default function TabNavigator() {
   return (
@@ -36,31 +59,11 @@ export default function TabNavigator() {
         tabBarLabelStyle: { fontSize: 10, marginTop: 2 },
       }}
     >
-      <Tab.Screen
-        name="Plan"
-        component={PlannerScreen}
-        options={{ tabBarIcon: tabIcon('\uD83D\uDCC5') }}
-      />
-      <Tab.Screen
-        name="Feeds"
-        component={FeedsScreen}
-        options={{ tabBarIcon: tabIcon('\uD83D\uDCF0') }}
-      />
-      <Tab.Screen
-        name="AI"
-        component={ChatScreen}
-        options={{ tabBarIcon: tabIcon('\uD83D\uDCAC') }}
-      />
-      <Tab.Screen
-        name="Mail"
-        component={EmailScreen}
-        options={{ tabBarIcon: tabIcon('\u2709\uFE0F') }}
-      />
-      <Tab.Screen
-        name="Health"
-        component={HealthScreen}
-        options={{ tabBarIcon: tabIcon('\u2764\uFE0F') }}
-      />
+      <Tab.Screen name="Plan"   component={PlannerScreen} options={{ tabBarIcon: tabIcon('Plan')   }} />
+      <Tab.Screen name="Feeds"  component={FeedsScreen}   options={{ tabBarIcon: tabIcon('Feeds')  }} />
+      <Tab.Screen name="AI"     component={ChatScreen}    options={{ tabBarIcon: tabIcon('AI')     }} />
+      <Tab.Screen name="Mail"   component={EmailScreen}   options={{ tabBarIcon: tabIcon('Mail')   }} />
+      <Tab.Screen name="Health" component={HealthScreen}  options={{ tabBarIcon: tabIcon('Health') }} />
     </Tab.Navigator>
   );
 }
