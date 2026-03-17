@@ -60,7 +60,7 @@ def analyze_health():
             with httpx.Client(timeout=300.0) as client:
                 qwen_model_name = os.environ.get("QWEN_MODEL_NAME", "Qwen/Qwen3.5-9B-Instruct")
                 ai_response = client.post(
-                    f"{qwen_endpoint_url}/v1/chat/completions",
+                    f"{qwen_endpoint_url.rstrip('/')}/chat/completions",
                     json={
                         "model": qwen_model_name,
                         "messages": [
