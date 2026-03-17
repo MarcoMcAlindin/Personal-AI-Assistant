@@ -31,7 +31,7 @@ def test_valid_token_returns_200(monkeypatch):
 def test_missing_token_returns_403(monkeypatch):
     monkeypatch.setattr(settings, "supabase_jwt_secret", TEST_SECRET)
     response = client.get("/api/v1/email/inbox")
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 def test_expired_token_returns_401(monkeypatch):

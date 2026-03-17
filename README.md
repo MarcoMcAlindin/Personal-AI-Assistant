@@ -72,7 +72,7 @@ uvicorn app.main:app --reload
 
 ## Core Features
 
-- **Private AI Chat** — Qwen 3.5 27B with 10-day RAG memory + permanent save/pin
+- **Private AI Chat** — Qwen3.5-9B-Instruct with 10-day RAG memory + permanent save/pin
 - **Tech Feed** — AI news, tools, and model releases via RSS
 - **Concert Feed** — Metal/Rock concerts in Scotland via Ticketmaster
 - **Whitelisted Email** — Spam-free Gmail client with approved senders only
@@ -85,5 +85,5 @@ uvicorn app.main:app --reload
 - **Mobile:** React Native, Expo, react-native-health-connect
 - **Backend:** Python 3.12, FastAPI, Docker, Google Cloud Run
 - **Database:** Supabase (PostgreSQL, pgvector, pg_cron, RLS)
-- **AI:** Qwen 3.5 27B via vLLM on GPU-enabled Cloud Run
+- **AI:** Qwen3.5-9B-Instruct via vLLM on GPU-enabled Cloud Run
 - **Automation:** GitHub Actions (8AM health analysis cron)

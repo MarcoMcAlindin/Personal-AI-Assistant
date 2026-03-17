@@ -42,15 +42,15 @@ gcloud run deploy "$SERVICE_NAME" \
   --platform managed \
   --gpu 1 \
   --gpu-type nvidia-l4 \
-  --memory 32Gi \
-  --cpu 8 \
+  --memory 16Gi \
+  --cpu 4 \
   --max-instances 1 \
   --min-instances 0 \
   --timeout 300 \
   --concurrency 16 \
   --port 8080 \
   --no-allow-unauthenticated \
-  --set-env-vars "MODEL_NAME=Qwen/Qwen3.5-9B"
+  --set-env-vars "MODEL_NAME=Qwen/Qwen3.5-9B-Instruct"
 
 echo "Deployment complete."
 echo "Check service: gcloud run services describe $SERVICE_NAME --region $REGION"

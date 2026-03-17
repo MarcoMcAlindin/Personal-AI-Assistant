@@ -28,7 +28,7 @@ Strict domain isolation virtually eliminates merge conflicts and keeps developme
 * [cite_start]**FastAPI Routing:** Building the REST endpoints that both the Vite web app and Expo mobile app will consume[cite: 123].
 * [cite_start]**Data Aggregation:** Writing the Python scripts to parse external APIs for the tech feeds and Scottish heavy metal concerts[cite: 124].
 * [cite_start]**Email Proxy Logic:** Handling the secure Gmail OAuth connection and filtering incoming messages against the Supabase whitelist before sending them to the frontends[cite: 125].
-* [cite_start]**RAG Orchestration:** Building the logic that searches Supabase pgvector embeddings, enforcing the 10-day rolling context window, and ensuring messages marked as "saved" are permanently injected into the Qwen 3.5 context[cite: 126].
+* [cite_start]**RAG Orchestration:** Building the logic that searches Supabase pgvector embeddings, enforcing the 10-day rolling context window, and ensuring messages marked as "saved" are permanently injected into the Qwen3.5-9B-Instruct context[cite: 126].
 * [cite_start]**Strict Boundary:** Mr. Green writes the Python logic that acts as the 24/7 bridge[cite: 127]. [cite_start]He does not touch UI code, database table creation, or the raw AI model deployment[cite: 128].
 
 ## [cite_start]Mr. Red: Cloud Intelligence & Automation Ops [cite: 129]
@@ -36,10 +36,10 @@ Strict domain isolation virtually eliminates merge conflicts and keeps developme
 [cite_start]**Codebase Territory:** `/.github/workflows`, `/vllm_deployment`, and prompt configuration files[cite: 130].
 
 [cite_start]**Core Responsibilities:** [cite: 131]
-* [cite_start]**LLM Deployment:** Configuring the vLLM Docker container and deployment scripts for hosting the private Qwen 3.5 27B model on Google Cloud Run with GPU allocation[cite: 132].
+* [cite_start]**LLM Deployment:** Configuring the vLLM Docker container and deployment scripts for hosting the private Qwen3.5-9B-Instruct model on Google Cloud Run with GPU allocation[cite: 132].
 * [cite_start]**Time-Based Automation:** Writing the GitHub Actions.yml workflow that triggers exactly at 8:00 AM GMT every day[cite: 133].
 * [cite_start]**Cloud Scripts:** Developing the lightweight Python script used by the 8:00 AM GitHub Action to pull the latest health data from Supabase, ping the Qwen model, and save the generated analysis back to the database[cite: 134].
-* [cite_start]**Prompt Engineering:** Tuning the system prompts for Qwen 3.5 to ensure the health analysis and chat responses match the required VibeOS persona[cite: 135].
+* [cite_start]**Prompt Engineering:** Tuning the system prompts for Qwen3.5-9B-Instruct to ensure the health analysis and chat responses match the required VibeOS persona[cite: 135].
 * [cite_start]**Strict Boundary:** Mr. Red handles the AI execution and automated chronometers[cite: 136]. [cite_start]He does not touch the FastAPI gateway routes or the React Native mobile code[cite: 137].
 
 ## [cite_start]Mr. White: Data Layer & Auth Architect [cite: 138]

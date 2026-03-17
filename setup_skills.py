@@ -25,7 +25,7 @@ description: Generates robust, uniform Python parsers for external RSS and API f
         "subdirs": ["scripts"],
         "content": """---
 name: rag-context-manager
-description: Governs the complex RAG logic for the Qwen 3.5 AI memory.
+description: Governs the complex RAG logic for the Qwen3.5-9B-Instruct AI memory.
 ---
 # RAG Context Manager
 ## When to use this skill

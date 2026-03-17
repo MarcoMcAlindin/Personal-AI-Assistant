@@ -1,5 +1,5 @@
 ---
-description:  Prepares the Qwen 3.5 AI container and backend for a Cloud Run deployment.  1. Review the `r
+description:  Prepares the Qwen3.5-9B-Instruct AI container and backend for a Cloud Run deployment.  1. Review the `r
 ---
 
 # Prepare Release

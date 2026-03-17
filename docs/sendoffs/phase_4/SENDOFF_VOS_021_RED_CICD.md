@@ -9,7 +9,7 @@ Your objective is to finalize the 24/7 autonomous "Pulse" of VibeOS.
 
 ### 1. 8:00 AM Health Audit (VOS-010/021)
 - **Workflow:** Create/Finalize the `.github/workflows/daily-health-audit.yml`.
-- **Logic:** It must trigger at 08:00 GMT, fetch the last 24h of `health_metrics`, send to the Qwen 3.5 Cloud Run gateway, and write back the `ai_analysis`.
+- **Logic:** It must trigger at 08:00 GMT, fetch the last 24h of `health_metrics`, send to the Qwen3.5-9B-Instruct Cloud Run gateway, and write back the `ai_analysis`.
 - **Cost Opt:** Ensure the vLLM container is configured to spin down immediately after the audit to prevent idle GPU charges.
 
 ### 2. Deployment Reliability

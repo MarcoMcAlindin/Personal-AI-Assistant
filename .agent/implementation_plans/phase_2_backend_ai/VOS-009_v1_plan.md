@@ -1,6 +1,6 @@
 # Implementation Plan: VOS-009 vLLM Deployment
 
-Deploy the Qwen 3.5 27B model using the vLLM engine on Google Cloud Run with GPU acceleration and scale-to-zero capabilities.
+Deploy the Qwen3.5-9B-Instruct model using the vLLM engine on Google Cloud Run with GPU acceleration and scale-to-zero capabilities.
 
 ## Proposed Changes
 
@@ -9,7 +9,7 @@ Deploy the Qwen 3.5 27B model using the vLLM engine on Google Cloud Run with GPU
 #### [NEW] [Dockerfile](file:///home/marco/Personal%20AI%20Assistant/vllm_deployment/Dockerfile)
 Create a Dockerfile based on the official vLLM OpenAI image.
 - Base: `vllm/vllm-openai:latest`
-- Command: Serve the `Qwen/Qwen3.5-27B` model.
+- Command: Serve the `Qwen/Qwen3.5-9B-Instruct` model.
 - Optimization: Set `--engine vllm` and appropriate flags for concurrent requests.
 
 #### [NEW] [cloudbuild.yaml](file:///home/marco/Personal%20AI%20Assistant/vllm_deployment/cloudbuild.yaml)

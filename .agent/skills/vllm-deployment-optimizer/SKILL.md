@@ -1,20 +1,20 @@
 ---
 name: vllm-deployment-optimizer
-description: Deploys Qwen2.5-VL-7B-Instruct on Google Cloud Run with a single L4 GPU, scale-to-zero, and vision-language support.
+description: Deploys Qwen3.5-9B-Instruct on Google Cloud Run with a single L4 GPU, scale-to-zero, and vision-language support.
 ---
-# vLLM Deployment Optimizer — Qwen2.5-VL-7B-Instruct
+# vLLM Deployment Optimizer — Qwen3.5-9B-Instruct
 
 ## When to use this skill
 - When updating the `Dockerfile` or `cloudbuild.yaml` for the AI inference container.
 - When configuring Cloud Run environment variables for the vLLM serving framework.
-- When deploying or redeploying the Qwen2.5-VL-7B-Instruct model.
+- When deploying or redeploying the Qwen3.5-9B-Instruct model.
 
 ## Model Details
 
 | Property | Value |
 |----------|-------|
-| Production Model ID | `RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8` |
-| Fallback Model ID | `Qwen/Qwen2.5-VL-7B-Instruct` |
+| Production Model ID | `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8` |
+| Fallback Model ID | `Qwen/Qwen3.5-9B-Instruct` |
 | Modality | Text + Image + Video |
 | Minimum vLLM | `v0.8.5+` |
 | GPU | 1x NVIDIA L4 (24GB) — Cloud Run |
@@ -27,9 +27,9 @@ description: Deploys Qwen2.5-VL-7B-Instruct on Google Cloud Run with a single L4
 **Using the pre-quantized W8A8 model (preferred):**
 ```dockerfile
 FROM vllm/vllm-openai:latest
-ENV MODEL_NAME="RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8"
+ENV MODEL_NAME="RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8"
 ENTRYPOINT ["python3", "-m", "vllm.entrypoints.openai.api_server"]
-CMD ["--model", "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8", \
+CMD ["--model", "RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8", \
      "--port", "8080", \
      "--trust-remote-code", \
      "--enforce-eager", \
@@ -41,7 +41,7 @@ CMD ["--model", "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8", \
 
 **Using BitsAndBytes 8-bit fallback:**
 ```dockerfile
-CMD ["--model", "Qwen/Qwen2.5-VL-7B-Instruct", \
+CMD ["--model", "Qwen/Qwen3.5-9B-Instruct", \
      "--port", "8080", \
      "--trust-remote-code", \
      "--enforce-eager", \
@@ -60,7 +60,7 @@ CMD ["--model", "Qwen/Qwen2.5-VL-7B-Instruct", \
 | `--enforce-eager` | **REQUIRED for VL models.** Disables CUDA graph capture which causes crashes with the vision encoder. Slight throughput reduction but prevents instability. |
 | `--trust-remote-code` | Required for all Qwen model architectures. |
 | `--limit-mm-per-prompt '{"image":2,"video":0}'` | Prevents OOM. Each high-res image can generate up to 16,384 visual tokens consuming KV cache memory. |
-| `--max-model-len 8192` | Caps context window. The model supports 32K natively but 8192 conserves KV cache. Can increase to 16384 with the 7B model if needed. |
+| `--max-model-len 8192` | Caps context window. The model supports 32K natively but 8192 conserves KV cache. Can increase to 16384 with the 9B model if needed. |
 | `--gpu-memory-utilization 0.90` | Uses 90% of L4's 24GB = ~21.6 GB. Leaves ~2.4 GB buffer for vision spikes. |
 
 ### 3. Cloud Run Deployment Settings
@@ -91,7 +91,7 @@ spec:
 **Text-only chat (no changes from previous setup):**
 ```json
 {
-  "model": "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8",
+  "model": "RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8",
   "messages": [
     {"role": "system", "content": "You are VibeOS Assistant."},
     {"role": "user", "content": "Hello, what can you do?"}
@@ -102,7 +102,7 @@ spec:
 **Image input (new capability):**
 ```json
 {
-  "model": "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8",
+  "model": "RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8",
   "messages": [
     {
       "role": "user",
@@ -117,8 +117,8 @@ spec:
 
 ### 5. Forbidden Patterns
 
-- **Do NOT set `--tensor-parallel-size > 1`.** The 7B model fits on a single L4. Tensor parallelism is unnecessary overhead.
+- **Do NOT set `--tensor-parallel-size > 1`.** The 9B model fits on a single L4. Tensor parallelism is unnecessary overhead.
 - **Do NOT omit `--enforce-eager`.** VL models will crash intermittently without it.
 - **Do NOT use FP16/BF16 unquantized.** The model will work but wastes ~8 GB of VRAM for zero benefit. Always use W8A8 or BitsAndBytes 8-bit.
 - **Do NOT set `--max-model-len > 16384`.** Wastes pre-allocated KV cache memory on a single L4 GPU.
-- **Do NOT deploy to GCE.** Cloud Run with scale-to-zero is the correct target for a 7B model. Rule 24 (GCE multi-GPU) is deprecated.
+- **Do NOT deploy to GCE.** Cloud Run with scale-to-zero is the correct target for a 9B model. Rule 24 (GCE multi-GPU) is deprecated.

@@ -1,4 +1,4 @@
-# SENDOFF: VOS-009 (vLLM Qwen 3.5 & Cloud Run GPU)
+# SENDOFF: VOS-009 (vLLM Qwen3.5-9B-Instruct & Cloud Run GPU)
 
 ## To: Mr. Red (Cloud Intelligence & Automation Ops)
 ## From: Mr. Pink (Project Manager & Architectural Scout)
@@ -8,7 +8,7 @@ You are deploying the "Brain" of Project VibeOS. This GPU-accelerated backend mu
 
 ### 🛠 Technical Scouting
 1. **Repository Root:** `/vllm_deployment`
-2. **Model:** Qwen 3.5 27B (vLLM engine)
+2. **Model:** Qwen3.5-9B-Instruct (vLLM engine)
 3. **Hardware:** Google Cloud Run with GPU allocation.
 4. **Efficiency (Rule 32 Compliance):**
    - Apply `vllm-deployment-optimizer` skill.

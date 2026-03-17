@@ -61,7 +61,7 @@ mcp_cloudrun_deploy_local_folder (project, folderPath: "/path/to/backend")
 mcp_cloudrun_deploy_container_image (project, imageUrl, service: "vibeos-gateway")
 ```
 
-## 3. Deploy Qwen 3.5 vLLM Container (GPU)
+## 3. Deploy Qwen3.5-9B-Instruct vLLM Container (GPU)
 
 > **Note:** Requires GPU quota approval in your GCP project.
 
@@ -70,7 +70,7 @@ gcloud run deploy vibeos-qwen \
   --image vllm/vllm-openai:latest \
   --region europe-west1 \
   --no-allow-unauthenticated \
-  --set-env-vars "MODEL_NAME=Qwen/Qwen3.5-27B" \
+  --set-env-vars "MODEL_NAME=Qwen/Qwen3.5-9B-Instruct" \
   --memory 32Gi \
   --cpu 8 \
   --gpu 1 \

@@ -62,7 +62,7 @@ Full database schema derived from the PRD data model.
 | `sleep_duration` | `numeric(4,2)` | | Sleep hours |
 | `avg_heart_rate` | `integer` | | Average heart rate (bpm) |
 | `raw_watch_data` | `jsonb` | | Full Samsung Watch sync payload |
-| `ai_analysis` | `text` | | Qwen 3.5 generated health analysis |
+| `ai_analysis` | `text` | | Qwen3.5-9B-Instruct generated health analysis |
 | `created_at` | `timestamptz` | DEFAULT `now()` | Record creation |
 | `updated_at` | `timestamptz` | DEFAULT `now()` | Last update |
 

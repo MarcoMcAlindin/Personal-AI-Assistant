@@ -1,23 +1,23 @@
 ---
-description: Governs the deployment of Qwen2.5-VL-7B-Instruct on Cloud Run with a single NVIDIA L4 GPU.
+description: Governs the deployment of Qwen3.5-9B-Instruct on Cloud Run with a single NVIDIA L4 GPU.
 trigger: glob
 globs: vllm_deployment/**, .github/workflows/**
 ---
 
-# Rule 23: Cloud Run GPU Governance — Qwen2.5-VL-7B-Instruct
+# Rule 23: Cloud Run GPU Governance — Qwen3.5-9B-Instruct
 
 ## Context
 
-VibeOS deploys the **Qwen2.5-VL-7B-Instruct** vision-language model via vLLM on Google Cloud Run with a single NVIDIA L4 GPU (24GB VRAM). The 7B model at 8-bit quantization requires ~7-9GB VRAM for weights, leaving ample headroom for KV cache and vision encoder overhead. This makes Cloud Run with scale-to-zero the optimal deployment target.
+VibeOS deploys the **Qwen3.5-9B-Instruct** vision-language model via vLLM on Google Cloud Run with a single NVIDIA L4 GPU (24GB VRAM). The 9B model at 8-bit quantization requires ~7-9GB VRAM for weights, leaving ample headroom for KV cache and vision encoder overhead. This makes Cloud Run with scale-to-zero the optimal deployment target.
 
-**Model change history:** Originally Qwen 3.5 27B (required 2x L4 on GCE). Downgraded 2026-03-15 due to GPU quota constraints. Rule 24 (GCE multi-GPU) is now deprecated.
+**Model change history:** Originally Qwen3.5-9B-Instruct (required 2x L4 on GCE). Downgraded 2026-03-15 due to GPU quota constraints. Rule 24 (GCE multi-GPU) is now deprecated.
 
 ## Model Specification
 
 | Property | Value |
 |----------|-------|
-| HuggingFace Model ID | `Qwen/Qwen2.5-VL-7B-Instruct` |
-| Pre-quantized Alternative | `RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8` (preferred for production) |
+| HuggingFace Model ID | `Qwen/Qwen3.5-9B-Instruct` |
+| Pre-quantized Alternative | `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8` (preferred for production) |
 | Architecture | `Qwen2_5_VLForConditionalGeneration` |
 | Modality | Text + Image + Video (vision-language) |
 | Native Context Length | 32,768 tokens |
@@ -38,7 +38,7 @@ VibeOS deploys the **Qwen2.5-VL-7B-Instruct** vision-language model via vLLM on 
 
 **Preferred (production):** Use the pre-quantized W8A8 model:
 ```
---model RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8
+--model RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8
 ```
 - No `--quantization` flag needed (quantization is embedded in the model weights).
 - No `--dtype` override needed.
@@ -47,7 +47,7 @@ VibeOS deploys the **Qwen2.5-VL-7B-Instruct** vision-language model via vLLM on 
 
 **Fallback (if W8A8 unavailable):** Use BitsAndBytes on-the-fly quantization:
 ```
---model Qwen/Qwen2.5-VL-7B-Instruct
+--model Qwen/Qwen3.5-9B-Instruct
 --quantization bitsandbytes
 --dtype float16
 ```
@@ -57,7 +57,7 @@ VibeOS deploys the **Qwen2.5-VL-7B-Instruct** vision-language model via vLLM on 
 ### 3. vLLM Serve Command (Reference)
 
 ```bash
-vllm serve RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8 \
+vllm serve RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8 \
   --port 8080 \
   --trust-remote-code \
   --enforce-eager \
@@ -76,7 +76,7 @@ vllm serve RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8 \
 ### 5. Cloud Run Configuration
 
 - **`min-instances=0`** — Scale-to-zero is mandatory for dev/staging (Rule 08).
-- **Startup probe:** `initialDelaySeconds >= 30` (7B model loads in ~15-30 seconds, much faster than 27B).
+- **Startup probe:** `initialDelaySeconds >= 30` (9B model loads in ~15-30 seconds, much faster than 9B).
 - **Request timeout:** 300 seconds (accommodates cold start + inference).
 - **Concurrency:** Set to `16` (matches `--max-num-seqs`). Do NOT use the Cloud Run default of 80.
 - **Instance-based billing:** Required for GPU workloads.
@@ -97,7 +97,7 @@ The model fits comfortably. No multi-GPU gymnastics required.
 
 - Any PR altering `vllm_deployment/` must be audited for:
   - "Quantization Drift" — accidentally reverting to FP16/BF16 unquantized.
-  - "Tensor Parallel Creep" — adding `--tensor-parallel-size > 1` (not needed for 7B).
+  - "Tensor Parallel Creep" — adding `--tensor-parallel-size > 1` (not needed for 9B).
   - "Missing `--enforce-eager`" — omitting this flag will cause VL model instability.
-  - "`--max-model-len` bloat" — values above 16384 waste pre-allocated KV cache on a 7B model.
+  - "`--max-model-len` bloat" — values above 16384 waste pre-allocated KV cache on a 9B model.
 - Verify `--limit-mm-per-prompt` is present to prevent OOM from unbounded image inputs.

@@ -39,7 +39,7 @@ No handoff letter was submitted for this work. The changes represent a **major a
 
 ## What the Work Appears to Contain
 
-Mr. Pink has reviewed the diffs. The changes are technically coherent and appear to implement VOS-023 (Deploy vLLM Qwen 3.5 27B to Cloud Run — now re-targeted to GCE). Specifically:
+Mr. Pink has reviewed the diffs. The changes are technically coherent and appear to implement VOS-023 (Deploy vLLM Qwen3.5-9B-Instruct to Cloud Run — now re-targeted to GCE). Specifically:
 
 - `deploy.sh` — Pivoted from Cloud Run to **GCE g2-standard-24 Spot instance** (2x L4 GPU, `europe-west1-b`) per Rule 24
 - `Dockerfile` — Updated to `--tensor-parallel-size 2`, `--quantization bitsandbytes`, `--dtype float16` for dual-L4 deployment
@@ -78,7 +78,7 @@ Complete ALL of the following before submitting your handoff:
            vllm_deployment/deploy.sh vllm_deployment/scripts/analyze_health.py \
            vllm_deployment/scripts/startup.sh vllm_deployment/service.yaml \
            .github/workflows/daily_health.yml
-   git commit -m "feat(red): VOS-023 GCE Spot dual-L4 deployment for Qwen 3.5 27B"
+   git commit -m "feat(red): VOS-023 GCE Spot dual-L4 deployment for Qwen3.5-9B-Instruct"
    git push origin feature/red/23-vllm-gce-deployment
    ```
 

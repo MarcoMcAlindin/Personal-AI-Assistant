@@ -6,7 +6,7 @@ trigger: never
 # Rule 24: DEPRECATED — GCE Multi-GPU Inference
 
 **Status:** DEPRECATED as of 2026-03-15.
-**Reason:** Model downgrade from Qwen 3.5 27B (required 2x L4 GPUs / 48GB VRAM) to **Qwen2.5-VL-7B-Instruct** (fits on 1x L4 / 24GB VRAM). GCE Spot instances and tensor parallelism are no longer required.
+**Reason:** Model downgrade from Qwen3.5-9B-Instruct (required 2x L4 GPUs / 48GB VRAM) to **Qwen3.5-9B-Instruct** (fits on 1x L4 / 24GB VRAM). GCE Spot instances and tensor parallelism are no longer required.
 
 **Superseded by:** Rule 23 (`23-cloud-run-gpu-governance.md`) — which now governs the single-GPU Cloud Run deployment.
 

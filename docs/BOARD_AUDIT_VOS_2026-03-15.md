@@ -17,7 +17,7 @@
 | VOS-006 | Gmail OAuth Proxy & Whitelist Filtering | Green | Done | CONFIRMED (caveat: auth is placeholder) |
 | VOS-007 | Tech & Concert RSS/API Feed Parsers | Green | Done | CONFIRMED |
 | VOS-008 | RAG Orchestration: pgvector 10-Day Context & Saved Messages | Green | Done | CONFIRMED (mock fallback masks missing Qwen endpoint) |
-| VOS-009 | vLLM Qwen 3.5 27B Docker Container & Cloud Run Deployment | Red | Done | **DISPUTED -- config files only, service never deployed, no L4 in GCP** |
+| VOS-009 | vLLM Qwen3.5-9B-Instruct Docker Container & Cloud Run Deployment | Red | Done | **DISPUTED -- config files only, service never deployed, no L4 in GCP** |
 | VOS-010 | 8:00 AM GitHub Actions Health Analysis Workflow | Red | Done | **UNVERIFIABLE -- depends on VOS-009 which is not live** |
 | VOS-011 | Prompt Engineering: Health Analysis & Chat Persona | Red | Done | CONFIRMED -- prompts exist |
 | VOS-012 | Web UI Scaffold: Vite/React Multi-Pane Layout | Blue | Done | CONFIRMED |
@@ -80,7 +80,7 @@ No screen in this sprint has any backend API integration wired yet.
 
 | Issue | Agent | Type | Title |
 |-------|-------|------|-------|
-| #27 VOS-023 | Red | Remediation | Actually Deploy vLLM Qwen 3.5 27B to Cloud Run |
+| #27 VOS-023 | Red | Remediation | Actually Deploy vLLM Qwen3.5-9B-Instruct to Cloud Run |
 | #28 VOS-024 | Red | Remediation | Verify 8:00 AM Health Analysis Workflow End-to-End |
 | #29 VOS-025 | Green | Gap Fill | FastAPI Authentication Middleware: Supabase JWT Integration |
 | #30 VOS-026 | Green | Gap Fill | Tasks/Planner API Endpoints |

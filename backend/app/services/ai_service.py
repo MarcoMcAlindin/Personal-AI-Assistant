@@ -1,2 +1,2 @@
 # VibeOS — AI Service
-# Qwen 3.5 9B inference via vLLM OpenAI-compatible API
+# Qwen3.5-9B-Instruct inference via vLLM OpenAI-compatible API

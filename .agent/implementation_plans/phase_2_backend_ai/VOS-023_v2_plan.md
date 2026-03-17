@@ -1,8 +1,8 @@
 ---
-description: Implementation blueprint for deploying Qwen2.5-VL-7B-Instruct on Cloud Run (VOS-023 v2 — model downgrade from 27B to 7B).
+description: Implementation blueprint for deploying Qwen3.5-9B-Instruct on Cloud Run (VOS-023 v2 — model downgrade from 9B to 9B).
 ---
 
-# Implementation Plan: VOS-023 v2 — Deploy Qwen2.5-VL-7B-Instruct to Cloud Run
+# Implementation Plan: VOS-023 v2 — Deploy Qwen3.5-9B-Instruct to Cloud Run
 
 - **Date:** 2026-03-15
 - **Drafted By:** Mr. Pink (Architectural Scout)
@@ -15,22 +15,22 @@ description: Implementation blueprint for deploying Qwen2.5-VL-7B-Instruct on Cl
 ## Context & Model Change
 
 **What changed:** The CEO has directed a model switch due to GPU quota constraints:
-- **Old:** Qwen 3.5 27B — required 2x L4 GPUs (48GB VRAM) on GCE Spot
-- **New:** Qwen2.5-VL-7B-Instruct — fits on 1x L4 GPU (24GB VRAM) on Cloud Run
+- **Old:** Qwen3.5-9B-Instruct — required 2x L4 GPUs (48GB VRAM) on GCE Spot
+- **New:** Qwen3.5-9B-Instruct — fits on 1x L4 GPU (24GB VRAM) on Cloud Run
 
 **What this means:**
 - Cloud Run with scale-to-zero is viable again (no GCE VM management)
 - No tensor parallelism needed (single GPU)
 - The model is a **vision-language** model — it can process images and video in addition to text
-- Cold starts drop from ~60-90s (27B on GCE) to ~15-30s (7B on Cloud Run)
+- Cold starts drop from ~60-90s (9B on GCE) to ~15-30s (9B on Cloud Run)
 
-**Previous work on VOS-023 is SUPERSEDED.** The Dockerfile, deploy.sh, startup.sh, and service.yaml changes made for the 27B GCE deployment must be replaced, not amended.
+**Previous work on VOS-023 is SUPERSEDED.** The Dockerfile, deploy.sh, startup.sh, and service.yaml changes made for the 9B GCE deployment must be replaced, not amended.
 
 ---
 
 ## Mandatory Reading Before Starting
 
-1. **Rule 23** (`23-cloud-run-gpu-governance.md`) — Rewritten for the 7B model. Contains the full vLLM serve command, VRAM budget, and verification checklist.
+1. **Rule 23** (`23-cloud-run-gpu-governance.md`) — Rewritten for the 9B model. Contains the full vLLM serve command, VRAM budget, and verification checklist.
 2. **Rule 08** (`08-gc-scale-to-zero.md`) — Scale-to-zero mandate.
 3. **Rule 24** (`24-gce-multi-gpu-inference.md`) — Read the DEPRECATED notice so you understand GCE is no longer the target.
 4. **Skill: `vllm-deployment-optimizer`** — Contains the exact Dockerfile CMD, Cloud Run YAML, and forbidden patterns. Follow it exactly.
@@ -44,14 +44,14 @@ description: Implementation blueprint for deploying Qwen2.5-VL-7B-Instruct on Cl
 Replace the entire Dockerfile with:
 
 ```dockerfile
-# Qwen2.5-VL-7B-Instruct on vLLM (Cloud Run, single L4 GPU)
+# Qwen3.5-9B-Instruct on vLLM (Cloud Run, single L4 GPU)
 FROM vllm/vllm-openai:latest
 
-ENV MODEL_NAME="RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8"
+ENV MODEL_NAME="RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8"
 
 # Port 8080 is the Cloud Run standard
 ENTRYPOINT ["python3", "-m", "vllm.entrypoints.openai.api_server"]
-CMD ["--model", "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8", \
+CMD ["--model", "RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8", \
      "--port", "8080", \
      "--trust-remote-code", \
      "--enforce-eager", \
@@ -122,7 +122,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --concurrency 16 \
   --port 8080 \
   --no-allow-unauthenticated \
-  --set-env-vars "MODEL_NAME=RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8"
+  --set-env-vars "MODEL_NAME=RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8"
 
 echo "Deployment complete."
 echo "Check service: gcloud run services describe $SERVICE_NAME --region $REGION"
@@ -178,7 +178,7 @@ spec:
             - containerPort: 8080
           env:
             - name: MODEL_NAME
-              value: "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8"
+              value: "RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8"
           resources:
             limits:
               nvidia.com/gpu: "1"
@@ -202,10 +202,10 @@ Update the model name in the API call (line 69):
 
 ```python
 # OLD:
-"model": "Qwen/Qwen3.5-27B",
+"model": "Qwen/Qwen3.5-9B-Instruct",
 
 # NEW:
-"model": "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8",
+"model": "RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8",
 ```
 
 Keep all the other changes from the previous iteration:
@@ -217,7 +217,7 @@ Keep all the other changes from the previous iteration:
 
 ### Step 7 — Update `vllm_deployment/README.md`
 
-Replace references to "Qwen 3.5 27B" with "Qwen2.5-VL-7B-Instruct".
+Replace references to "Qwen3.5-9B-Instruct" with "Qwen3.5-9B-Instruct".
 
 ---
 
@@ -233,10 +233,10 @@ In `backend/.env.example` and root `.env.example`:
 
 ```
 # OLD:
-QWEN_MODEL_NAME=Qwen/Qwen3.5-27B
+QWEN_MODEL_NAME=Qwen/Qwen3.5-9B-Instruct
 
 # NEW:
-QWEN_MODEL_NAME=RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8
+QWEN_MODEL_NAME=RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8
 ```
 
 ---
@@ -247,10 +247,10 @@ Update the model name in the chat endpoint (line 69):
 
 ```python
 # OLD:
-"model": "Qwen/Qwen3.5-27B",
+"model": "Qwen/Qwen3.5-9B-Instruct",
 
 # NEW:
-"model": "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8",
+"model": "RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8",
 ```
 
 **Boundary note:** This is a Mr. Green file. Coordinate with Green or submit the change as a cross-boundary patch documented in the handoff. Mr. Pink authorises this specific edit.
@@ -276,7 +276,7 @@ Update the model name in the chat endpoint (line 69):
 
 ## Definition of Done (Pink Verification Checklist)
 
-- [ ] Dockerfile uses `RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8`
+- [ ] Dockerfile uses `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8`
 - [ ] Dockerfile includes `--enforce-eager` and `--limit-mm-per-prompt`
 - [ ] Dockerfile does NOT contain `--tensor-parallel-size`
 - [ ] `deploy.sh` targets Cloud Run (NOT GCE)
@@ -285,7 +285,7 @@ Update the model name in the chat endpoint (line 69):
 - [ ] `analyze_health.py` model name updated
 - [ ] `endpoints.py` model name updated
 - [ ] `.env.example` files updated
-- [ ] `grep -r "Qwen3.5\|Qwen/Qwen3.5-27B\|g2-standard-24\|tensor-parallel" vllm_deployment/` returns empty
+- [ ] `grep -r "Qwen3.5\|Qwen/Qwen3.5-9B-Instruct\|g2-standard-24\|tensor-parallel" vllm_deployment/` returns empty
 - [ ] Branch `feature/red/23-vllm-qwen25vl` pushed to origin with handoff
 
 *Drafted by Mr. Pink — 2026-03-15*

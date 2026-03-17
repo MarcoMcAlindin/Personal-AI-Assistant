@@ -1,4 +1,4 @@
-# SENDOFF: VOS-023 v2 — Qwen2.5-VL-7B-Instruct Deployment
+# SENDOFF: VOS-023 v2 — Qwen3.5-9B-Instruct Deployment
 
 ## To: Mr. Red (Cloud Intelligence & Automation Ops)
 ## From: Mr. Pink (Project Manager & Architectural Scout)
@@ -12,7 +12,7 @@ Mr. Red, all previous VOS-023 work is **superseded**. The CEO has directed a mod
 
 | | Old | New |
 |--|-----|-----|
-| Model | Qwen 3.5 27B | **Qwen2.5-VL-7B-Instruct** |
+| Model | Qwen3.5-9B-Instruct | **Qwen3.5-9B-Instruct** |
 | GPU | 2x L4 (GCE Spot) | **1x L4 (Cloud Run)** |
 | Quantization | BitsAndBytes 8-bit | **W8A8 pre-quantized** |
 | Scale-to-zero | No (GCE VM) | **Yes (Cloud Run)** |
@@ -27,7 +27,7 @@ Mr. Red, all previous VOS-023 work is **superseded**. The CEO has directed a mod
 Before writing a single line of code, read these four files in order:
 
 1. `.agent/implementation_plans/phase_2_backend_ai/VOS-023_v2_plan.md` — Full step-by-step with exact file contents
-2. `.agent/rules/core-architecture/23-cloud-run-gpu-governance.md` — Rewritten governance for the 7B model
+2. `.agent/rules/core-architecture/23-cloud-run-gpu-governance.md` — Rewritten governance for the 9B model
 3. `.agent/skills/vllm-deployment-optimizer/SKILL.md` — Rewritten skill with exact Dockerfile CMD and Cloud Run YAML
 4. `.agent/rules/core-architecture/24-gce-multi-gpu-inference.md` — Read the DEPRECATED notice
 
@@ -44,7 +44,7 @@ Before writing a single line of code, read these four files in order:
 
 ### Your Previous Work
 
-The uncommitted changes currently sitting on `staging` (Dockerfile, deploy.sh, etc.) are for the **27B GCE deployment and are now obsolete**. You must overwrite them completely per the v2 plan. The formal notice issued earlier (`NOTICE_RED_VOS023_BRANCH_VIOLATION.md`) is superseded by this sendoff — the process violation still stands as a governance lesson, but the corrective action is now to implement the v2 plan instead.
+The uncommitted changes currently sitting on `staging` (Dockerfile, deploy.sh, etc.) are for the **9B GCE deployment and are now obsolete**. You must overwrite them completely per the v2 plan. The formal notice issued earlier (`NOTICE_RED_VOS023_BRANCH_VIOLATION.md`) is superseded by this sendoff — the process violation still stands as a governance lesson, but the corrective action is now to implement the v2 plan instead.
 
 ### What Mr. Pink Will Check During Audit
 

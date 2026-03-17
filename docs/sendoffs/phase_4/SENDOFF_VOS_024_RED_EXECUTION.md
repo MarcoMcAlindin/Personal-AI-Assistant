@@ -14,7 +14,7 @@
 
 Your VOS-023 deployment just passed audit. The `vibeos-qwen` Cloud Run service is live and confirmed serving inference (`Pong!` smoke test, 2026-03-15). This means the health analysis pipeline has a working AI endpoint for the first time. Your job now is to prove the full chain works — from GitHub Actions trigger to Supabase write-back.
 
-The model is `RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8`. The endpoint URL is set in GitHub Secrets. The `analyze_health.py` script was already updated in VOS-023. This task is pure verification — no new code should be needed unless something breaks.
+The model is `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8`. The endpoint URL is set in GitHub Secrets. The `analyze_health.py` script was already updated in VOS-023. This task is pure verification — no new code should be needed unless something breaks.
 
 ---
 
@@ -32,7 +32,7 @@ Confirm the run completes successfully (green check).
 ### Step 2: Verify Pipeline Stages
 Confirm the workflow:
 1. Connects to Supabase and fetches the most recent `health_metrics` row
-2. Sends biometric data to `QWEN_ENDPOINT_URL/v1/chat/completions` with model `RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8`
+2. Sends biometric data to `QWEN_ENDPOINT_URL/v1/chat/completions` with model `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8`
 3. Receives a valid AI analysis response
 4. Writes the `ai_analysis` text back to the correct `health_metrics` row
 
@@ -45,7 +45,7 @@ After the workflow completes, query Supabase directly:
 ```
 
 ### Step 4: Cold Start Tolerance
-The service may be scaled to zero when the Action fires. The 300s timeout in `analyze_health.py` should handle the ~15-30s cold start of the 7B model. Verify the workflow completes within the 15-minute `timeout-minutes` budget. Log actual elapsed time in your handoff.
+The service may be scaled to zero when the Action fires. The 300s timeout in `analyze_health.py` should handle the ~15-30s cold start of the 9B model. Verify the workflow completes within the 15-minute `timeout-minutes` budget. Log actual elapsed time in your handoff.
 
 ### Step 5: Cron Schedule Confirmation
 Confirm the `0 8 * * *` schedule is set in `.github/workflows/health_analysis.yml`. After 24 hours (tomorrow morning), check that an automated run fired at 8:00 AM GMT.
@@ -99,7 +99,7 @@ git pull origin feature/red/24-health-workflow-e2e
 ## Risk Notes
 
 - If there are no rows in `health_metrics`, the script will `sys.exit(1)` — you may need to seed a test row
-- If the cold start exceeds 300s (unlikely for 7B), increase the `httpx` timeout in `analyze_health.py`
+- If the cold start exceeds 300s (unlikely for 9B), increase the `httpx` timeout in `analyze_health.py`
 - If the workflow fails on permissions, verify the GitHub Actions environment has the right secrets
 
 ---

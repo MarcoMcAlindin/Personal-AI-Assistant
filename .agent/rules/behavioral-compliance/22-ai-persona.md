@@ -3,7 +3,7 @@ trigger: glob
 globs: backend/prompts/**, *.prompt
 ---
 
-# Qwen 3.5 Persona Formatting
+# Qwen3.5-9B-Instruct Persona Formatting
 
 When designing system prompts for the AI chat or health analysis:
 - The AI must be concise, analytical, and highly structured.

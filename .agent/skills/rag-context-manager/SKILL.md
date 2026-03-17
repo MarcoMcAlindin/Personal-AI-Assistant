@@ -1,6 +1,6 @@
 ---
 name: rag-context-manager
-description: Governs the complex RAG logic for the Qwen2.5-VL-7B-Instruct AI memory.
+description: Governs the complex RAG logic for the Qwen3.5-9B-Instruct AI memory.
 ---
 # RAG Context Manager
 ## When to use this skill

@@ -61,7 +61,7 @@ def analyze_health():
                 ai_response = client.post(
                     f"{qwen_endpoint_url}/v1/chat/completions",
                     json={
-                        "model": "Qwen/Qwen3.5-9B",
+                        "model": "Qwen/Qwen3.5-9B-Instruct",
                         "messages": [
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": f"Analyze this biometric data: {json.dumps(data_summary)}"}
