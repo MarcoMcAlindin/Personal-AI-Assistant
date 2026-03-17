@@ -3,13 +3,14 @@ import time
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Depends
-from typing import Optional, List
+from typing import Literal, Optional, List
 from pydantic import BaseModel
 from app.services.email_service import EmailService
 from app.services.feed_service import FeedService
 from app.services.health_service import HealthService
 from app.services.rag_service import RAGService
 from app.services.task_service import TaskService
+from app.services.ai_service import call_ollama
 from app.utils.auth import get_current_user
 import httpx
 import os
@@ -29,6 +30,8 @@ class EmailSendRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
+    model_target: Optional[Literal['cloud', 'home_pc', 'device']] = 'cloud'
+    ollama_url: Optional[str] = None
 
 class HealthSyncPayload(BaseModel):
     heart_rate: Optional[float] = None
@@ -184,7 +187,27 @@ async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_
     # 1. Build RAG Context
     context = await rag_service.build_context_block(user_id, request.message)
 
-    # 2. Get Qwen Endpoint
+    # 2. Route to home_pc or reject device
+    if request.model_target == 'device':
+        raise HTTPException(
+            status_code=400,
+            detail="device model_target is local-only — do not route through backend",
+        )
+
+    if request.model_target == 'home_pc':
+        ollama_url = request.ollama_url or os.environ.get("OLLAMA_ENDPOINT_URL")
+        if not ollama_url:
+            raise HTTPException(
+                status_code=400,
+                detail="home_pc model_target requires ollama_url in request body or OLLAMA_ENDPOINT_URL env var",
+            )
+        try:
+            text = await call_ollama(request.message, context, ollama_url)
+        except httpx.HTTPError as e:
+            raise HTTPException(status_code=502, detail=f"Ollama unreachable: {e}")
+        return {"response": text, "model": "ollama/home_pc"}
+
+    # 3. Cloud path (unchanged) — get Qwen endpoint
     qwen_url = os.environ.get("QWEN_ENDPOINT_URL")
     if not qwen_url:
         return {"response": f"[MOCK CONTEXT]: {context}\n\n[REPLY]: I am functioning in mock mode because QWEN_ENDPOINT_URL is missing."}
