@@ -51,3 +51,8 @@ Track agent task completion attempts and CEO approval history.
 | Mr. Green | VOS-050 | 1 | Pass | Confirmed |
 | Mr. Red | VOS-051 | 1 | Pass | Confirmed |
 | Mr. Green | VOS-046 | 1 | Pass | Confirmed |
+| Mr. Blue | VOS-043 | 1 | Pass | Confirmed |
+| Mr. Blue | VOS-047 | 1 | Pass | Confirmed |
+| Mr. Blue | VOS-048 | 1 | Pass | Confirmed |
+| Mr. Blue | VOS-052 | 1 | Pass | Confirmed |
+| Mr. Red | VOS-024 | 1 | Pass | Pending — workflow blocked on GCP_SA_KEY format issue (invalid JSON parse) |
