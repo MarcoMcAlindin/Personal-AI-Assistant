@@ -17,8 +17,14 @@ web-build/
 *.p8
 *.p12
 *.mobileprovision
-android/
 ios/
+
+# Android — secrets and build output (native project is committed)
+android/app/google-services.json
+android/app/release/
+android/.gradle/
+android/build/
+android/app/build/
 
 # IDE
 .vscode/

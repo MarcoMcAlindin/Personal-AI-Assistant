@@ -105,3 +105,26 @@ export async function fetchHealth() {
   if (!res.ok) throw new Error(`health failed: ${res.status}`);
   return res.json();
 }
+
+export async function fetchVllmStatus() {
+  const res = await fetch(`${API_BASE_URL}/vllm/status`);
+  if (!res.ok) throw new Error('vllm/status failed');
+  return res.json(); // { status: 'offline' | 'warming' | 'online' }
+}
+
+export async function triggerVllmWarmup() {
+  const res = await fetch(`${API_BASE_URL}/vllm/warmup`, { method: 'POST' });
+  if (!res.ok) throw new Error('vllm/warmup failed');
+  return res.json();
+}
+
+export async function logWater(liters) {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE_URL}/health/water`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ liters }),
+  });
+  if (!res.ok) throw new Error(`health/water failed: ${res.status}`);
+  return res.json();
+}
