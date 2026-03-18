@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     supabase_service_role_key: str = ""
     supabase_jwt_secret: str = ""
     qwen_endpoint_url: str = ""
-    qwen_model_name: str = "Qwen/Qwen3.5-9B-Instruct"
+    qwen_model_name: str = "DavidAU/Qwen3.5-9B-Claude-4.6-HighIQ-INSTRUCT"
     cors_origins: str = ""
     gmail_client_id: str = ""
     gmail_client_secret: str = ""

@@ -50,7 +50,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --concurrency 16 \
   --port 8080 \
   --no-allow-unauthenticated \
-  --set-env-vars "MODEL_NAME=Qwen/Qwen3.5-9B-Instruct"
+  --set-env-vars "MODEL_NAME=DavidAU/Qwen3.5-9B-Claude-4.6-HighIQ-INSTRUCT"
 
 echo "Deployment complete."
 echo "Check service: gcloud run services describe $SERVICE_NAME --region $REGION"

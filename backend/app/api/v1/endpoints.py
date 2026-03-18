@@ -162,7 +162,7 @@ async def rewrite_email(
                 f"{qwen_url.rstrip('/')}/chat/completions",
                 headers=headers,
                 json={
-                    "model": os.environ.get("QWEN_MODEL_NAME", "Qwen/Qwen3.5-9B-Instruct"),
+                    "model": os.environ.get("QWEN_MODEL_NAME", "DavidAU/Qwen3.5-9B-Claude-4.6-HighIQ-INSTRUCT"),
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": request.body},
@@ -216,7 +216,7 @@ async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_
                     f"{qwen_url.rstrip('/')}/chat/completions",
                     headers=headers,
                     json={
-                        "model": os.environ.get("QWEN_MODEL_NAME", "Qwen/Qwen3.5-9B-Instruct"),
+                        "model": os.environ.get("QWEN_MODEL_NAME", "DavidAU/Qwen3.5-9B-Claude-4.6-HighIQ-INSTRUCT"),
                         "messages": [
                             {"role": "system", "content": "You are VibeOS Assistant. Use the provided context to answer accurately."},
                             {"role": "user", "content": f"{context}\n\nUser Query: {request.message}"}

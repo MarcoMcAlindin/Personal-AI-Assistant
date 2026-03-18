@@ -23,7 +23,7 @@ function ChatHeader() {
         <Text style={{ fontSize: 18 }}>{'\u2728'}</Text>
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Qwen3.5-9B-Instruct Assistant</Text>
+        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>VibeOS Assistant</Text>
         <Text style={{ color: palette.textMuted, fontSize: 12 }}>10-day RAG context {'\u2022'} 3 pinned memories</Text>
       </View>
       <View style={{ flexDirection: 'row' }}>

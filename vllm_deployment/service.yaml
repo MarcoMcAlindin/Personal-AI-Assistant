@@ -37,7 +37,7 @@ spec:
               nvidia.com/gpu: "1"
           env:
             - name: MODEL_NAME
-              value: "Qwen/Qwen3.5-9B-Instruct"
+              value: "DavidAU/Qwen3.5-9B-Claude-4.6-HighIQ-INSTRUCT"
           # Startup probe: allows up to 3660s (~61 min) for model download + GPU load on cold start
           # Rule 23: initialDelaySeconds >= 60 required for LLM containers.
           # Use /v1/models (NOT /health): /health returns 200 immediately on server start;

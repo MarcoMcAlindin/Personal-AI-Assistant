@@ -1,7 +1,8 @@
 steps:
   # Build the container image (includes model weight download ~18GB)
+  # HF_TOKEN passed as substitution at build time -- never stored in source
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest', '.']
+    args: ['build', '--build-arg', 'HF_TOKEN=${_HF_TOKEN}', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest', '.']
 
   # Push the container image to Artifact Registry
   # Cloud Run deployment is handled by deploy.sh (gcloud run deploy)
@@ -10,6 +11,7 @@ steps:
 
 substitutions:
   _REGION: europe-west1
+  _HF_TOKEN: ''
 
 images:
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest'
