@@ -14,7 +14,7 @@ if [ ! -d "android" ]; then
   npx expo prebuild --platform android --clean
 fi
 
-# Step 2: Build debug APK
+# Step 2: Build debug APK (Gradle bundles JS automatically via expo export:embed)
 echo ">>> Building debug APK..."
 cd android
 ./gradlew assembleDebug
