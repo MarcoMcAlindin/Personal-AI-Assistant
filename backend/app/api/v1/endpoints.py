@@ -170,6 +170,7 @@ async def rewrite_email(
                     "stream": False,
                     "max_tokens": 1024,
                     "temperature": 0.7,
+                    "chat_template_kwargs": {"enable_thinking": False},
                 }
             )
             response.raise_for_status()
@@ -220,7 +221,8 @@ async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_
                             {"role": "system", "content": "You are VibeOS Assistant. Use the provided context to answer accurately."},
                             {"role": "user", "content": f"{context}\n\nUser Query: {request.message}"}
                         ],
-                        "stream": False
+                        "stream": False,
+                        "chat_template_kwargs": {"enable_thinking": False},
                     }
                 )
                 ai_response.raise_for_status()

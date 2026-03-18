@@ -46,7 +46,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --cpu 4 \
   --max-instances 1 \
   --min-instances 0 \
-  --timeout 300 \
+  --timeout 600 \
   --concurrency 16 \
   --port 8080 \
   --no-allow-unauthenticated \

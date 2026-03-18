@@ -75,7 +75,8 @@ def analyze_health():
                             {"role": "user", "content": f"Analyze this biometric data: {json.dumps(data_summary)}"}
                         ],
                         "max_tokens": 512,
-                        "temperature": 0.7
+                        "temperature": 0.7,
+                        "chat_template_kwargs": {"enable_thinking": False},
                     },
                     headers={
                         "Content-Type": "application/json",

@@ -24,7 +24,7 @@ spec:
         run.googleapis.com/vpc-access-egress: private-ranges-only
     spec:
       containerConcurrency: 16
-      timeoutSeconds: 300
+      timeoutSeconds: 600
       containers:
         - image: __IMAGE_REF__
           ports:
