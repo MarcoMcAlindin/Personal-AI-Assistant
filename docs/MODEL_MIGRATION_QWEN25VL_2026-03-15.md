@@ -1,3 +1,10 @@
+> **SUPERSEDED — 2026-03-18**
+> This document describes an intermediate migration that is no longer the current architecture.
+> The live model architecture is defined in `docs/MODEL_ARCHITECTURE_2026-03-18.md`.
+> Cloud target is now `Qwen/Qwen3.5-35B-A3B-GPTQ-Int4`. Retained for historical reference only.
+
+---
+
 # Model Migration: Qwen3.5-9B-Instruct → Qwen3.5-9B-Instruct
 
 **Date:** 2026-03-15

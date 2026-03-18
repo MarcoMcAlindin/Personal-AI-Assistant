@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `/web` — React + Vite desktop app (port 3000)
 - `/mobile` — React Native + Expo iOS/Android app
 - `/backend` — Python FastAPI cloud gateway (Cloud Run, port 8080)
-- `/vllm_deployment` — Qwen3.5-9B-Instruct inference on GPU Cloud Run (scale-to-zero)
+- `/vllm_deployment` — Qwen3.5-35B-A3B-GPTQ-Int4 inference on GPU Cloud Run (scale-to-zero)
 - `/supabase` — PostgreSQL migrations (pgvector + pg_cron)
 
 ## Development Commands
@@ -49,7 +49,7 @@ bash vllm_deployment/deploy.sh  # GPU Cloud Run deployment
 ### Data Flow
 ```
 Web / Mobile → REST API → FastAPI (Cloud Run) → Supabase (PostgreSQL)
-                                              ↘ vLLM Qwen3.5-9B-Instruct (Cloud Run GPU)
+                                              ↘ vLLM Qwen3.5-35B-A3B-GPTQ-Int4 (Cloud Run GPU)
 ```
 
 ### Backend Services (`/backend/app/`)
@@ -101,5 +101,6 @@ Web / Mobile → REST API → FastAPI (Cloud Run) → Supabase (PostgreSQL)
 - `.env.example` — all required environment variables
 - Supabase migrations in `/supabase/migrations/`
 - Backend Dockerfile targets port 8080; local dev runs on 8000
-- vLLM endpoint uses OpenAI-compatible API (model: `qwen3.5-9b-instruct`)
+- vLLM cloud endpoint uses OpenAI-compatible API (model: `Qwen/Qwen3.5-35B-A3B-GPTQ-Int4`)
+- Three inference tiers: Cloud (`Qwen3.5-35B-A3B-GPTQ-Int4`), Home PC (`DavidAU/Qwen3.5-9B-Claude-4.6-HighIQ-INSTRUCT`), On-Device (`DavidAU/Qwen3.5-2B-GPT-5.1-HighIQ-INSTRUCT`)
 - Cloud Run region: `europe-west1`
