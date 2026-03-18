@@ -5,7 +5,7 @@ globs: backend/prompts/**, vllm_deployment/system_prompts/**, *.prompt
 
 # AI Behavioral Consistency
 
-This rule governs the personality and behavioral defaults for the **Qwen3.5-35B-A3B-GPTQ-Int4** cloud model across all VibeOS interaction surfaces (chat, health analysis, task summaries).
+This rule governs the personality and behavioral defaults for the **Qwen3.5-35B-A3B GGUF Q4_K_M** cloud model across all VibeOS interaction surfaces (chat, health analysis, task summaries).
 
 ## Model Identity
 
@@ -13,13 +13,14 @@ VibeOS uses a three-tier inference architecture. The `model_target` field on `/c
 
 | Target | Model ID | Hardware |
 |--------|----------|----------|
-| `cloud` (default) | `Qwen/Qwen3.5-35B-A3B-GPTQ-Int4` | Cloud Run L4 24GB, europe-west1 |
+| `cloud` (default) | `unsloth/Qwen3.5-35B-A3B-GGUF` | Cloud Run L4 24GB, europe-west1 |
 | `home_pc` | `DavidAU/Qwen3.5-9B-Claude-4.6-HighIQ-INSTRUCT` | RTX 4070 Ti via Tailscale |
 | `device` | `DavidAU/Qwen3.5-2B-GPT-5.1-HighIQ-INSTRUCT` | On-device mobile (local only) |
 
-- **Cloud model:** `Qwen/Qwen3.5-35B-A3B-GPTQ-Int4` — 35B MoE, GPTQ Int4, ~17.5GB weights, text-only (no vision).
+- **Cloud model:** `unsloth/Qwen3.5-35B-A3B-GGUF` (file: `Qwen3.5-35B-A3B-Q4_K_M.gguf`) — 35B MoE, GGUF Q4_K_M, 22GB weights, deployed with `--language-model-only`.
 - **Capabilities:** Text chat, structured JSON output, health analysis, RAG context injection.
-- **Note:** The 35B MoE model is text-only. Vision/image inputs are no longer supported via the cloud path.
+- **Thinking mode:** Model emits `<think>...</think>` tags by default. Stripped at vLLM level (`--reasoning-parser qwen3`) and at backend level (VOS-063 strip utility). Both layers remain active.
+- **Note:** Deployed text-only (`--language-model-only`) to stay within L4 24GB VRAM budget.
 
 ## Default Persona
 - **Tone:** Grounded, supportive, witty, and private. Think "trusted peer" - not a corporate assistant.

@@ -30,7 +30,7 @@ User picks model
 
 | Backend | Model ID | Size | VRAM/RAM | Perf | API |
 |---------|----------|------|----------|------|-----|
-| Cloud vLLM | `Qwen/Qwen3.5-35B-A3B-GPTQ-Int4` | 35B MoE (GPTQ Int4, ~17.5GB) | L4 24GB | ~20-30 tok/s | OpenAI compat |
+| Cloud vLLM | `unsloth/Qwen3.5-35B-A3B-GGUF` (file: `Qwen3.5-35B-A3B-Q4_K_M.gguf`) | 35B MoE (GGUF Q4_K_M, 22GB) | L4 24GB | ~20-30 tok/s | OpenAI compat |
 | Home PC Ollama | `DavidAU/Qwen3.5-9B-Claude-4.6-HighIQ-INSTRUCT` | 9B | ~6GB | 40-80 tok/s | OpenAI compat |
 | On-Device llama.rn | `DavidAU/Qwen3.5-2B-GPT-5.1-HighIQ-INSTRUCT` | 2B | ~1.5GB RAM | 50-100 tok/s | llama.rn API |
 
