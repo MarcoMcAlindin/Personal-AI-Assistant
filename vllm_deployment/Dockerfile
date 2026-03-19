@@ -1,24 +1,40 @@
-# Qwen3.5-9B-Instruct on vLLM (Cloud Run, single L4 GPU)
-# Rule 23: W8A8 pre-quantized -- ~7-9GB weights, fits on L4 with 6-11GB headroom
-FROM vllm/vllm-openai:latest
+# Qwen3.5-35B-A3B Q4_K_M GGUF on llama.cpp server (Cloud Run, single L4 GPU)
+# Rule 23: GGUF Q4_K_M -- ~19.5GB weights, fits on L4 24GB with ~4.5GB KV cache headroom
+#
+# Two-stage build:
+#   Stage 1 (downloader): Python slim -- downloads single GGUF file via hf_hub_download.
+#     DO NOT use snapshot_download on the GGUF repo -- it pulls all quant variants (200+ GB).
+#   Stage 2 (runtime):    Official llama.cpp server-cuda image -- pre-built llama-server binary.
+#     No compilation required. Cloud Build does not have GPUs; compile-from-source CUDA builds fail.
 
-RUN python3 -m pip install huggingface_hub
-RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download('Qwen/Qwen3.5-9B-Instruct')"
-ENV MODEL_NAME="Qwen/Qwen3.5-9B-Instruct"
+# Stage 1: download the single GGUF file
+FROM python:3.12-slim AS downloader
+RUN pip install --no-cache-dir huggingface_hub
+RUN mkdir -p /models && \
+    python3 -c "\
+from huggingface_hub import hf_hub_download; \
+hf_hub_download(\
+  repo_id='unsloth/Qwen3.5-35B-A3B-GGUF', \
+  filename='Qwen3.5-35B-A3B-Q4_K_M.gguf', \
+  local_dir='/models'\
+)"
 
-# --model: W8A8 pre-quantized variant -- no --quantization flag needed (embedded in weights)
-# --enforce-eager: REQUIRED for VL models -- disables CUDA graph capture which causes vision encoder crashes
-# --limit-mm-per-prompt: Caps image inputs to 2 per request -- each high-res image = up to 16K visual tokens (OOM prevention)
-# --max-model-len: 8192 -- conserves KV cache on single L4; model natively supports 32K
-# --gpu-memory-utilization: 0.90 = ~21.6GB of L4's 24GB -- leaves buffer for vision spikes
-# --max-num-seqs: 16 -- matches Cloud Run containerConcurrency
-# --trust-remote-code: Required for all Qwen architectures
-ENTRYPOINT ["python3", "-m", "vllm.entrypoints.openai.api_server"]
-CMD ["--model", "Qwen/Qwen3.5-9B-Instruct", \
+# Stage 2: official llama.cpp CUDA server image (pre-built binary, no compile needed)
+FROM ghcr.io/ggerganov/llama.cpp:server-cuda
+
+COPY --from=downloader /models /models
+
+# --model:    GGUF file path
+# -ngl 999:   offload all layers to GPU (L4 24GB)
+# --ctx-size: KV cache budget -- safe within ~4.5GB headroom after Q4_K_M weights (~19.5GB)
+# --parallel: concurrent sequences, matches Cloud Run containerConcurrency
+# --host:     0.0.0.0 required for Cloud Run to receive traffic
+# --alias:    sets the model ID returned by /v1/models (llama.cpp ignores model field in completions)
+EXPOSE 8080
+CMD ["--model", "/models/Qwen3.5-35B-A3B-Q4_K_M.gguf", \
+     "--host", "0.0.0.0", \
      "--port", "8080", \
-     "--trust-remote-code", \
-     "--enforce-eager", \
-     "--max-model-len", "8192", \
-     "--gpu-memory-utilization", "0.90", \
-     "--max-num-seqs", "16", \
-     "--limit-mm-per-prompt", "{\"image\":2,\"video\":0}"]
+     "-ngl", "999", \
+     "--ctx-size", "4096", \
+     "--parallel", "16", \
+     "--alias", "Qwen/Qwen3.5-35B-A3B-GGUF"]

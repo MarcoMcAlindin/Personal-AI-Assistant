@@ -1,5 +1,5 @@
 steps:
-  # Build the container image (includes model weight download ~18GB)
+  # Build the container image (two-stage: Python downloader fetches single GGUF Q4_K_M file; llama.cpp CUDA server runs it)
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest', '.']
 

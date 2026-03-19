@@ -31,9 +31,9 @@ echo "Building and pushing image via Cloud Build..."
 gcloud builds submit --config cloudbuild.yaml .
 
 # 3. Deploy to Cloud Run with single L4 GPU (Rule 23)
-# --gpu 1 --gpu-type nvidia-l4: single L4, 24GB VRAM
+# --gpu 1 --gpu-type nvidia-l4: single L4, 24GB VRAM -- GGUF Q4_K_M ~19.5GB + ~4.5GB KV cache headroom
 # --min-instances 0: scale-to-zero (Rule 08)
-# --concurrency 16: matches --max-num-seqs in vLLM CMD
+# --concurrency 16: matches --parallel in CMD
 # --no-allow-unauthenticated: IAM-protected, called via identity token
 echo "Deploying to Cloud Run ($SERVICE_NAME, $REGION)..."
 gcloud run deploy "$SERVICE_NAME" \
@@ -50,7 +50,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --concurrency 16 \
   --port 8080 \
   --no-allow-unauthenticated \
-  --set-env-vars "MODEL_NAME=Qwen/Qwen3.5-9B-Instruct"
+  --set-env-vars "MODEL_NAME=Qwen/Qwen3.5-35B-A3B-GGUF"
 
 echo "Deployment complete."
 echo "Check service: gcloud run services describe $SERVICE_NAME --region $REGION"
