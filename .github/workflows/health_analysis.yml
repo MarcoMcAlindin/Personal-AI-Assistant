@@ -1,6 +1,6 @@
 # VibeOS — Automated Daily Health Analysis
 # Runs every day at 8:00 AM GMT
-# Pulls latest Samsung Watch data from Supabase → sends to Qwen3.5-9B-Instruct → stores analysis
+# Pulls latest Samsung Watch data from Supabase → sends to Qwen3.5-35B-A3B-GGUF → stores analysis
 
 name: Daily Health Analysis
 
