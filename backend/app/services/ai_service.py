@@ -1,5 +1,5 @@
 # VibeOS — AI Service
-# Qwen3.5-35B-A3B-GGUF (cloud llama.cpp) + Qwen3.5-9B-Claude-4.6-HighIQ (home PC Ollama) multi-model router
+# unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF (cloud llama.cpp) + Qwen3.5-9B-Claude-4.6-HighIQ (home PC Ollama) multi-model router
 
 import os
 import httpx

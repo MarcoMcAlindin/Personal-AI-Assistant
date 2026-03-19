@@ -18,13 +18,17 @@ async function getAuthHeaders() {
 // --- Public endpoints (no auth) ---
 
 export async function fetchTechFeeds() {
-  const res = await fetch(`${API_BASE_URL}/feeds/tech`);
+  const res = await fetch(`${API_BASE_URL}/feeds/tech`, {
+    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+  });
   if (!res.ok) throw new Error(`feeds/tech failed: ${res.status}`);
   return res.json();
 }
 
 export async function fetchConcerts() {
-  const res = await fetch(`${API_BASE_URL}/feeds/concerts`);
+  const res = await fetch(`${API_BASE_URL}/feeds/concerts`, {
+    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+  });
   if (!res.ok) throw new Error(`feeds/concerts failed: ${res.status}`);
   return res.json();
 }

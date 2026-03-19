@@ -1,4 +1,6 @@
-const BACKEND_URL = 'http://localhost:8000/api/v1';
+/// <reference types="vite/client" />
+
+const BACKEND_URL = import.meta.env.VITE_CLOUD_GATEWAY_URL || 'http://localhost:8000/api/v1';
 
 export type VllmStatus = 'offline' | 'warming' | 'online';
 

@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     supabase_service_role_key: str = ""
     supabase_jwt_secret: str = ""
     qwen_endpoint_url: str = ""
-    qwen_model_name: str = "Qwen/Qwen3.5-9B-Instruct"
+    qwen_model_name: str = "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"
     ollama_endpoint_url: str = ""
     ollama_model_name: str = "qwen2.5:7b"
     cors_origins: str = ""

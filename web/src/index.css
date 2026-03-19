@@ -1,7 +1,7 @@
 /* VibeOS OLED Theme Tokens - Figma Refined */
 :root {
   /* Colors */
-  --bg-primary: #050508;      /* Precise OLED Black */
+  --bg-primary: #000000;      /* Precise OLED Black */
   --bg-secondary: #0d0d12;    /* Refined Slate */
   --bg-card: #13131C;         /* Figma AI Card Color */
   

@@ -120,9 +120,17 @@ export default function ChatScreen() {
 
   useEffect(() => {
     pollVllmStatus();
-    const interval = setInterval(pollVllmStatus, 15000);
-    return () => clearInterval(interval);
   }, [pollVllmStatus]);
+
+  useEffect(() => {
+    let interval = null;
+    if (vllmStatus === 'warming') {
+      interval = setInterval(pollVllmStatus, 5000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [pollVllmStatus, vllmStatus]);
 
   const handleWarmup = async () => {
     setVllmWarming(true);

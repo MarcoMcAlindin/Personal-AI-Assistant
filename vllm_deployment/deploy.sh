@@ -28,6 +28,7 @@ fi
 
 # 2. Build and push via Cloud Build
 echo "Building and pushing image via Cloud Build..."
+cd "$SCRIPT_DIR"
 gcloud builds submit --config cloudbuild.yaml .
 
 # 3. Deploy to Cloud Run with single L4 GPU (Rule 23)
@@ -50,7 +51,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --concurrency 16 \
   --port 8080 \
   --no-allow-unauthenticated \
-  --set-env-vars "MODEL_NAME=Qwen/Qwen3.5-35B-A3B-GGUF"
+  --set-env-vars "MODEL_NAME=unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"
 
 echo "Deployment complete."
 echo "Check service: gcloud run services describe $SERVICE_NAME --region $REGION"

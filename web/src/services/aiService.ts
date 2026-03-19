@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 export interface Message {
   id: string;
   content: string;
@@ -5,7 +7,7 @@ export interface Message {
   timestamp: string;
 }
 
-const BACKEND_URL = 'http://localhost:8000/api/v1';
+const BACKEND_URL = import.meta.env.VITE_CLOUD_GATEWAY_URL || 'http://localhost:8000/api/v1';
 
 export const aiService = {
   sendMessage: async (message: string, onToken: (token: string) => void) => {

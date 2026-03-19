@@ -14,8 +14,8 @@ RUN mkdir -p /models && \
     python3 -c "\
 from huggingface_hub import hf_hub_download; \
 hf_hub_download(\
-  repo_id='unsloth/Qwen3.5-35B-A3B-GGUF', \
-  filename='Qwen3.5-35B-A3B-Q4_K_M.gguf', \
+  repo_id='unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF', \
+  filename='Qwen3-Coder-30B-A3B-Instruct-Q4_K_S.gguf', \
   local_dir='/models'\
 )"
 
@@ -32,10 +32,10 @@ COPY --from=downloader /models /models
 # --host:     0.0.0.0 required for Cloud Run to receive traffic
 # --alias:    sets the model ID returned by /v1/models (llama.cpp ignores model in completions)
 EXPOSE 8080
-CMD ["--model", "/models/Qwen3.5-35B-A3B-Q4_K_M.gguf", \
+CMD ["--model", "/models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_S.gguf", \
      "--host", "0.0.0.0", \
      "--port", "8080", \
      "-ngl", "999", \
      "--ctx-size", "4096", \
      "--parallel", "16", \
-     "--alias", "Qwen/Qwen3.5-35B-A3B-GGUF"]
+     "--alias", "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"]

@@ -32,9 +32,17 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     pollVllmStatus();
-    const interval = setInterval(pollVllmStatus, 15000);
-    return () => clearInterval(interval);
   }, [pollVllmStatus]);
+
+  useEffect(() => {
+    let interval = null;
+    if (vllmStatus === 'warming') {
+      interval = setInterval(pollVllmStatus, 5000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [pollVllmStatus, vllmStatus]);
 
   const vllmColor = VLLM_STATUS_COLORS[vllmStatus] || '#ef4444';
 
@@ -54,7 +62,7 @@ export default function SettingsScreen() {
             <Text style={{ color: '#4ade80', fontSize: 13 }}>Connected</Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ color: palette.textMuted, fontSize: 13 }}>Qwen3.5-9B-Instruct</Text>
+            <Text style={{ color: palette.textMuted, fontSize: 13 }}>Qwen3-Coder-30B</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={{
                 width: 6, height: 6, borderRadius: 3,

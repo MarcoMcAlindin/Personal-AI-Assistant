@@ -8,7 +8,7 @@ This file provides guidance to gemini when working with code in this repository.
 - `/web` — React + Vite desktop app (port 3000)
 - `/mobile` — React Native + Expo iOS/Android app
 - `/backend` — Python FastAPI cloud gateway (Cloud Run, port 8080)
-- `/vllm_deployment` — Qwen3.5-9B-Instruct inference on GPU Cloud Run (scale-to-zero)
+- `/vllm_deployment` — Qwen3-Coder-30B-Instruct inference on GPU Cloud Run (scale-to-zero)
 - `/supabase` — PostgreSQL migrations (pgvector + pg_cron)
 
 ## Development Commands
@@ -49,7 +49,7 @@ bash vllm_deployment/deploy.sh  # GPU Cloud Run deployment
 ### Data Flow
 ```
 Web / Mobile → REST API → FastAPI (Cloud Run) → Supabase (PostgreSQL)
-                                              ↘ vLLM Qwen3.5-9B-Instruct (Cloud Run GPU)
+                                              ↘ vLLM Qwen3-Coder-30B-A3B-Instruct-GGUF (Cloud Run GPU)
 ```
 
 ### Backend Services (`/backend/app/`)
@@ -101,5 +101,5 @@ Web / Mobile → REST API → FastAPI (Cloud Run) → Supabase (PostgreSQL)
 - `.env.example` — all required environment variables
 - Supabase migrations in `/supabase/migrations/`
 - Backend Dockerfile targets port 8080; local dev runs on 8000
-- vLLM endpoint uses OpenAI-compatible API (model: `qwen3.5-9b-instruct`)
+- vLLM endpoint uses OpenAI-compatible API (model: `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF`)
 - Cloud Run region: `europe-west1`

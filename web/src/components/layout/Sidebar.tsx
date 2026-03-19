@@ -32,9 +32,17 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     pollVllmStatus();
-    const interval = setInterval(pollVllmStatus, 15000);
-    return () => clearInterval(interval);
   }, [pollVllmStatus]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (vllmStatus === 'warming') {
+      interval = setInterval(pollVllmStatus, 5000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [pollVllmStatus, vllmStatus]);
 
   const handleWarmup = async () => {
     if (vllmStatus !== 'offline' || vllmLoading) return;
@@ -81,14 +89,7 @@ const Sidebar: React.FC = () => {
             </svg>
             {!collapsed && <span>Tech Feed</span>}
           </NavLink>
-          <NavLink to="/concerts" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Concerts">
-            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 18V5l12-2v13"></path>
-              <circle cx="6" cy="18" r="3"></circle>
-              <circle cx="18" cy="16" r="3"></circle>
-            </svg>
-            {!collapsed && <span>Concerts</span>}
-          </NavLink>
+
           <NavLink to="/email" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Email">
             <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
@@ -163,7 +164,7 @@ const Sidebar: React.FC = () => {
                 </div>
               </>
             )}
-            <div className={`qwen-chip qwen-chip--${vllmStatus}${collapsed ? ' qwen-chip--icon-only' : ''}`}>
+            <div data-testid="vllm-status" className={`qwen-chip qwen-chip--${vllmStatus}${collapsed ? ' qwen-chip--icon-only' : ''}`}>
               <span
                 className={`qwen-dot qwen-dot--${vllmStatus}`}
                 style={{ backgroundColor: VLLM_DOT_COLORS[vllmStatus] }}
@@ -196,10 +197,10 @@ const Sidebar: React.FC = () => {
 
       {showSettings && (
         <div className="settings-overlay" onClick={() => setShowSettings(false)}>
-          <div className="settings-modal" onClick={e => e.stopPropagation()}>
+          <div className="settings-modal" onClick={e => e.stopPropagation()} role="dialog" aria-labelledby="settings-title" aria-modal="true">
             <div className="settings-header">
-              <h2>Settings</h2>
-              <button className="settings-close" onClick={() => setShowSettings(false)}>
+              <h2 id="settings-title">Settings</h2>
+              <button className="settings-close" onClick={() => setShowSettings(false)} aria-label="Close Settings">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}>
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -229,7 +230,7 @@ const Sidebar: React.FC = () => {
                   <span className="settings-value online">Active</span>
                 </div>
                 <div className="settings-row">
-                  <span>Qwen3.5-9B-Instruct</span>
+                  <span>Qwen3-Coder-30B</span>
                   <span
                     className={`settings-value ${vllmStatus === 'online' ? 'online' : vllmStatus === 'warming' ? 'pending' : 'offline'}`}
                   >
