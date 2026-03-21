@@ -1,10 +1,10 @@
-// VibeOS Mobile -- Daily Planner Screen
 import React, { useState, useEffect } from 'react';
 import {
   View, FlatList, TouchableOpacity, TextInput,
-  ActivityIndicator, RefreshControl,
+  ActivityIndicator, RefreshControl, Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../components/Themed';
 import { palette, spacing } from '../theme';
 import { fetchTasks, createTask, updateTask } from '../services/api';
@@ -86,7 +86,7 @@ export default function PlannerScreen() {
             marginRight: spacing.md, marginTop: 2,
             alignItems: 'center', justifyContent: 'center',
           }}>
-            {done && <Text style={{ color: '#000', fontSize: 12, fontWeight: 'bold' }}>{'\u2713'}</Text>}
+            {done && <Ionicons name="checkmark-bold" size={14} color="#000" />}
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{
@@ -99,16 +99,21 @@ export default function PlannerScreen() {
             {item.description && (
               <Text style={{ color: palette.textMuted, fontSize: 12, marginTop: 2 }}>{item.description}</Text>
             )}
-            <View style={{ flexDirection: 'row', marginTop: 4 }}>
+            <View style={{ flexDirection: 'row', marginTop: 4, alignItems: 'center' }}>
               {item.time && (
-                <Text style={{ color: palette.textMuted, fontSize: 11 }}>
-                  {'\u23F0'} {formatTime12h(item.time)}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="time-outline" size={12} color={palette.textMuted} style={{ marginRight: 4 }} />
+                  <Text style={{ color: palette.textMuted, fontSize: 11 }}>
+                    {formatTime12h(item.time)}
+                  </Text>
+                </View>
               )}
               {item.duration && (
-                <Text style={{ color: palette.textMuted, fontSize: 11, marginLeft: spacing.sm }}>
-                  {item.duration >= 60 ? `${Math.floor(item.duration / 60)} hr` : `${item.duration} min`}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: spacing.sm }}>
+                  <Text style={{ color: palette.textMuted, fontSize: 11 }}>
+                    {item.duration >= 60 ? `${Math.floor(item.duration / 60)} hr` : `${item.duration} min`}
+                  </Text>
+                </View>
               )}
             </View>
           </View>
@@ -136,7 +141,7 @@ export default function PlannerScreen() {
               backgroundColor: palette.bgCard, alignItems: 'center', justifyContent: 'center',
               marginRight: spacing.md, borderWidth: 1, borderColor: palette.accentPrimary,
             }}>
-              <Text style={{ fontSize: 18 }}>{'\uD83D\uDCC5'}</Text>
+              <Ionicons name="calendar" size={20} color={palette.accentPrimary} />
             </View>
             <View>
               <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Daily Planner</Text>
@@ -144,15 +149,15 @@ export default function PlannerScreen() {
                 {formatDate()} {'\u2022'} Auto-archives at midnight
               </Text>
             </View>
-            <View style={{ flexDirection: 'row', marginLeft: spacing.sm, marginRight: spacing.sm }}>
-              <TouchableOpacity style={{ marginRight: spacing.xs }}>
-                <Text style={{ color: palette.textMuted, fontSize: 16 }}>{'\u2630'}</Text>
+            <View style={{ flexDirection: 'row', marginLeft: spacing.md }}>
+              <TouchableOpacity style={{ marginRight: spacing.sm }}>
+                <Ionicons name="menu-outline" size={20} color={palette.textMuted} />
               </TouchableOpacity>
-              <TouchableOpacity style={{ marginRight: spacing.xs }}>
-                <Text style={{ color: palette.textMuted, fontSize: 16 }}>{'\u2B1A'}</Text>
+              <TouchableOpacity style={{ marginRight: spacing.sm }}>
+                <Ionicons name="filter-outline" size={20} color={palette.textMuted} />
               </TouchableOpacity>
               <TouchableOpacity>
-                <Text style={{ color: palette.textMuted, fontSize: 16 }}>{'\uD83D\uDDD1\uFE0F'}</Text>
+                <Ionicons name="trash-outline" size={20} color={palette.textMuted} />
               </TouchableOpacity>
             </View>
           </View>

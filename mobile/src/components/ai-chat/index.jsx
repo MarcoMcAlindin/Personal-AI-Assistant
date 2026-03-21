@@ -1,1 +1,1 @@
-// VibeOS Mobile — AI Chat Components
+// SuperCyan Mobile — AI Chat Components

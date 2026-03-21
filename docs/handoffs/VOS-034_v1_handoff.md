@@ -21,7 +21,7 @@ The Chat screen skeleton has been built at `mobile/src/screens/ChatScreen.jsx` w
 |--------|------|-------------|
 | MODIFY | `mobile/src/screens/ChatScreen.jsx` | Match chat UI to ground truth |
 | MODIFY | `mobile/src/navigation/TabNavigator.jsx` | Ensure tab bar matches mockup (5 tabs: Plan, Feeds, AI, Mail, Health) |
-| MODIFY | `mobile/src/App.jsx` | Add footer text "VibeOS Mobile -- React Native (Expo)" if needed |
+| MODIFY | `mobile/src/App.jsx` | Add footer text "SuperCyan Mobile -- React Native (Expo)" if needed |
 | REFERENCE | `mobile/src/theme.ts` | Use palette colors exactly |
 | REFERENCE | `mobile/src/components/Themed.tsx` | Reuse Text/View/Card components |
 
@@ -58,7 +58,7 @@ None. Uses existing `POST /api/v1/chat` endpoint.
 
 ## 7. Notes for Mr. Blue
 
-- The ground truth shows a **footer line** below the tab bar: "VibeOS Mobile -- React Native (Expo)" -- add this
+- The ground truth shows a **footer line** below the tab bar: "SuperCyan Mobile -- React Native (Expo)" -- add this
 - User avatar is a teal circle with "M" initial, AI avatar is purple circle with sparkle
 - The chat header has two small icon buttons (save + link) -- these are decorative for now
 - Use `SafeAreaView` edges carefully -- `['top']` only, with manual bottom padding for Android

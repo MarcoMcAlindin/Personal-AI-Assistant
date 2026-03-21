@@ -16,7 +16,7 @@ The `health_analysis.yml` daily workflow runs at 8:00 AM GMT, fetches Samsung Wa
 **Today every run that reached the Qwen call produced:**
 ```
 Error during AI analysis for user 8b1203a5-...: Client error '404 Not Found'
-for url 'https://vibeos-qwen-599152061719.../v1/chat/completions'
+for url 'https://supercyan-qwen-599152061719.../v1/chat/completions'
 ```
 
 The workflow still exited with ✅ success because the exception was silently caught. No analysis was written to Supabase.
@@ -47,17 +47,17 @@ White's VOS-053 fix patches the `QWEN_MODEL_NAME` env var on the **Cloud Run bac
 
 ```bash
 git worktree list
-git worktree add /home/marco/vibeos-worktrees/red feature/red/058-health-analysis-fix
-cd /home/marco/vibeos-worktrees/red
+git worktree add /home/marco/supercyan-worktrees/red feature/red/058-health-analysis-fix
+cd /home/marco/supercyan-worktrees/red
 ```
 
 ### Step 2 — Confirm the live model ID (same step as White)
 
 ```bash
 TOKEN=$(gcloud auth print-identity-token \
-  --audiences=https://vibeos-qwen-599152061719.europe-west1.run.app)
+  --audiences=https://supercyan-qwen-599152061719.europe-west1.run.app)
 curl -s -H "Authorization: Bearer $TOKEN" \
-  "https://vibeos-qwen-599152061719.europe-west1.run.app/v1/models" | python3 -m json.tool
+  "https://supercyan-qwen-599152061719.europe-west1.run.app/v1/models" | python3 -m json.tool
 ```
 
 Note the exact `id` value from `data[0]`. This is the string you need.
@@ -265,6 +265,6 @@ These must both land on `staging` before the Health Hub screen shows live AI ana
 
 ---
 
-**Mr. Pink** — VibeOS Project Manager & Scout
+**Mr. Pink** — SuperCyan Project Manager & Scout
 *Live evidence: GitHub Actions run 23200786475, job 67422195434*
 *Audit doc: `docs/AUDIT_MOBILE_PINK_2026-03-17.md` — companion to B-01*

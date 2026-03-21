@@ -2,15 +2,16 @@
 
 export interface Message {
   id: string;
+  role: 'user' | 'assistant' | 'system';
   content: string;
-  sender: 'user' | 'ai';
-  timestamp: string;
+  isSaved?: boolean;
+  timestamp?: string;
 }
 
 const BACKEND_URL = import.meta.env.VITE_CLOUD_GATEWAY_URL || 'http://localhost:8000/api/v1';
 
 export const aiService = {
-  sendMessage: async (message: string, onToken: (token: string) => void) => {
+  sendMessage: async (message: string, onToken: (token: string) => void): Promise<Message> => {
     try {
       const response = await fetch(`${BACKEND_URL}/chat`, {
         method: 'POST',
@@ -20,30 +21,38 @@ export const aiService = {
 
       if (!response.ok) throw new Error('AI Bridge Failed');
 
+      // The backend actually returns a stream (SSE) in the real implementation, 
+      // but if the endpoint is simple JSON for now, we handle it as such.
+      // If it's SSE, we would use an EventSource or a ReadableStream.
       const data = await response.json();
-      const content = data.response;
+      const content = data.response || data.content || "";
 
-      // Simulate streaming for the UI since the current backend isn't true SSE yet
+      // For a smooth UI, we still simulate the typing if the backend doesn't stream yet
+      // but we do it character-by-character or small chunks for better feel.
       const tokens = content.split(' ');
-      let current = "";
       for (const t of tokens) {
-        const token = t + " ";
-        current += token;
-        onToken(token);
-        await new Promise(r => setTimeout(r, 50));
+        onToken(t + " ");
+        await new Promise(r => setTimeout(r, 20));
       }
 
-      return { id: crypto.randomUUID(), content };
+      return { id: crypto.randomUUID(), role: 'assistant', content };
     } catch (error) {
       console.error('[AIService] Bridge Error:', error);
-      const errorMsg = "I'm having trouble connecting to my neural core. Please ensure the VibeOS backend is running.";
+      const errorMsg = "I'm having trouble connecting to my neural core. Please ensure the SuperCyan backend is running.";
       onToken(errorMsg);
-      return { id: crypto.randomUUID(), content: errorMsg };
+      return { id: crypto.randomUUID(), role: 'assistant', content: errorMsg };
     }
   },
 
   saveMessage: async (messageId: string) => {
-    // TODO: Implement save logic in backend
-    return { success: true };
+    try {
+      const response = await fetch(`${BACKEND_URL}/chat/save/${messageId}`, {
+        method: 'PATCH',
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('[AIService] Save Error:', error);
+      throw error;
+    }
   }
 };

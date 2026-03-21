@@ -49,8 +49,8 @@ vLLM's OpenAI-compatible server validates the `model` field in every `/v1/chat/c
 ```bash
 git worktree list
 # If feature/white/053-vllm-fix doesn't exist:
-git worktree add /home/marco/vibeos-worktrees/white feature/white/053-vllm-fix
-cd /home/marco/vibeos-worktrees/white
+git worktree add /home/marco/supercyan-worktrees/white feature/white/053-vllm-fix
+cd /home/marco/supercyan-worktrees/white
 ```
 
 ### Step 2 — Confirm the live model ID
@@ -59,9 +59,9 @@ Run this to get the exact ID vLLM reports (requires gcloud auth):
 
 ```bash
 TOKEN=$(gcloud auth print-identity-token \
-  --audiences=https://vibeos-qwen-599152061719.europe-west1.run.app)
+  --audiences=https://supercyan-qwen-599152061719.europe-west1.run.app)
 curl -s -H "Authorization: Bearer $TOKEN" \
-  "https://vibeos-qwen-599152061719.europe-west1.run.app/v1/models" | python3 -m json.tool
+  "https://supercyan-qwen-599152061719.europe-west1.run.app/v1/models" | python3 -m json.tool
 ```
 
 Note the `id` field. Expected: `"Qwen/Qwen3.5-9B"` (or similar without `-Instruct`).
@@ -69,7 +69,7 @@ Note the `id` field. Expected: `"Qwen/Qwen3.5-9B"` (or similar without `-Instruc
 ### Step 3 — Patch the backend env var (the actual fix)
 
 ```bash
-gcloud run services update vibeos-backend \
+gcloud run services update supercyan-backend \
   --region europe-west1 \
   --update-env-vars QWEN_MODEL_NAME="<exact-id-from-step-2>"
 ```
@@ -77,7 +77,7 @@ gcloud run services update vibeos-backend \
 This deploys a new revision in ~60 seconds. Monitor:
 
 ```bash
-gcloud run revisions list --service vibeos-backend --region europe-west1
+gcloud run revisions list --service supercyan-backend --region europe-west1
 ```
 
 ### Step 4 — Verify end-to-end chat
@@ -86,7 +86,7 @@ You need a valid Supabase JWT for this. Get one by looking at `.env` or the Supa
 
 ```bash
 # Test chat endpoint
-curl -s -X POST "https://vibeos-backend-enffsru5pa-ew.a.run.app/api/v1/chat" \
+curl -s -X POST "https://supercyan-backend-enffsru5pa-ew.a.run.app/api/v1/chat" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <SUPABASE_JWT>" \
   -d '{"message":"explain to me what supabase is used for"}' | python3 -m json.tool
@@ -96,7 +96,7 @@ Expected HTTP 200, `{"response": "Supabase is an open-source..."}`.
 
 Also verify status still shows online:
 ```bash
-curl -s "https://vibeos-backend-enffsru5pa-ew.a.run.app/api/v1/vllm/status"
+curl -s "https://supercyan-backend-enffsru5pa-ew.a.run.app/api/v1/vllm/status"
 # → {"status":"online","model":"Qwen/Qwen3.5-9B","latency_ms":...}
 ```
 
@@ -111,7 +111,7 @@ Add a section "Model Name Contract" explaining that `QWEN_MODEL_NAME` on the bac
 git add vllm_deployment/README.md
 git commit -m "[VOS-053][White] fix: patch QWEN_MODEL_NAME env var to match vLLM served model ID"
 gh pr create --base staging --title "[VOS-053][White] Fix chat 404 — model name mismatch" \
-  --body "Patches QWEN_MODEL_NAME on vibeos-backend Cloud Run to match the exact model ID served by vLLM. Resolves chat 404 without container rebuild."
+  --body "Patches QWEN_MODEL_NAME on supercyan-backend Cloud Run to match the exact model ID served by vLLM. Resolves chat 404 without container rebuild."
 ```
 
 ---
@@ -130,9 +130,9 @@ gh pr create --base staging --title "[VOS-053][White] Fix chat 404 — model nam
 
 If Step 2 shows the model ID IS `Qwen/Qwen3.5-9B-Instruct` (matching what the backend sends), then the 404 has a different root cause. In that case:
 
-1. Check Cloud Run logs for `vibeos-qwen`:
+1. Check Cloud Run logs for `supercyan-qwen`:
    ```bash
-   gcloud run services logs read vibeos-qwen --region europe-west1 --limit 50
+   gcloud run services logs read supercyan-qwen --region europe-west1 --limit 50
    ```
 2. Look for: `"404"`, `"NotFoundError"`, `"does not exist"`, model loading errors
 3. If the vLLM container is in a partial startup state: trigger a new deployment via `bash vllm_deployment/deploy.sh`
@@ -161,5 +161,5 @@ Your `HANDOFF.md` must include:
 
 ---
 
-**Mr. Pink** — VibeOS Project Manager & Scout
+**Mr. Pink** — SuperCyan Project Manager & Scout
 *Audit doc: `docs/AUDIT_MOBILE_PINK_2026-03-17.md` — B-01*

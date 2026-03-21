@@ -4,7 +4,7 @@
 
 ## Community Skills Evaluated
 
-| Skill / Repo | Stars | Approach | VibeOS Fit | Verdict |
+| Skill / Repo | Stars | Approach | SuperCyan Fit | Verdict |
 |---|---|---|---|---|
 | **lackeyjb/playwright-skill** | 2k | Generic browser automation plugin for Claude Code marketplace | No monorepo awareness, no FastAPI/Supabase integration, writes scripts to `/tmp/` | **Pass** — good for ad-hoc browsing, not structured testing |
 | **LambdaTest/agent-skills** | — | 46 production-grade skills, cloud-testing focused | Enterprise overhead, LambdaTest platform dependency, overkill for our scale | **Pass** — great reference material, wrong platform |
@@ -26,7 +26,7 @@
 ## Why Custom Wins
 
 1. **Stack-aware**: Knows `localhost:3000` (Vite), `localhost:8000` (FastAPI), Supabase, OLED palette hex values
-2. **Agent-integrated**: Uses VibeOS skill format (YAML frontmatter, Forbidden Patterns section, audit-ready)
+2. **Agent-integrated**: Uses SuperCyan skill format (YAML frontmatter, Forbidden Patterns section, audit-ready)
 3. **Monorepo-structured**: Separate `e2e/web/`, `e2e/mobile-web/`, `api/` directories matching our architecture
 4. **Contract-driven**: API tests enforce the same Pydantic response shapes that Rule 05 mandates
 5. **Theme-native**: Built-in OLED palette constants and CSS assertion helpers

@@ -1,4 +1,4 @@
-# VibeOS — Personal Assistant Dashboard
+# SuperCyan — Personal Assistant Dashboard
 
 A private, highly customized dashboard serving as a comprehensive "second brain." Combines a private AI assistant, curated feeds, focused email, health tracking, and daily task management.
 

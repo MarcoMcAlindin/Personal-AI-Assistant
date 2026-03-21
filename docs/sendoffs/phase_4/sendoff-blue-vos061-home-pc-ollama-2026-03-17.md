@@ -27,8 +27,8 @@ A direct HTTP connection from the mobile app to the user's home PC running Ollam
 
 ```bash
 git fetch origin staging
-git worktree add /home/marco/vibeos-worktrees/blue-061 feature/blue/061-home-pc-ollama
-cd /home/marco/vibeos-worktrees/blue-061
+git worktree add /home/marco/supercyan-worktrees/blue-061 feature/blue/061-home-pc-ollama
+cd /home/marco/supercyan-worktrees/blue-061
 # After VOS-059 merges:
 git rebase origin/staging
 ```
@@ -48,7 +48,7 @@ export async function sendChatOllama(message, ollamaUrl) {
     body: JSON.stringify({
       model: 'qwen2.5:7b',
       messages: [
-        { role: 'system', content: 'You are VibeOS Assistant.' },
+        { role: 'system', content: 'You are SuperCyan Assistant.' },
         { role: 'user', content: message },
       ],
       stream: false,
@@ -176,9 +176,9 @@ ip route get 1 | awk '{print $7}'
 ipconfig | findstr "IPv4"
 ```
 
-## Step 5 — Configure VibeOS
+## Step 5 — Configure SuperCyan
 
-In the VibeOS app:
+In the SuperCyan app:
 1. Go to **Settings**
 2. Under **Home PC (Ollama)**, enter: `http://YOUR_PC_IP:11434`
 3. Tap **Test Connection**
@@ -191,7 +191,7 @@ To use your home PC from outside your home network:
 1. Install Tailscale on both PC and phone: https://tailscale.com/download
 2. Sign in on both devices with the same account
 3. Get your PC's Tailscale IP: `tailscale ip -4`
-4. In VibeOS Settings, use: `http://TAILSCALE_IP:11434`
+4. In SuperCyan Settings, use: `http://TAILSCALE_IP:11434`
 
 Tailscale is free for personal use (up to 3 devices).
 
@@ -320,5 +320,5 @@ The Ollama endpoint has no authentication. This is acceptable on a home LAN. Whe
 
 ---
 
-**Mr. Pink** — VibeOS Project Manager & Scout
+**Mr. Pink** — SuperCyan Project Manager & Scout
 *Model research: qwen2.5:7b chosen for RTX 4070 Ti — 4.7GB Q4 fits easily in 12GB VRAM, 40–80 tok/s, OpenAI-compatible API requires no custom code.*

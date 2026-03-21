@@ -1,26 +1,26 @@
-// VibeOS Mobile -- Health Hub Screen
 import React, { useState, useEffect } from 'react';
 import {
   View, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { Text, Card } from '../components/Themed';
 import { palette, spacing } from '../theme';
 import { fetchHealth } from '../services/api';
 
 const METRIC_ICONS = {
-  'Sleep': '\uD83C\uDF19',
-  'Avg HR': '\u2764\uFE0F',
-  'Deep Sleep': '\uD83E\uDDE0',
-  'REM': '\uD83C\uDF19',
+  'Sleep': 'moon',
+  'Avg HR': 'heart',
+  'Deep Sleep': 'brain',
+  'REM': 'eye',
 };
 
 function MetricCard({ label, value, unit, delta }) {
-  const icon = METRIC_ICONS[label] || '';
+  const iconName = METRIC_ICONS[label] || 'stats-chart';
   return (
     <Card style={{ flex: 1, margin: spacing.xs, padding: spacing.md }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
-        {icon ? <Text style={{ fontSize: 12, marginRight: spacing.xs }}>{icon}</Text> : null}
+        <Ionicons name={iconName} size={14} color={palette.accentPrimary} style={{ marginRight: spacing.xs }} />
         <Text style={{ color: palette.textMuted, fontSize: 11 }}>{label}</Text>
       </View>
       <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{value ?? '--'}</Text>
@@ -96,7 +96,7 @@ export default function HealthScreen() {
             backgroundColor: palette.bgCard, alignItems: 'center', justifyContent: 'center',
             marginRight: spacing.md, borderWidth: 1, borderColor: palette.accentPrimary,
           }}>
-            <Text style={{ fontSize: 18 }}>{'\u2764\uFE0F'}</Text>
+            <Ionicons name="heart" size={20} color={palette.accentPrimary} />
           </View>
           <View>
             <Text style={{ fontSize: 22, fontWeight: 'bold' }}>Health Hub</Text>
@@ -109,9 +109,12 @@ export default function HealthScreen() {
         {/* AI Morning Analysis */}
         {data?.ai_analysis && (
           <Card style={{ marginBottom: spacing.md, borderLeftWidth: 3, borderLeftColor: palette.accentPrimary }}>
-            <Text style={{ color: palette.accentPrimary, fontWeight: '600', fontSize: 13, marginBottom: spacing.sm }}>
-              {'\u26A1'} AI Morning Analysis -- 8:00 AM
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
+              <Ionicons name="flash" size={14} color={palette.accentPrimary} style={{ marginRight: 6 }} />
+              <Text style={{ color: palette.accentPrimary, fontWeight: '600', fontSize: 13 }}>
+                AI Morning Analysis -- 8:00 AM
+              </Text>
+            </View>
             <Text style={{ color: palette.textPrimary, fontSize: 13, lineHeight: 20 }}>
               {data.ai_analysis}
             </Text>
@@ -131,7 +134,10 @@ export default function HealthScreen() {
         {/* Water Intake */}
         <Card style={{ marginBottom: spacing.md }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm }}>
-            <Text style={{ fontWeight: '600', fontSize: 15 }}>{'\uD83D\uDCA7'} Water Intake</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="water" size={16} color={palette.accentPrimary} style={{ marginRight: 6 }} />
+              <Text style={{ fontWeight: '600', fontSize: 15 }}>Water Intake</Text>
+            </View>
             <Text style={{ color: palette.accentPrimary, fontSize: 13, fontWeight: '600' }}>
               {waterIntake.toFixed(1)}L / {waterGoal.toFixed(1)}L
             </Text>
@@ -155,7 +161,7 @@ export default function HealthScreen() {
                 backgroundColor: palette.bgSecondary, alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>-</Text>
+              <Ionicons name="remove" size={20} color={palette.textPrimary} />
             </TouchableOpacity>
             <Text style={{ color: palette.textMuted, fontSize: 13, marginHorizontal: spacing.md }}>
               +250ml per tap
@@ -167,7 +173,7 @@ export default function HealthScreen() {
                 backgroundColor: palette.accentPrimary, alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <Text style={{ color: '#000', fontSize: 18, fontWeight: 'bold' }}>+</Text>
+              <Ionicons name="add" size={20} color="#000" />
             </TouchableOpacity>
           </View>
         </Card>

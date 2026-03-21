@@ -1,4 +1,4 @@
-/* VibeOS OLED Theme Tokens - Figma Refined */
+/* SuperCyan OLED Theme Tokens - Figma Refined */
 :root {
   /* Colors */
   --bg-primary: #000000;      /* Precise OLED Black */
@@ -132,11 +132,56 @@ p {
   cursor: pointer;
   font-size: 1.2rem;
   margin-top: var(--spacing-xs);
-  transition: color 0.2s;
+  transition: all 0.2s;
 }
 
-.save-btn.saved {
-  color: #ffd700;
+.save-btn.pinned {
+  color: #FFD700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+}
+
+/* Markdown Support */
+.message-bubble h1, .message-bubble h2, .message-bubble h3 {
+  color: var(--accent-primary);
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+  font-size: 1.1em;
+}
+
+.message-bubble ul, .message-bubble ol {
+  padding-left: var(--spacing-lg);
+  margin: var(--spacing-sm) 0;
+}
+
+.message-bubble li {
+  margin-bottom: 4px;
+}
+
+.message-bubble code {
+  font-family: 'Fira Code', monospace;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.message-bubble .code-block {
+  margin: var(--spacing-md) 0 !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.message-bubble .code-block code {
+  background: none;
+  padding: 0;
+}
+
+.message-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--spacing-sm);
+  border-top: 1px solid var(--border-color);
+  padding-top: var(--spacing-xs);
 }
 
 .typing-indicator {

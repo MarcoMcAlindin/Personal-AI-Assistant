@@ -1,9 +1,9 @@
-// VibeOS Mobile -- Email Screen
 import React, { useState, useEffect } from 'react';
 import {
   View, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../components/Themed';
 import { palette, spacing } from '../theme';
 import { fetchInbox } from '../services/api';
@@ -50,16 +50,19 @@ export default function EmailScreen() {
         borderBottomWidth: 1, borderBottomColor: palette.borderColor,
       }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-          <Text style={{
-            fontSize: 18, marginRight: spacing.md, marginTop: 2,
-            color: isImportant ? '#FFD700' : palette.textMuted,
-          }}>
-            {isImportant ? '\u2605' : '\u2606'}
-          </Text>
+          <Ionicons 
+            name={isImportant ? "star" : "star-outline"} 
+            size={18} 
+            color={isImportant ? "#FFD700" : palette.textMuted} 
+            style={{ marginRight: spacing.md, marginTop: 2 }}
+          />
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
               <Text style={{ fontSize: 15, fontWeight: '600' }}>{item.from}</Text>
-              <Text style={{ color: palette.textMuted, fontSize: 11 }}>{'\u23F0'} {formatTime(item.timestamp)}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="time-outline" size={12} color={palette.textMuted} style={{ marginRight: 4 }} />
+                <Text style={{ color: palette.textMuted, fontSize: 11 }}>{formatTime(item.timestamp)}</Text>
+              </View>
             </View>
             <Text style={{ fontSize: 14, fontWeight: '500', marginBottom: 2 }} numberOfLines={1}>
               {item.subject}
@@ -91,13 +94,16 @@ export default function EmailScreen() {
               backgroundColor: palette.bgCard, alignItems: 'center', justifyContent: 'center',
               marginRight: spacing.md, borderWidth: 1, borderColor: palette.accentPrimary,
             }}>
-              <Text style={{ fontSize: 18 }}>{'\u2709\uFE0F'}</Text>
+              <Ionicons name="mail" size={20} color={palette.accentPrimary} />
             </View>
             <View>
               <Text style={{ fontSize: 24, fontWeight: 'bold' }}>Inbox</Text>
-              <Text style={{ color: palette.textMuted, fontSize: 12, marginTop: 2 }}>
-                {'\u2709\uFE0F'} Whitelist active {'\u2022'} {whitelistCount} approved senders
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                <Ionicons name="shield-checkmark-outline" size={12} color={palette.accentPrimary} style={{ marginRight: 4 }} />
+                <Text style={{ color: palette.textMuted, fontSize: 12 }}>
+                  Whitelist active {'\u2022'} {whitelistCount} approved senders
+                </Text>
+              </View>
             </View>
           </View>
           <TouchableOpacity

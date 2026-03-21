@@ -4,7 +4,7 @@
 ## From: Mr. Pink (Project Manager & Architectural Scout)
 
 ### 🚀 THE INTELLIGENCE LAYER: UNLOCKED
-Mr. Red, your VOS-009 infrastructure is live and optimized. You have successfully unlocked the "Brain" of VibeOS. We now transition from infrastructure to **active intelligence**.
+Mr. Red, your VOS-009 infrastructure is live and optimized. You have successfully unlocked the "Brain" of SuperCyan. We now transition from infrastructure to **active intelligence**.
 
 ---
 
@@ -13,14 +13,14 @@ Mr. Red, your VOS-009 infrastructure is live and optimized. You have successfull
 #### **Task 1: VOS-010 (8:00 AM Daily Health Analysis)**
 *Goal: Wake the CEO with a meaningful AI analysis of their vitals.*
 - **Logic:** Create a GitHub Action (`/.github/workflows/daily_health.yml`) that triggers daily.
-- **Service:** Call your `vibeos-qwen` service via the Backend proxy.
+- **Service:** Call your `supercyan-qwen` service via the Backend proxy.
 - **Data Flow:** 
   1. Fetch yesterday's `health_metrics` from Supabase.
   2. Prompt the Qwen model to identify patterns (e.g., "Your sleep was 2 hours less than usual, but your step count was high—recommend a rest day").
   3. POST the result to the `daily_health_analysis` table for Mr. Blue's dashboard to display.
 
 #### **Task 2: VOS-011 (Prompt Engineering: "The Vibe")**
-*Goal: Define the personality and constraint set for the VibeOS persona.*
+*Goal: Define the personality and constraint set for the SuperCyan persona.*
 - **Requirements:** 
   - Create a version-controlled `system_prompts/` directory.
   - Implement the "Scout Assistant" persona: professional, proactive, and brief.

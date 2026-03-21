@@ -1,6 +1,6 @@
-# VibeOS Git Architecture & Branching Strategy
+# SuperCyan Git Architecture & Branching Strategy
 
-This document dictates the strict Git flow for the VibeOS monorepo. All agents must adhere to this structure.
+This document dictates the strict Git flow for the SuperCyan monorepo. All agents must adhere to this structure.
 
 ## Core Principles
 - **Source of Truth:** All work begins and ends in GitHub.

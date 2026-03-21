@@ -11,7 +11,7 @@ Responsibilities involve allocating GPU resources, scaling-to-zero parameters on
 
 ## Model Name Contract
 
-**Critical:** The `QWEN_MODEL_NAME` environment variable on the `vibeos-backend` Cloud Run service **must exactly match** the model ID reported by the vLLM service's `/v1/models` endpoint.
+**Critical:** The `QWEN_MODEL_NAME` environment variable on the `supercyan-backend` Cloud Run service **must exactly match** the model ID reported by the vLLM service's `/v1/models` endpoint.
 
 vLLM validates the `model` field in every `/v1/chat/completions` request against its loaded model IDs. A mismatch returns HTTP 404 `{"message": "The model X does not exist."}` — breaking all AI chat functionality.
 
@@ -20,14 +20,14 @@ vLLM validates the `model` field in every `/v1/chat/completions` request against
 ```bash
 TOKEN=$(gcloud auth print-identity-token)
 curl -s -H "Authorization: Bearer $TOKEN" \
-  "https://vibeos-qwen-599152061719.europe-west1.run.app/v1/models" | python3 -m json.tool
+  "https://supercyan-qwen-599152061719.europe-west1.run.app/v1/models" | python3 -m json.tool
 # Look for: "id": "..."  <-- this is the canonical model name
 ```
 
 ### How to patch the backend if there is a mismatch
 
 ```bash
-gcloud run services update vibeos-backend \
+gcloud run services update supercyan-backend \
   --region europe-west1 \
   --update-env-vars QWEN_MODEL_NAME="<exact-id-from-above>"
 ```

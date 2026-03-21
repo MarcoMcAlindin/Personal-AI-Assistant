@@ -1,26 +1,26 @@
 ---
-description: Governs the deployment of Qwen3.5-9B-Instruct on Cloud Run with a single NVIDIA L4 GPU.
+description: Governs the deployment of Qwen3-Coder-30B-A3B-Instruct-GGUF on Cloud Run with a single NVIDIA L4 GPU.
 trigger: glob
 globs: vllm_deployment/**, .github/workflows/**
 ---
 
-# Rule 23: Cloud Run GPU Governance — Qwen3.5-9B-Instruct
+# Rule 23: Cloud Run GPU Governance — Qwen3-Coder-30B-A3B-Instruct-GGUF
 
 ## Context
 
-VibeOS deploys the **Qwen3.5-9B-Instruct** vision-language model via vLLM on Google Cloud Run with a single NVIDIA L4 GPU (24GB VRAM). The 9B model at 8-bit quantization requires ~7-9GB VRAM for weights, leaving ample headroom for KV cache and vision encoder overhead. This makes Cloud Run with scale-to-zero the optimal deployment target.
+VibeOS deploys the **Qwen3-Coder-30B-A3B-Instruct-GGUF** model via llama.cpp on Google Cloud Run with a single NVIDIA L4 GPU (24GB VRAM). The 30B model at Q4_K_S quantization requires ~19.5GB VRAM for weights, leaving ~4.5GB for KV cache. This makes Cloud Run with scale-to-zero the optimal deployment target.
 
-**Model change history:** Originally Qwen3.5-9B-Instruct (required 2x L4 on GCE). Downgraded 2026-03-15 due to GPU quota constraints. Rule 24 (GCE multi-GPU) is now deprecated.
+**Model change history:** Originally Qwen3.5-9B-Instruct (vision-language). Upgraded 2026-03-19 to Qwen3-Coder-30B for enhanced tool execution and reasoning.
 
 ## Model Specification
 
 | Property | Value |
 |----------|-------|
-| HuggingFace Model ID | `Qwen/Qwen3.5-9B-Instruct` |
-| Pre-quantized Alternative | `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8` (preferred for production) |
-| Architecture | `Qwen2_5_VLForConditionalGeneration` |
-| Modality | Text + Image + Video (vision-language) |
-| Native Context Length | 32,768 tokens |
+| HuggingFace Model ID | `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` |
+| Quantization | `Q4_K_S` (GGUF) |
+| Architecture | `Qwen2_5` (30B MoE) |
+| Modality | Text-only (Tool-Use / Logic optimized) |
+| Native Context Length | 32,768 tokens (VibeOS uses 8,192) |
 | License | Apache 2.0 |
 | Minimum vLLM Version | **v0.8.5+** |
 
@@ -85,11 +85,10 @@ vllm serve RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8 \
 
 | Component | Estimated VRAM |
 |-----------|---------------|
-| W8A8 model weights | ~7-9 GB |
-| KV cache (8192 context, 16 seqs) | ~4-6 GB |
-| Vision encoder overhead | ~2-3 GB (per high-res image) |
-| **Total** | **~13-18 GB** |
-| **L4 headroom** | **6-11 GB buffer** |
+| Q4_K_S model weights | ~19.5 GB |
+| KV cache (8192 context, 8 seqs) | ~4.2 GB |
+| **Total** | **~23.7 GB** |
+| **L4 headroom** | **~0.3 GB buffer** |
 
 The model fits comfortably. No multi-GPU gymnastics required.
 

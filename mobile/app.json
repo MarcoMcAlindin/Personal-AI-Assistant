@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "VibeOS",
-    "slug": "vibeos-mobile",
+    "name": "SuperCyan",
+    "slug": "supercyan-mobile",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,14 +14,14 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.vibeos.mobile"
+      "bundleIdentifier": "com.supercyan.mobile"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0a0a0f"
       },
-      "package": "com.vibeos.mobile",
+      "package": "com.supercyan.mobile",
       "permissions": [
         "android.permission.health.READ_HEART_RATE",
         "android.permission.health.READ_SLEEP",

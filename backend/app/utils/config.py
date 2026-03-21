@@ -1,4 +1,4 @@
-# VibeOS -- Configuration
+# SuperCyan -- Configuration
 # Pydantic Settings for environment variable management
 
 from pydantic_settings import BaseSettings

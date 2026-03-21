@@ -1,4 +1,4 @@
-# VibeOS Model Architecture — GGUF Edition (2026-03-18)
+# SuperCyan Model Architecture — GGUF Edition (2026-03-18)
 
 > **This is the authoritative current architecture document.**
 > The GPTQ-Int4 attempt (`docs/MODEL_ARCHITECTURE_2026-03-18.md`) is superseded and retained for history only.
@@ -63,7 +63,7 @@ GGUF Q4_K_M is more memory-efficient in practice:
 
 ```env
 # Cloud (llama.cpp on Cloud Run)
-QWEN_ENDPOINT_URL=https://vibeos-qwen-<hash>.europe-west1.run.app/v1
+QWEN_ENDPOINT_URL=https://supercyan-qwen-<hash>.europe-west1.run.app/v1
 QWEN_MODEL_NAME=Qwen/Qwen3.5-35B-A3B-GGUF
 
 # Home PC (Ollama/vLLM on RTX 4070 Ti, accessed via Tailscale)

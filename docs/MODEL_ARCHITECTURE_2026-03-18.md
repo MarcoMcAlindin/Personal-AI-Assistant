@@ -5,11 +5,11 @@
 
 ---
 
-# VibeOS Model Architecture — 2026-03-18 (GPTQ, superseded)
+# SuperCyan Model Architecture — 2026-03-18 (GPTQ, superseded)
 
 ## Three-Model Architecture
 
-VibeOS now uses three distinct inference backends depending on context. The `model_target` field on `/chat` requests controls routing.
+SuperCyan now uses three distinct inference backends depending on context. The `model_target` field on `/chat` requests controls routing.
 
 | Target | Model | Hardware | HF Model ID |
 |--------|-------|----------|-------------|
@@ -19,7 +19,7 @@ VibeOS now uses three distinct inference backends depending on context. The `mod
 
 ### Why GPTQ Int4 for Cloud?
 
-`Qwen3.5-35B-A3B-GPTQ-Int4` compresses the 35B MoE model to ~17.5GB weights (4 bits per param), fitting on a single L4 GPU (24GB VRAM) with ~4GB KV cache headroom. This keeps the existing Cloud Run architecture, region, and GPU tier intact — no quota changes required.
+`unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` (Q4_K_S) fits on a single L4 GPU (24GB VRAM) with ~4.5GB KV cache headroom. This keeps the existing Cloud Run architecture, region, and GPU tier intact — no quota changes required.
 
 ### Home PC Access from Mobile
 
@@ -31,7 +31,7 @@ When the home PC is on, mobile connects via Tailscale. The backend receives `mod
 
 Mr Pink: update every reference below to reflect the new model IDs. The three canonical strings are:
 
-- **Cloud**: `Qwen/Qwen3.5-35B-A3B-GPTQ-Int4`
+- **Cloud**: `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF`
 - **Home PC**: `DavidAU/Qwen3.5-9B-Claude-4.6-HighIQ-INSTRUCT`
 - **Mobile/Device**: `DavidAU/Qwen3.5-2B-GPT-5.1-HighIQ-INSTRUCT`
 
@@ -64,9 +64,9 @@ Mr Pink: update every reference below to reflect the new model IDs. The three ca
 
 | File | Line | Current Value | Required Change |
 |------|------|--------------|-----------------|
-| `mobile/src/screens/ChatScreen.jsx` | 75 | `Qwen2.5 Assistant` | Update to `Qwen3.5 Assistant` or `VibeOS Assistant` |
+| `mobile/src/screens/ChatScreen.jsx` | 75 | `Qwen3-Coder-30B` | Update header title |
 | `mobile/src/screens/ChatScreen.jsx` | 244, 275 | `Ask Qwen anything...` | Update placeholder text if desired |
-| `mobile/src/screens/SettingsScreen.jsx` | 57 | `Qwen3.5-9B-Instruct` | Update display label to `Qwen3.5-35B (Cloud)` |
+| `mobile/src/screens/SettingsScreen.jsx` | 57 | `Qwen3-Coder-30B` | Update display label |
 | `mobile/src/services/feedService.ts` | 13 | Mock feed item referencing old model name | Update or remove stale mock data |
 
 #### Documentation
@@ -104,7 +104,7 @@ Mr Pink: update every reference below to reflect the new model IDs. The three ca
 
 ```env
 # Cloud (vLLM on Cloud Run)
-QWEN_ENDPOINT_URL=https://vibeos-qwen-<hash>.europe-west1.run.app/v1
+QWEN_ENDPOINT_URL=https://supercyan-qwen-<hash>.europe-west1.run.app/v1
 QWEN_MODEL_NAME=Qwen/Qwen3.5-35B-A3B-GPTQ-Int4
 
 # Home PC (Ollama/vLLM on RTX 4070 Ti, accessed via Tailscale)

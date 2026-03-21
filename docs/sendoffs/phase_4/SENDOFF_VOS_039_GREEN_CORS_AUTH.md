@@ -25,7 +25,7 @@ There are **uncommitted fixes already in the staging working tree** for `auth.py
 The following files have uncommitted changes on `staging` that contain partial fixes. Before touching anything, commit them to preserve the work:
 
 ```bash
-cd /home/marco/vibeos-worktrees/green
+cd /home/marco/supercyan-worktrees/green
 git checkout -b feature/green/039-cors-auth-connectivity
 git cherry-pick or merge from staging as needed
 ```
@@ -47,7 +47,7 @@ origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", _default_origins).s
 
 **Required changes:**
 1. Add `http://localhost:3000` and `http://127.0.0.1:3000` to `_default_origins` (port 3000 is the Vite dev server per CLAUDE.md). Port 5173 is Vite's default but the project config uses 3000.
-2. Add the production Cloud Run URL `https://vibeos-backend-enffsru5pa-ew.a.run.app` to defaults.
+2. Add the production Cloud Run URL `https://supercyan-backend-enffsru5pa-ew.a.run.app` to defaults.
 3. Ensure `allow_headers` includes `Authorization` explicitly (currently `["*"]` which should work, but verify).
 4. Ensure `OPTIONS` is in `allow_methods` for preflight requests.
 
@@ -255,7 +255,7 @@ class RAGService:
 ## Worktree Setup
 
 ```bash
-cd /home/marco/vibeos-worktrees/green
+cd /home/marco/supercyan-worktrees/green
 git fetch origin staging
 git rebase origin/staging
 git checkout -b feature/green/039-cors-auth-connectivity

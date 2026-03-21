@@ -1,2 +1,2 @@
-// VibeOS Web — Common/Shared Components
+// SuperCyan Web — Common/Shared Components
 // Reusable UI elements: buttons, cards, modals, layout

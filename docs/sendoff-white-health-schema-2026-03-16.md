@@ -49,4 +49,4 @@ Ensure the `auth.uid() = user_id` RLS policy covers any new columns. No policy c
 
 ---
 
-**Mr. Pink** — VibeOS Project Auditor
+**Mr. Pink** — SuperCyan Project Auditor

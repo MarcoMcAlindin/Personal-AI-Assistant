@@ -224,13 +224,13 @@ cd "/home/marco/Personal AI Assistant"
 git worktree list
 # Blue's existing worktree is on feature/blue/055-056-057-mobile-ui-alignment (merged)
 # Create a new branch from staging:
-git worktree add /home/marco/vibeos-worktrees/blue-064 feature/blue/064-065-066-067-icon-polish
-cd /home/marco/vibeos-worktrees/blue-064
+git worktree add /home/marco/supercyan-worktrees/blue-064 feature/blue/064-065-066-067-icon-polish
+cd /home/marco/supercyan-worktrees/blue-064
 ```
 
 Alternatively, reset the existing blue worktree if cleaner:
 ```bash
-cd /home/marco/vibeos-worktrees/blue
+cd /home/marco/supercyan-worktrees/blue
 git fetch origin staging
 git checkout -b feature/blue/064-065-066-067-icon-polish origin/staging
 ```
@@ -247,7 +247,7 @@ Ensure `import { Ionicons } from '@expo/vector-icons';` is at the top of each fi
 ### Step 3 — Build and test
 
 ```bash
-cd /home/marco/vibeos-worktrees/blue-064/mobile
+cd /home/marco/supercyan-worktrees/blue-064/mobile
 npm install
 bash build-android.sh   # or: npm run android
 ```
@@ -302,5 +302,5 @@ Closes #82 #83 #84 #85"
 
 ---
 
-**Mr. Pink** — VibeOS Project Manager & Scout
+**Mr. Pink** — SuperCyan Project Manager & Scout
 *Board: VOS-064/065/066/067 → In Progress*

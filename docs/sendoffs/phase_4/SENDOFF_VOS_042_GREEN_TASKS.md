@@ -66,7 +66,7 @@ class TaskUpdateRequest(BaseModel):
 **File:** Create `backend/app/services/task_service.py`
 
 ```python
-# VibeOS — Task Service
+# SuperCyan — Task Service
 # CRUD operations for the daily planner
 
 import os
@@ -359,7 +359,7 @@ curl -H "Authorization: Bearer $TOKEN" "$BASE/tasks"
 ## Worktree Setup
 
 ```bash
-cd /home/marco/vibeos-worktrees/green
+cd /home/marco/supercyan-worktrees/green
 git fetch origin staging
 git rebase origin/staging  # Ensure VOS-039, VOS-040, VOS-041 are included
 git checkout -b feature/green/042-tasks-api
@@ -377,4 +377,4 @@ git checkout -b feature/green/042-tasks-api
 ---
 
 *Mr. Pink — Scout & Auditor*
-*"The planner is the daily heartbeat of VibeOS. Give it a real backend."*
+*"The planner is the daily heartbeat of SuperCyan. Give it a real backend."*

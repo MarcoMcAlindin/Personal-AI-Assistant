@@ -39,7 +39,7 @@ Do NOT start this until every upstream dependency is green.
 
 #### 1. Backend Health Check
 ```bash
-curl -s $BACKEND_URL/ | jq -e '.status == "VibeOS Gateway Online"'
+curl -s $BACKEND_URL/ | jq -e '.status == "SuperCyan Gateway Online"'
 ```
 - Must respond within 3 seconds (cold start tolerance).
 

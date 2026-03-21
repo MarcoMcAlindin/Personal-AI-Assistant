@@ -1,4 +1,4 @@
-# VibeOS Cloud Backend — Python Dependencies
+# SuperCyan Cloud Backend — Python Dependencies
 
 # Web Framework
 fastapi==0.115.*

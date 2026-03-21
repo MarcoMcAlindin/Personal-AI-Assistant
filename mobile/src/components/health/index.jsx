@@ -1,1 +1,1 @@
-// VibeOS Mobile — Health Hub Components
+// SuperCyan Mobile — Health Hub Components

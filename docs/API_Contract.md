@@ -1,4 +1,4 @@
-# VibeOS API Contract
+# SuperCyan API Contract
 
 This document serves as the binding agreement between Mr. Green (Cloud Backend implementor) and Mr. Blue (Frontend consumer). **No implementation agent begins coding against these endpoints until this contract is approved by the CEO.**
 

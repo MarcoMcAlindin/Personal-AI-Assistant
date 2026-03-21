@@ -16,7 +16,7 @@ Mr. Green, the proxy logic for Gmail is excellent. Implementation of the `MOCK_G
 ### 🚀 Next Mission: RAG Orchestration (VOS-008)
 
 ### 🧠 THE INTELLIGENCE LAYER: UNLOCKED
-With the Gmail and Feed services live, you are now entering the logic core of VibeOS. Your next task is to bridge the gap between "Stupid Data" and "Smart Context."
+With the Gmail and Feed services live, you are now entering the logic core of SuperCyan. Your next task is to bridge the gap between "Stupid Data" and "Smart Context."
 
 #### **Mission: VOS-008 (pgvector Context & Saved Messages)**
 *Goal: Give the AI a 10-day memory and the ability to recall "Pinned" wisdom.*

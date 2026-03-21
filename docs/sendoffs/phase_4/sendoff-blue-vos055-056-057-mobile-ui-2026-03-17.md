@@ -265,5 +265,5 @@ Include these screenshots in your handoff letter alongside the ground truth imag
 
 ---
 
-**Mr. Pink** — VibeOS Project Manager & Scout
+**Mr. Pink** — SuperCyan Project Manager & Scout
 *Audit doc: `docs/AUDIT_MOBILE_PINK_2026-03-17.md` — B-03, B-04, B-05, B-06, B-07, B-08, B-09*

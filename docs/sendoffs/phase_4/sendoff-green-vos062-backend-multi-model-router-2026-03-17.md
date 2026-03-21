@@ -44,8 +44,8 @@ The mobile app will offer a toggle per-model: "Use Cloud RAG" (routes via backen
 
 ```bash
 git worktree list
-git worktree add /home/marco/vibeos-worktrees/green-062 feature/green/062-backend-multi-model-router
-cd /home/marco/vibeos-worktrees/green-062
+git worktree add /home/marco/supercyan-worktrees/green-062 feature/green/062-backend-multi-model-router
+cd /home/marco/supercyan-worktrees/green-062
 ```
 
 ### Step 2 — Update `ChatRequest` schema
@@ -79,10 +79,10 @@ async def call_ollama(message: str, rag_context: str, ollama_url: str) -> str:
     """Proxy chat request to a user's Ollama instance with RAG context."""
     base = ollama_url.rstrip('/')
     system_prompt = (
-        "You are VibeOS Assistant. Use the following context to answer the user's question.\n\n"
+        "You are SuperCyan Assistant. Use the following context to answer the user's question.\n\n"
         f"Context:\n{rag_context}"
         if rag_context
-        else "You are VibeOS Assistant."
+        else "You are SuperCyan Assistant."
     )
     async with httpx.AsyncClient(timeout=120.0) as client:
         response = await client.post(
@@ -155,7 +155,7 @@ OLLAMA_MODEL_NAME=qwen2.5:7b
 ### Step 6 — Local test
 
 ```bash
-cd /home/marco/vibeos-worktrees/green-062/backend
+cd /home/marco/supercyan-worktrees/green-062/backend
 source .venv/bin/activate
 uvicorn app.main:app --reload --port 8000
 ```
@@ -185,7 +185,7 @@ curl -s -X POST http://localhost:8000/api/v1/chat \
 ### Step 7 — Deploy backend
 
 ```bash
-cd /home/marco/vibeos-worktrees/green-062/backend
+cd /home/marco/supercyan-worktrees/green-062/backend
 bash deploy.sh
 ```
 
@@ -240,5 +240,5 @@ This task is **independent** — it can be worked in parallel with VOS-059, VOS-
 
 ---
 
-**Mr. Pink** — VibeOS Project Manager & Scout
+**Mr. Pink** — SuperCyan Project Manager & Scout
 *Architecture note: Home PC path intentionally never involves GCP auth tokens — Ollama has no authentication. The backend acts purely as a RAG context injector and proxy for this use case.*

@@ -20,7 +20,7 @@ HTTP 404 Not Found
 {"object":"error","message":"The model `X` does not exist.","type":"NotFoundError","code":404}
 ```
 
-The served model ID is determined by the `--model` flag passed to the vLLM entrypoint (or `--served-model-name` if set separately). The HuggingFace Hub path normalises differently on different vLLM versions — e.g., `Qwen/Qwen3.5-9B-Instruct` vs `Qwen/Qwen3.5-9B`.
+The served model ID is determined by the `--model` flag passed to the vLLM entrypoint (or `--alias` if using llama.cpp). The HuggingFace Hub path normalizes differently — e.g., `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` vs `Qwen3-Coder-30B`.
 
 ## Diagnostic Steps
 
@@ -45,7 +45,7 @@ gcloud run services describe vibeos-backend \
 
 Look for `QWEN_MODEL_NAME`. If it's absent, the backend falls back to the hardcoded default in `endpoints.py:218`:
 ```python
-"model": os.environ.get("QWEN_MODEL_NAME", "Qwen/Qwen3.5-9B-Instruct"),
+"model": os.environ.get("QWEN_MODEL_NAME", "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"),
 ```
 
 If the live model ID (Step 1) differs from the env var value — that IS the 404 root cause.
@@ -85,9 +85,9 @@ This value should be cached and reused as the `model` field in chat completions 
 
 | Dockerfile `--model` arg | vLLM reports as |
 |--------------------------|-----------------|
-| `Qwen/Qwen3.5-9B-Instruct` | `Qwen/Qwen3.5-9B` (version-dependent) |
-| `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8` | `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8` |
-| Custom `--served-model-name foo` | `foo` |
+| `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` | `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` |
+| `Qwen3-Coder-30B-A3B-Instruct-Q4_K_S.gguf` | `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` (if aliased) |
+| Custom `--alias foo` | `foo` |
 
 Always trust the `/v1/models` response over any config assumption.
 

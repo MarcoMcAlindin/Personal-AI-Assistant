@@ -5,7 +5,7 @@
 - **Status:** **UNBLOCKED**
 
 ## Mission Specs
-Your objective is to finalize the 24/7 autonomous "Pulse" of VibeOS.
+Your objective is to finalize the 24/7 autonomous "Pulse" of SuperCyan.
 
 ### 1. 8:00 AM Health Audit (VOS-010/021)
 - **Workflow:** Create/Finalize the `.github/workflows/daily-health-audit.yml`.

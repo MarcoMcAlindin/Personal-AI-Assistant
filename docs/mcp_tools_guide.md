@@ -1,6 +1,6 @@
-# VibeOS - MCP Tools Guide
+# SuperCyan - MCP Tools Guide
 
-This guide covers how to use the available MCP (Model Context Protocol) tools during VibeOS development. These tools allow direct interaction with Supabase and Google Cloud Run from your development environment.
+This guide covers how to use the available MCP (Model Context Protocol) tools during SuperCyan development. These tools allow direct interaction with Supabase and Google Cloud Run from your development environment.
 
 ---
 

@@ -100,8 +100,8 @@ const tappable = (status === 'offline' || status === 'degraded') && !warming;
 
 ```bash
 git worktree list
-git worktree add /home/marco/vibeos-worktrees/green feature/green/054-vllm-status-probe
-cd /home/marco/vibeos-worktrees/green
+git worktree add /home/marco/supercyan-worktrees/green feature/green/054-vllm-status-probe
+cd /home/marco/supercyan-worktrees/green
 ```
 
 ### Step 2 — Implement the dual-probe in `endpoints.py`
@@ -118,7 +118,7 @@ Edit `ChatScreen.jsx` and `SettingsScreen.jsx` as described above. This is a mob
 ### Step 4 — Local backend test
 
 ```bash
-cd /home/marco/vibeos-worktrees/green/backend
+cd /home/marco/supercyan-worktrees/green/backend
 source .venv/bin/activate
 uvicorn app.main:app --reload --port 8000
 ```
@@ -139,13 +139,13 @@ curl -s http://localhost:8001/api/v1/vllm/status
 ### Step 5 — Deploy backend
 
 ```bash
-cd /home/marco/vibeos-worktrees/green/backend
+cd /home/marco/supercyan-worktrees/green/backend
 bash deploy.sh
 ```
 
 Monitor the deployment:
 ```bash
-gcloud run revisions list --service vibeos-backend --region europe-west1
+gcloud run revisions list --service supercyan-backend --region europe-west1
 ```
 
 ### Step 6 — End-to-end status validation
@@ -153,7 +153,7 @@ gcloud run revisions list --service vibeos-backend --region europe-west1
 After deploy, from Mr. Pink's curl tests:
 
 ```bash
-curl -s "https://vibeos-backend-enffsru5pa-ew.a.run.app/api/v1/vllm/status"
+curl -s "https://supercyan-backend-enffsru5pa-ew.a.run.app/api/v1/vllm/status"
 ```
 
 - If VOS-053 (White's fix) is merged: expect `"status":"online"`
@@ -198,5 +198,5 @@ VOS-053 (White) and VOS-054 (Green) are complementary. White's fix makes the mod
 
 ---
 
-**Mr. Pink** — VibeOS Project Manager & Scout
+**Mr. Pink** — SuperCyan Project Manager & Scout
 *Audit doc: `docs/AUDIT_MOBILE_PINK_2026-03-17.md` — B-02*

@@ -1,21 +1,24 @@
-# HANDOFF — VOS-080: Frontend Multimodal & Tool UI (Phase 3)
+# HANDOFF — VOS-080: Intelligent UI Sync (Phase 3)
 **Agent:** Mr. Blue  
 **Date:** 2026-03-19  
 
 ## Objective
-Upgrade the Vite Web and Expo Mobile Chat UIs to support multimodal attachments and dynamic Tool/Agent execution states.
+Update the Web and Mobile frontends to reflect the new AI-centric capabilities and "Agentic" nature of the assistant.
 
 ## Required Changes
-### 1. Attachment UI
-- Add a designated paperclip / image upload icon button next to the primary Chat text input.
-- Convert locally selected images into base64 thumbnails and display them beautifully above the chat input before sending.
-- Update the payload sent through `apiService` to optionally map the `attachments` array.
 
-### 2. Multi-Turn / Tool Execution UI States
-- If the backend takes longer than normal while resolving a backend action (i.e. the system is executing step 2 of the Tool Loop), display a dynamic loader chip (e.g., *"Agent is executing an action..."* or *"Creating Task..."*).
-- Maintain robust OLED-black compliance strictly matching Figma styling. 
-- Ensure markdown rendering is completely robust for any structured tables or lists the new Instruct model naturally outputs.
+### 1. Chat UI Polishing (`web/src/components/chat/`)
+- Add a "Thinking..." state that visually indicates when the AI is processing tool calls (multi-step reasoning).
+- Ensure the `Qwen3-Coder-30B` label is consistently displayed in the Sidebar and Settings.
+
+### 2. Mobile Consistency (`mobile/src/screens/ChatScreen.jsx`)
+- Match the Web's OLED premium aesthetic for the chat bubbles.
+- Update the model selector to favor "Cloud (30B)" as the default high-IQ option.
 
 ## Verification
-- Visually upload an image in the Web App interface, type a prompt like "Describe this diagram", and verify the Base64 cleanly reaches the FastAPI gateway.
-- Ensure the UI seamlessly conveys that the agent is actually performing work in the background when executing actions.
+- Cross-platform check: Ensure the chat looks and feels identical (premium OLED dark mode) on both Web and Mobile.
+- Verify that long AI responses (2048+ tokens) are rendered correctly without UI lag.
+
+---
+**Status:** [READY]
+**Dependencies:** VOS-079 (Backend must be returning tool execution data).

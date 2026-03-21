@@ -1,4 +1,4 @@
-// VibeOS Mobile -- Root App Component
+// SuperCyan Mobile -- Root App Component
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View, Text as RNText } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -39,7 +39,7 @@ export default function App() {
       }
       // Auto sign-in with CEO test account
       await supabase.auth.signInWithPassword({
-        email: 'ceo@vibeos.app',
+        email: 'ceo@supercyan.app',
         password: 'testpass123',
       });
       setReady(true);
@@ -62,7 +62,7 @@ export default function App() {
           <TabNavigator />
           <View style={{ alignItems: 'center', paddingBottom: 6, backgroundColor: '#000000' }}>
             <RNText style={{ color: palette.textMuted, fontSize: 10 }}>
-              VibeOS Mobile — React Native (Expo)
+              SuperCyan Mobile — React Native (Expo)
             </RNText>
           </View>
         </View>

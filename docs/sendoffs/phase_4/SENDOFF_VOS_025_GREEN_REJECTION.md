@@ -42,7 +42,7 @@ untracked:  docs/handoffs/
 
 **What to do:**
 ```bash
-cd /home/marco/vibeos-worktrees/green
+cd /home/marco/supercyan-worktrees/green
 git add backend/app/utils/auth.py backend/tests/ backend/app/api/v1/endpoints.py \
        backend/app/utils/config.py backend/requirements.txt backend/.env.example \
        .agent/handoffs/phase_4_remediation/ docs/handoffs/

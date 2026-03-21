@@ -1,7 +1,7 @@
 # SENDOFF: VOS-045 — Upgrade AI Model to Qwen3.5-9B-Instruct
 
 ## 1. Objective
-Following the CEO's directive, we are standardizing the VibeOS intelligence layer. Mr. Red is tasked with upgrading the private inference engine from the deprecated 7B/27B architectures to the **Qwen3.5-9B-Instruct** model. This includes updating the vLLM deployment configuration, the Cloud Run service, and the automated health analysis workflow.
+Following the CEO's directive, we are standardizing the SuperCyan intelligence layer. Mr. Red is tasked with upgrading the private inference engine from the deprecated 7B/27B architectures to the **Qwen3.5-9B-Instruct** model. This includes updating the vLLM deployment configuration, the Cloud Run service, and the automated health analysis workflow.
 
 ## 2. Technical Domain: Mr. Red (Cloud Intelligence & Automation)
 **Codebase Territory:** `/vllm_deployment`, `.github/workflows`, and associated deployment scripts.
@@ -27,7 +27,7 @@ Following the CEO's directive, we are standardizing the VibeOS intelligence laye
 - **Update `vllm_deployment/scripts/analyze_health.py`:** Update the `model` parameter in the API request payload.
 
 ## 5. Verification Checklist
-- [ ] `vibeos-qwen` Cloud Run service is redeployed successfully.
+- [ ] `supercyan-qwen` Cloud Run service is redeployed successfully.
 - [ ] Smoke Test: `curl` the `/v1/chat/completions` endpoint and verify the `model` field in the response matches `Qwen/Qwen3.5-9B-Instruct`.
 - [ ] Health Analysis: Manually trigger the `analyze_health.py` script and confirm it can prompt the 9B model and receive a valid analysis.
 - [ ] No `[MOCK CONTEXT]` fallback is triggered in the backend logs.

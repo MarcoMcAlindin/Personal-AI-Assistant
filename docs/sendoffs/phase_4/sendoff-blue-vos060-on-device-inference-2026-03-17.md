@@ -42,8 +42,8 @@ The VOS-052 bare workflow migration (`expo prebuild`) already ran — llama.rn i
 
 ```bash
 git fetch origin staging
-git worktree add /home/marco/vibeos-worktrees/blue-060 feature/blue/060-on-device-inference
-cd /home/marco/vibeos-worktrees/blue-060
+git worktree add /home/marco/supercyan-worktrees/blue-060 feature/blue/060-on-device-inference
+cd /home/marco/supercyan-worktrees/blue-060
 # Rebase on staging after VOS-059 merges:
 git rebase origin/staging
 ```
@@ -90,7 +90,7 @@ export async function sendChatDevice(message, history = []) {
   if (!_llamaContext) throw new Error('On-device model not loaded');
   const result = await _llamaContext.completion({
     messages: [
-      { role: 'system', content: 'You are VibeOS Assistant.' },
+      { role: 'system', content: 'You are SuperCyan Assistant.' },
       ...history,
       { role: 'user', content: message },
     ],
@@ -226,7 +226,7 @@ const modelStatuses = {
 The llama.rn native module requires a full native rebuild:
 
 ```bash
-cd /home/marco/vibeos-worktrees/blue-060/mobile
+cd /home/marco/supercyan-worktrees/blue-060/mobile
 npm run android
 ```
 
@@ -319,5 +319,5 @@ If performance is worse than expected, verify `n_gpu_layers: 99` is set — with
 
 ---
 
-**Mr. Pink** — VibeOS Project Manager & Scout
+**Mr. Pink** — SuperCyan Project Manager & Scout
 *Model research: Phi-3.5-mini Q4_K_M chosen over Qwen2.5-3B for superior benchmark performance at same size. llama.rn chosen over alternatives for compatibility with existing bare workflow from VOS-052.*

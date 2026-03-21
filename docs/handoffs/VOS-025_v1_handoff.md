@@ -33,7 +33,7 @@ Implemented Supabase JWT authentication middleware for the FastAPI gateway. Ever
 
 ### Automated Tests
 ```bash
-cd /home/marco/vibeos-worktrees/green/backend
+cd /home/marco/supercyan-worktrees/green/backend
 source .venv/bin/activate
 pytest tests/test_auth.py -v
 ```
@@ -53,7 +53,7 @@ grep -r "placeholder_user_id" backend/
 ### Manual curl Tests (with local server running)
 ```bash
 # Start the server
-cd /home/marco/vibeos-worktrees/green/backend
+cd /home/marco/supercyan-worktrees/green/backend
 source .venv/bin/activate
 uvicorn app.main:app --reload --port 8000
 

@@ -1,7 +1,7 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: vibeos-qwen
+  name: supercyan-qwen
   namespace: "__PROJECT_NUMBER__"
   annotations:
     run.googleapis.com/launch-stage: GA
@@ -19,11 +19,11 @@ spec:
         run.googleapis.com/startup-cpu-boost: "true"
         # Gen2 required for Direct VPC (provides outbound internet via Cloud NAT)
         run.googleapis.com/execution-environment: gen2
-        # Direct VPC with all-traffic egress -- internet access goes through Cloud NAT (vibeos-nat)
+        # Direct VPC with all-traffic egress -- internet access goes through Cloud NAT (supercyan-nat)
         run.googleapis.com/network-interfaces: '[{"network":"default","subnetwork":"default"}]'
         run.googleapis.com/vpc-access-egress: private-ranges-only
     spec:
-      containerConcurrency: 16
+      containerConcurrency: 8
       timeoutSeconds: 300
       containers:
         - image: __IMAGE_REF__

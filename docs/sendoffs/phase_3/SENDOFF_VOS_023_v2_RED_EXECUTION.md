@@ -55,7 +55,7 @@ grep -r "Qwen3.5\|g2-standard-24\|tensor-parallel" vllm_deployment/
 ls vllm_deployment/scripts/startup.sh
 # Must not exist
 
-gcloud run services describe vibeos-qwen --region europe-west1
+gcloud run services describe supercyan-qwen --region europe-west1
 # Must show READY with nvidia-l4
 ```
 

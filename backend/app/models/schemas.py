@@ -1,2 +1,2 @@
-# VibeOS — Pydantic Schemas
+# SuperCyan — Pydantic Schemas
 # Request/response models for all API endpoints

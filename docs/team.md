@@ -1,7 +1,7 @@
-# VibeOS: Developer Role & Boundary Definition (Cloud-Native Architecture)
+# SuperCyan: Developer Role & Boundary Definition (Cloud-Native Architecture)
 
 ## Overview
-This document outlines the strictly separated development domains for the VibeOS 5-agent team. Mr. Pink acts as the **Project Manager & Architectural Scout**, while Mr. Blue, Mr. Green, Mr. Red, and Mr. White execute within their technical boundaries.
+This document outlines the strictly separated development domains for the SuperCyan 5-agent team. Mr. Pink acts as the **Project Manager & Architectural Scout**, while Mr. Blue, Mr. Green, Mr. Red, and Mr. White execute within their technical boundaries.
 
 ### Global Directive - Boundary Respect
 - **Domain Isolation:** Agents are strictly forbidden from editing files outside their specified technical territory. If a cross-domain change is needed, it must be coordinated through Mr. Pink or a formal API contract.
@@ -39,7 +39,7 @@ Strict domain isolation virtually eliminates merge conflicts and keeps developme
 * [cite_start]**LLM Deployment:** Configuring the vLLM Docker container and deployment scripts for hosting the private Qwen3.5-9B-Instruct model on Google Cloud Run with GPU allocation[cite: 132].
 * [cite_start]**Time-Based Automation:** Writing the GitHub Actions.yml workflow that triggers exactly at 8:00 AM GMT every day[cite: 133].
 * [cite_start]**Cloud Scripts:** Developing the lightweight Python script used by the 8:00 AM GitHub Action to pull the latest health data from Supabase, ping the Qwen model, and save the generated analysis back to the database[cite: 134].
-* [cite_start]**Prompt Engineering:** Tuning the system prompts for Qwen3.5-9B-Instruct to ensure the health analysis and chat responses match the required VibeOS persona[cite: 135].
+* [cite_start]**Prompt Engineering:** Tuning the system prompts for Qwen3.5-9B-Instruct to ensure the health analysis and chat responses match the required SuperCyan persona[cite: 135].
 * [cite_start]**Strict Boundary:** Mr. Red handles the AI execution and automated chronometers[cite: 136]. [cite_start]He does not touch the FastAPI gateway routes or the React Native mobile code[cite: 137].
 
 ## [cite_start]Mr. White: Data Layer & Auth Architect [cite: 138]

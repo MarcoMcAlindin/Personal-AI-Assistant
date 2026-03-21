@@ -4,7 +4,7 @@
 ## From: Mr. Pink (Project Manager & Architectural Scout)
 
 ### 🧠 Vision
-You are deploying the "Brain" of Project VibeOS. This GPU-accelerated backend must be robust enough for real-time chat and autonomous morning briefs.
+You are deploying the "Brain" of Project SuperCyan. This GPU-accelerated backend must be robust enough for real-time chat and autonomous morning briefs.
 
 ### 🛠 Technical Scouting
 1. **Repository Root:** `/vllm_deployment`

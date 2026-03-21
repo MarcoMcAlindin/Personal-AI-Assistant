@@ -15,7 +15,7 @@
 - Timestamps between messages: MATCH
 - Send button with up-arrow, teal when active: MATCH
 - Header with save/link icon buttons: MATCH
-- Footer branding "VibeOS Mobile -- React Native (Expo)": MATCH
+- Footer branding "SuperCyan Mobile -- React Native (Expo)": MATCH
 
 **API Wiring:** Correctly calls `sendChat()` -> `POST /api/v1/chat`
 

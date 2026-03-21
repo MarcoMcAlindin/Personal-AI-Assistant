@@ -9,7 +9,7 @@ To potentially eliminate the ~$220/month fixed fee for the Cloud NAT gateway and
 ## 3. Implementation Steps
 
 1. **Audit NAT Requirement:** 
-   Verify if any external services currently used by VibeOS require a static whitelisted IP. If not, the NAT gateway is redundant.
+   Verify if any external services currently used by SuperCyan require a static whitelisted IP. If not, the NAT gateway is redundant.
 
 2. **Enable Private Google Access (PGA):**
    ```bash
@@ -20,11 +20,11 @@ To potentially eliminate the ~$220/month fixed fee for the Cloud NAT gateway and
 
 3. **Delete NAT Gateway & Router (If redundant):**
    ```bash
-   gcloud compute routers nats delete vibeos-nat --router=vibeos-router --region=europe-west1
-   gcloud compute routers delete vibeos-router --region=europe-west1
+   gcloud compute routers nats delete supercyan-nat --router=supercyan-router --region=europe-west1
+   gcloud compute routers delete supercyan-router --region=europe-west1
    ```
 
 ## 4. Verification Checklist
 - [ ] PGA is confirmed active on the subnet.
 - [ ] vLLM and Backend services can still reach Secret Manager and Artifact Registry.
-- [ ] Monthly fixed charges for `vibeos-nat` cease in the GCP Billing Console.
+- [ ] Monthly fixed charges for `supercyan-nat` cease in the GCP Billing Console.

@@ -1,4 +1,4 @@
-# VibeOS -- Health Service
+# SuperCyan -- Health Service
 # Samsung Watch data processing and health metrics API
 
 import os

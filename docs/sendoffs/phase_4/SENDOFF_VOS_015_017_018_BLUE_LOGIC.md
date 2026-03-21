@@ -5,7 +5,7 @@
 - **Status:** **UNBLOCKED**
 
 ## Mission Specs
-Your objective is to move the remaining VibeOS components from "Scaffold" to "Functional".
+Your objective is to move the remaining SuperCyan components from "Scaffold" to "Functional".
 
 ### 1. Daily Planner (VOS-015)
 - **Web:** Build the full `Planner` component in `web/src/components/planner/`. 

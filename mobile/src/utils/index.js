@@ -1,1 +1,1 @@
-// VibeOS Mobile — Utility Functions
+// SuperCyan Mobile — Utility Functions

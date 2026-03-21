@@ -14,7 +14,7 @@
 
 import { test, expect, request } from '@playwright/test';
 
-const BACKEND = 'https://vibeos-backend-enffsru5pa-ew.a.run.app';
+const BACKEND = 'https://supercyan-backend-enffsru5pa-ew.a.run.app';
 const DEV_USER_ID = 'd4f8a1b2-3c4d-5e6f-7890-abcdef123456';
 
 // ── API CONTRACT TESTS ────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // Point at Blue's worktree where the fixes live
-const MOBILE_SRC = path.join('/home/marco/vibeos-worktrees/blue/mobile/src');
+const MOBILE_SRC = path.join('/home/marco/supercyan-worktrees/blue/mobile/src');
 const BRANCH_HEALTH = path.join(MOBILE_SRC, 'screens/HealthScreen.jsx');
 const BRANCH_CHAT = path.join(MOBILE_SRC, 'screens/ChatScreen.jsx');
 const BRANCH_PLANNER = path.join(MOBILE_SRC, 'screens/PlannerScreen.jsx');

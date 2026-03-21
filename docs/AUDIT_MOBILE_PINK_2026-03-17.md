@@ -1,9 +1,9 @@
-# VibeOS Mobile App Audit — 2026-03-17
+# SuperCyan Mobile App Audit — 2026-03-17
 **Auditor:** Mr. Pink (Scout / QA Lead)
 **Device:** Samsung Galaxy S series · `RFCY504R60T` · ADB live + scrcpy
-**Build:** `com.vibeos.mobile` (native APK) — `staging` branch
-**Backend:** `https://vibeos-backend-enffsru5pa-ew.a.run.app`
-**vLLM:** `https://vibeos-qwen-599152061719.europe-west1.run.app`
+**Build:** `com.supercyan.mobile` (native APK) — `staging` branch
+**Backend:** `https://supercyan-backend-enffsru5pa-ew.a.run.app`
+**vLLM:** `https://supercyan-qwen-599152061719.europe-west1.run.app`
 **Audit Method:** Source code analysis + live ADB screencap + live curl probes
 
 ---
@@ -41,13 +41,13 @@ Additionally, the Health screen contains hardcoded fake metric values that will 
 ### Proof (live curl)
 
 ```
-POST https://vibeos-backend-enffsru5pa-ew.a.run.app/api/v1/chat
+POST https://supercyan-backend-enffsru5pa-ew.a.run.app/api/v1/chat
 Body: { "message": "hello test" }
 
 Response HTTP 404:
 {
   "detail": "AI Service Error: Client error '404 Not Found' for url
-  'https://vibeos-qwen-599152061719.europe-west1.run.app/v1/chat/completions'"
+  'https://supercyan-qwen-599152061719.europe-west1.run.app/v1/chat/completions'"
 }
 ```
 
@@ -59,8 +59,8 @@ Response HTTP 404:
 
 | Endpoint | URL | Result |
 |----------|-----|--------|
-| vLLM `/v1/models` | `vibeos-qwen-599152061719.../v1/models` | ✅ 200 — returns `Qwen/Qwen3.5-9B` |
-| vLLM `/v1/chat/completions` | `vibeos-qwen-599152061719.../v1/chat/completions` | ❌ 404 |
+| vLLM `/v1/models` | `supercyan-qwen-599152061719.../v1/models` | ✅ 200 — returns `Qwen/Qwen3.5-9B` |
+| vLLM `/v1/chat/completions` | `supercyan-qwen-599152061719.../v1/chat/completions` | ❌ 404 |
 
 ### Root cause
 
@@ -70,7 +70,7 @@ The vLLM Cloud Run service is **alive but not serving inference**. It responds t
 - The `QWEN_ENDPOINT_URL` env var in Cloud Run backend points to an instance with broken routing
 
 ### Owner
-**Mr. White** (infrastructure/vLLM deployment) — re-examine `vllm_deployment/` config and Cloud Run service `vibeos-qwen-599152061719`.
+**Mr. White** (infrastructure/vLLM deployment) — re-examine `vllm_deployment/` config and Cloud Run service `supercyan-qwen-599152061719`.
 
 ---
 
@@ -262,7 +262,7 @@ No `onPress` prop. Button is visible and tappable but does nothing. Needs compos
 
 | Service | URL | Status |
 |---------|-----|--------|
-| Gateway root | `.../` | ✅ 200 `VibeOS Gateway Online` |
+| Gateway root | `.../` | ✅ 200 `SuperCyan Gateway Online` |
 | vLLM status | `.../api/v1/vllm/status` | ✅ 200 `{"status":"online","model":"Qwen/Qwen3.5-9B","latency_ms":32}` |
 | Chat endpoint | `POST .../api/v1/chat` | ❌ 404 — vLLM `/v1/chat/completions` returns 404 |
 
@@ -296,4 +296,4 @@ No `onPress` prop. Button is visible and tappable but does nothing. Needs compos
 
 ---
 
-*Audit by Mr. Pink — VibeOS Scout Protocol — 2026-03-17*
+*Audit by Mr. Pink — SuperCyan Scout Protocol — 2026-03-17*

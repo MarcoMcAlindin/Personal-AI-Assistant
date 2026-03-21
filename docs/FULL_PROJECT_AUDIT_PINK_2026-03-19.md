@@ -1,9 +1,9 @@
-# VibeOS Full Project Audit (Mr. Pink)
+# SuperCyan Full Project Audit (Mr. Pink)
 **Date:** 2026-03-19
 **Auditor:** Mr. Pink (Scout & Verification)
 
 ## 1. Executive Summary
-A comprehensive audit of the VibeOS monorepo was executed. Environmental inconsistencies, Git protocol violations, and specific Web/Mobile UI connectivity issues were successfully diagnosed and remediated. The project is now stable and synchronized.
+A comprehensive audit of the SuperCyan monorepo was executed. Environmental inconsistencies, Git protocol violations, and specific Web/Mobile UI connectivity issues were successfully diagnosed and remediated. The project is now stable and synchronized.
 
 ## 2. Git & Naming Consistency Fixes
 - **Branch Contamination Resolved:** Identified agent modifications incorrectly made directly in the `staging` branch within the main repository (`/home/marco/Personal AI Assistant`), violating Rule 30 (Worktree Isolation). The uncommitted changes were safely stashed (`Contamination backup`) and the `staging` branch was fast-forwarded to match `origin/staging`.
@@ -15,7 +15,7 @@ A comprehensive audit of the VibeOS monorepo was executed. Environmental inconsi
 - **Root Cause:** Analysis of `web/src/services/aiService.ts` and `vllmService.ts` revealed hardcoded values pointing to `http://localhost:8000/api/v1`. Additionally, `web/.env` contained a dummy value for the Cloud Gateway.
 - **Resolution:**
   - Standardized all Web API clients to load `import.meta.env.VITE_CLOUD_GATEWAY_URL`.
-  - Updated `web/.env` with the true production endpoint (`https://vibeos-backend-enffsru5pa-ew.a.run.app`).
+  - Updated `web/.env` with the true production endpoint (`https://supercyan-backend-enffsru5pa-ew.a.run.app`).
 
 ## 4. Mobile Auto-Refresh Validation
 - **Problem:** Pull-to-refresh on the Mobile Feeds Screen did not fetch the latest tech and concert articles.

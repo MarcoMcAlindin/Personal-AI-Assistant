@@ -133,7 +133,7 @@ global _cached_model_id
 _cached_model_id = model_id
 
 # In chat_with_ai():
-model_name = _cached_model_id or os.environ.get("QWEN_MODEL_NAME", "Qwen/Qwen3.5-9B-Instruct")
+model_name = _cached_model_id or os.environ.get("QWEN_MODEL_NAME", "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF")
 ```
 
 This makes the model name self-healing — it auto-corrects on the next status poll.

@@ -1,9 +1,10 @@
-// VibeOS Mobile -- Cloud Gateway API Client
+// SuperCyan Mobile -- Cloud Gateway API Client
 
 import { CLOUD_GATEWAY_URL } from '@env';
 import { supabase } from './supabase';
 
 export const API_BASE_URL = `${CLOUD_GATEWAY_URL}/api/v1`;
+console.log('[API] Base URL:', API_BASE_URL);
 
 async function getAuthHeaders() {
   const { data } = await supabase.auth.getSession();

@@ -1,4 +1,4 @@
-// VibeOS Mobile -- Bottom Tab Navigator
+// SuperCyan Mobile -- Bottom Tab Navigator
 import React from 'react';
 import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';

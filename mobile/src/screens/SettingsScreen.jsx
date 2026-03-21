@@ -1,8 +1,8 @@
-// VibeOS Mobile -- Settings Screen
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Card, commonStyles } from '../components/Themed';
+import { Ionicons } from '@expo/vector-icons';
+import { Text, Card } from '../components/Themed';
 import { palette, spacing } from '../theme';
 import { API_BASE_URL, fetchVllmStatus } from '../services/api';
 
@@ -47,12 +47,15 @@ export default function SettingsScreen() {
   const vllmColor = VLLM_STATUS_COLORS[vllmStatus] || '#ef4444';
 
   return (
-    <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <ScrollView>
-        <Text style={commonStyles.title}>Settings</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.bgPrimary }} edges={['top']}>
+      <ScrollView contentContainerStyle={{ padding: spacing.md }}>
+        <Text style={{ fontSize: 28, fontWeight: 'bold', marginBottom: spacing.lg }}>Settings</Text>
 
         <Card style={{ marginBottom: spacing.md }}>
-          <Text style={{ color: palette.accentPrimary, fontWeight: '600', marginBottom: spacing.sm }}>Connections</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
+            <Ionicons name="wifi" size={16} color={palette.accentPrimary} style={{ marginRight: 8 }} />
+            <Text style={{ color: palette.accentPrimary, fontWeight: '600' }}>Connections</Text>
+          </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs }}>
             <Text style={{ color: palette.textMuted, fontSize: 13 }}>Gateway</Text>
             <Text style={{ color: '#4ade80', fontSize: 13 }}>Active</Text>
@@ -74,12 +77,18 @@ export default function SettingsScreen() {
         </Card>
 
         <Card style={{ marginBottom: spacing.md }}>
-          <Text style={{ color: palette.accentPrimary, fontWeight: '600', marginBottom: spacing.sm }}>Gateway URL</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
+            <Ionicons name="link" size={16} color={palette.accentPrimary} style={{ marginRight: 8 }} />
+            <Text style={{ color: palette.accentPrimary, fontWeight: '600' }}>Gateway URL</Text>
+          </View>
           <Text style={{ color: palette.textMuted, fontSize: 13 }}>{API_BASE_URL}</Text>
         </Card>
 
         <Card style={{ marginBottom: spacing.md }}>
-          <Text style={{ color: palette.accentPrimary, fontWeight: '600', marginBottom: spacing.sm }}>App Info</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
+            <Ionicons name="information-circle" size={16} color={palette.accentPrimary} style={{ marginRight: 8 }} />
+            <Text style={{ color: palette.accentPrimary, fontWeight: '600' }}>App Info</Text>
+          </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs }}>
             <Text style={{ color: palette.textMuted, fontSize: 13 }}>Version</Text>
             <Text style={{ fontSize: 13 }}>0.1.0</Text>

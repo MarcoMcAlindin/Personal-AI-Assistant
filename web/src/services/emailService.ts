@@ -15,7 +15,7 @@ export const emailService = {
       return [
         { 
           id: '1', 
-          from: "system@vibeos.com", 
+          from: "system@supercyan.com", 
           subject: "Welcome to your Intelligence Dashboard", 
           body: "Your personal health sync is now active...", 
           timestamp: new Date().toISOString(),

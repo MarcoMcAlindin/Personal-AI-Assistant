@@ -13,7 +13,7 @@
 
 CEO-directed model downgrade complete. Replaced the deprecated Qwen3.5-9B-Instruct GCE Spot deployment (Rule 24, 2x L4) with **Qwen3.5-9B-Instruct W8A8** on Cloud Run with a single NVIDIA L4 GPU (Rule 23). The 9B model fits comfortably within 24GB VRAM (~13-18GB total footprint at 8192 context, 16 sequences).
 
-The Cloud Run service `vibeos-qwen` is live, healthy, and serving inference. AI chat and health analysis workflows are **fully operational** as of 2026-03-15.
+The Cloud Run service `supercyan-qwen` is live, healthy, and serving inference. AI chat and health analysis workflows are **fully operational** as of 2026-03-15.
 
 ## 2. Changed Files
 
@@ -34,7 +34,7 @@ The Cloud Run service `vibeos-qwen` is live, healthy, and serving inference. AI 
 ### 3.1 Live Smoke Test (run from any machine with gcloud auth)
 
 ```bash
-SERVICE_URL="https://vibeos-qwen-599152061719.europe-west1.run.app"
+SERVICE_URL="https://supercyan-qwen-599152061719.europe-west1.run.app"
 TOKEN=$(gcloud auth print-identity-token)
 
 curl -s -X POST "$SERVICE_URL/v1/chat/completions" \
@@ -66,7 +66,7 @@ grep -r "Qwen3.5\|g2-standard-24\|tensor-parallel" vllm_deployment/
 ### 3.3 Cloud Run Service Health
 
 ```bash
-gcloud run services describe vibeos-qwen --region europe-west1 \
+gcloud run services describe supercyan-qwen --region europe-west1 \
   --format="value(status.conditions[0].status,status.url)"
 ```
 
@@ -85,7 +85,7 @@ gh secret list --repo MarcoMcAlindin/Personal-AI-Assistant | grep QWEN
 | Variable | Old Value | New Value |
 |----------|-----------|-----------|
 | `QWEN_MODEL_NAME` | `Qwen/Qwen3.5-9B-Instruct` | `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8` |
-| `QWEN_ENDPOINT_URL` | (GCE IP) | `https://vibeos-qwen-599152061719.europe-west1.run.app` |
+| `QWEN_ENDPOINT_URL` | (GCE IP) | `https://supercyan-qwen-599152061719.europe-west1.run.app` |
 
 Both set as GitHub Actions secrets on 2026-03-15.
 

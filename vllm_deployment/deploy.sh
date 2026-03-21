@@ -12,18 +12,18 @@ fi
 # Rule 23: Single L4 GPU on Cloud Run (scale-to-zero). Rule 24 (GCE) is deprecated.
 PROJECT_ID=$(gcloud config get-value project)
 REGION="europe-west1"
-SERVICE_NAME="vibeos-qwen"
-IMAGE_NAME="$REGION-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest"
+SERVICE_NAME="supercyan-qwen"
+IMAGE_NAME="$REGION-docker.pkg.dev/$PROJECT_ID/supercyan/vllm-qwen:latest"
 
 echo "Starting vLLM Deployment for Project: $PROJECT_ID"
 
 # 1. Create Artifact Registry repository if it doesn't exist
-if ! gcloud artifacts repositories describe vibeos --location=$REGION > /dev/null 2>&1; then
+if ! gcloud artifacts repositories describe supercyan --location=$REGION > /dev/null 2>&1; then
   echo "Creating Artifact Registry repository..."
-  gcloud artifacts repositories create vibeos \
+  gcloud artifacts repositories create supercyan \
     --repository-format=docker \
     --location=$REGION \
-    --description="VibeOS Containerized Services"
+    --description="SuperCyan Containerized Services"
 fi
 
 # 2. Build and push via Cloud Build
@@ -47,7 +47,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --cpu 4 \
   --max-instances 1 \
   --min-instances 0 \
-  --timeout 300 \
+  --timeout 600 \
   --concurrency 16 \
   --port 8080 \
   --no-allow-unauthenticated \

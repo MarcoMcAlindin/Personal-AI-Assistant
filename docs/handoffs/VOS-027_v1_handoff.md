@@ -29,7 +29,7 @@ Implemented 4 health metric endpoints that connect the Health Dashboard (VOS-018
 
 ### Automated Tests
 ```bash
-cd /home/marco/vibeos-worktrees/green/backend
+cd /home/marco/supercyan-worktrees/green/backend
 source .venv/bin/activate
 pytest tests/ -v
 ```

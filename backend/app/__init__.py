@@ -1,1 +1,1 @@
-# VibeOS Cloud Backend — App Package
+# SuperCyan Cloud Backend — App Package

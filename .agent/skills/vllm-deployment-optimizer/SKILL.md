@@ -1,24 +1,24 @@
 ---
 name: vllm-deployment-optimizer
-description: Deploys Qwen3.5-9B-Instruct on Google Cloud Run with a single L4 GPU, scale-to-zero, and vision-language support.
+description: Deploys Qwen3-Coder-30B-A3B-Instruct-GGUF on Google Cloud Run with a single L4 GPU, scale-to-zero, and agentic tool-calling.
 ---
-# vLLM Deployment Optimizer — Qwen3.5-9B-Instruct
+# vLLM Deployment Optimizer — Qwen3-Coder-30B-A3B-Instruct-GGUF
 
 ## When to use this skill
 - When updating the `Dockerfile` or `cloudbuild.yaml` for the AI inference container.
 - When configuring Cloud Run environment variables for the vLLM serving framework.
-- When deploying or redeploying the Qwen3.5-9B-Instruct model.
+- When deploying or redeploying the Qwen3-Coder-30B-A3B-Instruct model.
 
 ## Model Details
 
 | Property | Value |
 |----------|-------|
-| Production Model ID | `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8` |
-| Fallback Model ID | `Qwen/Qwen3.5-9B-Instruct` |
-| Modality | Text + Image + Video |
-| Minimum vLLM | `v0.8.5+` |
+| Production Model ID | `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` |
+| Quantization | `Q4_K_S` |
+| Modality | Text-only (optimized for logic/code/tool-use) |
+| Minimum llama.cpp | `b4490+` |
 | GPU | 1x NVIDIA L4 (24GB) — Cloud Run |
-| VRAM footprint (W8A8) | ~7-9 GB weights + ~4-6 GB KV cache |
+| VRAM footprint (Q4_K_S) | ~19.5 GB weights + ~4.5 GB KV cache |
 
 ## How to use it
 

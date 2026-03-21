@@ -1,22 +1,27 @@
-# HANDOFF — VOS-079: Backend Tool Execution Loop (Phase 2)
+# HANDOFF — VOS-079: AI Tool Execution Loop (Phase 2)
 **Agent:** Mr. Green  
 **Date:** 2026-03-19  
 
 ## Objective
-Overhaul the FastAPI `/chat` endpoint to support OpenAI-compatible Tool Calling and Multimodal (Image/Video) attachment parsing.
+Leverage the new `Qwen3-Coder-30B` model's reasoning capabilities to implement the **Tool Execution Loop** in the FastAPI backend.
 
 ## Required Changes
-### 1. Core API Types (`backend/app/api/v1/endpoints.py`)
-- Update `ChatRequest` to optionally accept `attachments: List[dict]` (parsing Base64 image/video representations from Mr. Blue).
 
-### 2. Tool Definition & Execution Logic
-- Define JSON Schemas for available actions: `create_task(...)` and `send_email(...)`.
-- When the user sends a message, inject the `tools` array into the vLLM `chat/completions` request.
-- Create the recursive `chat_with_tools` loop:
-  1. If vLLM replies with `tool_calls` instead of standard text content, securely parse the JSON arguments payload.
-  2. Execute the corresponding local FastAPI service logic (e.g., `task_service.create_task()` saving to the Supabase DB).
-  3. Re-append a `tool_result` message to the message history and hit vLLM a second time to force the Agent to generate a final human-readable success/failure summary.
+### 1. Tool Definitions (`backend/app/api/v1/endpoints.py`)
+- Define the OpenAI-compatible `tools` array for the AI call.
+- Tools should include:
+    - `get_emails` (Search inbox)
+    - `add_task` (Calendar/Planner integration)
+    - `analyze_health` (Summarize biometrics)
+
+### 2. Execution Logic (`backend/app/services/ai_service.py`)
+- Implement a recursive or iterative loop that processes `tool_calls` returned by the model.
+- Execute the corresponding service functions (EmailService, TaskService) and feed the results back to the model for a final conversational response.
 
 ## Verification
-- Send a mock POST request to `/api/v1/chat` asking "Please create a task for tomorrow at 3 PM to call David".
-- Verify that the backend successfully receives a `tool_calls` trigger from the Instruct model, executes the insertion via Supabase, and returns a verified conversational confirmation to the chat socket.
+- Send a query like "Do I have any emails from the bank?" and verify the AI calls the email tool and summarizes the result.
+- Verify "Add a task to buy groceries at 5 PM" triggers the TaskService tool.
+
+---
+**Status:** [READY]
+**Dependencies:** VOS-078 (Model must be online with tool-calling support).

@@ -1,1 +1,1 @@
-// VibeOS Mobile — Custom React Native Hooks
+// SuperCyan Mobile — Custom React Native Hooks

@@ -10,7 +10,7 @@ from app.services.feed_service import FeedService
 from app.services.health_service import HealthService
 from app.services.rag_service import RAGService
 from app.services.task_service import TaskService
-from app.services.ai_service import call_ollama
+from app.services.ai_service import call_ollama, chat_with_tools
 from app.utils.auth import get_current_user
 import httpx
 import os
@@ -32,6 +32,7 @@ class ChatRequest(BaseModel):
     message: str
     model_target: Optional[Literal['cloud', 'home_pc', 'device']] = 'cloud'
     ollama_url: Optional[str] = None
+    attachments: Optional[List[dict]] = []
 
 class HealthSyncPayload(BaseModel):
     heart_rate: Optional[float] = None
@@ -171,7 +172,7 @@ async def rewrite_email(
                         {"role": "user", "content": request.body},
                     ],
                     "stream": False,
-                    "max_tokens": 1024,
+                    "max_tokens": 2048,
                     "temperature": 0.7,
                 }
             )
@@ -207,83 +208,23 @@ async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_
             raise HTTPException(status_code=502, detail=f"Ollama unreachable: {e}")
         return {"response": text, "model": "ollama/home_pc"}
 
-    # 3. Cloud path (unchanged) — get Qwen endpoint
-    qwen_url = os.environ.get("QWEN_ENDPOINT_URL")
-    if not qwen_url:
-        return {"response": f"[MOCK CONTEXT]: {context}\n\n[REPLY]: I am functioning in mock mode because QWEN_ENDPOINT_URL is missing."}
-
-    # 3. Get GCP identity token for IAM-protected vLLM service
-    qwen_base = qwen_url.rstrip("/v1").rstrip("/")
-    headers = {"Content-Type": "application/json"}
+    # 3. Cloud path — use agentic tool execution loop
     try:
-        import google.auth.transport.requests
-        import google.oauth2.id_token
-        auth_req = google.auth.transport.requests.Request()
-        identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
-        headers["Authorization"] = f"Bearer {identity_token}"
-    except Exception:
-        pass  # Local dev without GCP credentials -- skip auth
-
-    # 4. Call vLLM Model with cold-start retry (3 attempts: 0s, 5s, 15s backoff)
-    retry_delays = [0, 5, 15]
-    last_error = None
-
-    for attempt, delay in enumerate(retry_delays):
-        if delay > 0:
-            await asyncio.sleep(delay)
-
-        try:
-            async with httpx.AsyncClient(timeout=300.0) as client:
-                ai_response = await client.post(
-                    f"{qwen_url.rstrip('/')}/chat/completions",
-                    headers=headers,
-                    json={
-                        "model": os.environ.get("QWEN_MODEL_NAME", "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"),
-                        "messages": [
-                            {"role": "system", "content": "You are VibeOS Assistant. Use the provided context to answer accurately."},
-                            {"role": "user", "content": f"{context}\n\nUser Query: {request.message}"}
-                        ],
-                        "stream": False
-                    }
-                )
-                ai_response.raise_for_status()
-                data = ai_response.json()
-                ai_content = data["choices"][0]["message"]["content"]
-
-                # Strip Qwen chain-of-thought <think>...</think> blocks
-                import re as _re
-                ai_content = _re.sub(r'<think>.*?</think>', '', ai_content, flags=_re.DOTALL).strip()
-
-                # Store both user message and AI response in chat_history
-                try:
-                    now = datetime.now(timezone.utc).isoformat()
-                    rag_service.supabase.table("chat_history").insert([
-                        {"user_id": user_id, "role": "user", "message": request.message, "timestamp": now},
-                        {"user_id": user_id, "role": "assistant", "message": ai_content, "timestamp": now},
-                    ]).execute()
-                except Exception:
-                    pass  # Don't fail the chat response if storage fails
-
-                return {"response": ai_content}
-
-        except (httpx.ConnectError, httpx.RemoteProtocolError) as e:
-            last_error = e
-            continue
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 503:
-                last_error = e
-                continue
-            raise HTTPException(status_code=e.response.status_code, detail=f"AI Service Error: {str(e)}")
-        except httpx.TimeoutException:
-            raise HTTPException(status_code=504, detail="AI Service Timeout: model did not respond within 300 seconds")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"AI Service Error: {str(e)}")
-
-    # All retries exhausted
-    raise HTTPException(
-        status_code=503,
-        detail=f"AI Service unavailable after {len(retry_delays)} attempts. The model may be cold-starting -- try again in 30 seconds. Last error: {str(last_error)}",
-    )
+        response_content = await chat_with_tools(
+            message=request.message,
+            context=context,
+            user_id=user_id,
+            attachments=request.attachments or [],
+            services={
+                "email": email_service,
+                "task": task_service,
+                "health": health_service
+            }
+        )
+        return {"response": response_content}
+    except Exception as e:
+        # Rule 11: Error handling for AI service
+        raise HTTPException(status_code=500, detail=f"AI Service Error: {str(e)}")
 
 @router.post("/health/sync")
 async def health_sync(
@@ -426,11 +367,18 @@ async def vllm_status():
             if response.status_code == 200:
                 data = response.json()
                 models = data.get("data", [])
-                if models:
-                    model_id = models[0].get("id", "unknown")
-                    return {"status": "online", "model": model_id, "latency_ms": latency}
+                target_model = os.environ.get("QWEN_MODEL_NAME", "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF")
+                
+                # VOS-054 Fix: Ensure the actual model is loaded, not just the server responding
+                is_ready = any(m.get("id") == target_model for m in models)
+                
+                if is_ready:
+                    return {"status": "online", "model": target_model, "latency_ms": latency}
+                elif models:
+                    # Server is up but model name mismatch or still loading
+                    return {"status": "warming", "model": models[0].get("id"), "latency_ms": latency}
                 else:
-                    return {"status": "warming", "model": None, "latency_ms": latency, "detail": "Model loading"}
+                    return {"status": "warming", "model": None, "latency_ms": latency}
             else:
                 return {"status": "warming", "model": None, "latency_ms": latency, "detail": f"vLLM returned {response.status_code}"}
     except httpx.ConnectError:

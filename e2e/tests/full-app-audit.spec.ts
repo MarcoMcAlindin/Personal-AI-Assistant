@@ -43,7 +43,7 @@ test.describe('Full Application Audit (Web & Mobile Viewports)', () => {
     await expect(statusChip).toBeVisible();
 
     // Verify Chat Input and Send Button
-    const messageInput = page.getByPlaceholder(/Ask VibeOS anything/i);
+    const messageInput = page.getByPlaceholder(/Ask SuperCyan anything/i);
     const sendButton = page.getByRole('button', { name: /send/i });
     
     await expect(messageInput).toBeVisible();

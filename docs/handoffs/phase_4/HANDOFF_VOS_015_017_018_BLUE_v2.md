@@ -1,7 +1,7 @@
 # HANDOFF: VOS-015 / VOS-017 / VOS-018 — Frontend Logic Remediation v2
 **Agent:** Mr. Blue (Frontend & Mobile Architect)
 **Branch:** `feature/blue/phase-4-logic`
-**Worktree:** `/home/marco/vibeos-worktrees/blue`
+**Worktree:** `/home/marco/supercyan-worktrees/blue`
 **Date:** 2026-03-15
 **Commit:** `848d6da`
 
@@ -9,7 +9,7 @@
 
 ## Summary
 
-Full remediation of all dead-end / non-functional buttons identified across the VibeOS web app. All 5 problem areas resolved and verified with headless Playwright against live Vite dev server.
+Full remediation of all dead-end / non-functional buttons identified across the SuperCyan web app. All 5 problem areas resolved and verified with headless Playwright against live Vite dev server.
 
 ---
 

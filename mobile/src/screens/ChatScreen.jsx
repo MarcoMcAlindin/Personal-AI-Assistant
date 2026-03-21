@@ -1,11 +1,12 @@
-// VibeOS Mobile -- AI Chat Screen
+// SuperCyan Mobile -- AI Chat Screen
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  View, TextInput, FlatList, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ActivityIndicator,
+  View, Text, StyleSheet, FlatList, TextInput,
+  TouchableOpacity, KeyboardAvoidingView, Platform,
+  SafeAreaView, ActivityIndicator, Image
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text } from '../components/Themed';
+import { Ionicons } from '@expo/vector-icons';
+import Markdown from 'react-native-markdown-display';
 import { palette, spacing } from '../theme';
 import { sendChat, fetchVllmStatus, triggerVllmWarmup } from '../services/api';
 
@@ -71,7 +72,7 @@ function ChatHeader() {
         <Text style={{ fontSize: 18 }}>{'\u2728'}</Text>
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Qwen2.5 Assistant</Text>
+        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Qwen3-Coder-30B</Text>
         <Text style={{ color: palette.textMuted, fontSize: 12 }}>10-day RAG context {'\u2022'} 3 pinned memories</Text>
       </View>
       <View style={{ flexDirection: 'row' }}>
@@ -100,6 +101,42 @@ function Timestamp({ time }) {
     </Text>
   );
 }
+
+const markdownStyles = {
+  body: {
+    color: palette.textPrimary,
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  heading1: { color: palette.accentPrimary, fontSize: 20, fontWeight: '700', marginVertical: 8 },
+  heading2: { color: palette.accentPrimary, fontSize: 18, fontWeight: '700', marginVertical: 6 },
+  code_inline: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    color: palette.accentPrimary,
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  code_block: {
+    backgroundColor: '#000',
+    borderWidth: 1,
+    borderColor: palette.borderColor,
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 8,
+  },
+  fence: {
+    backgroundColor: '#000',
+    borderWidth: 1,
+    borderColor: palette.borderColor,
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 8,
+  },
+  link: { color: palette.accentPrimary, textDecorationLine: 'underline' },
+  bullet_list: { marginVertical: 8 },
+  ordered_list: { marginVertical: 8 },
+};
 
 export default function ChatScreen() {
   const [messages, setMessages] = useState([]);
@@ -195,7 +232,7 @@ export default function ChatScreen() {
               backgroundColor: palette.accentSecondary, alignItems: 'center', justifyContent: 'center',
               marginRight: spacing.sm,
             }}>
-              <Text style={{ fontSize: 12 }}>{'\u2728'}</Text>
+              <Ionicons name="sparkles" size={14} color="#FFF" />
             </View>
           )}
           <View style={{
@@ -203,14 +240,20 @@ export default function ChatScreen() {
             borderRadius: 16,
             borderBottomRightRadius: isUser ? 4 : 16,
             borderBottomLeftRadius: isUser ? 16 : 4,
-            padding: spacing.md,
+            padding: isUser ? spacing.md : spacing.sm,
             maxWidth: '75%',
             borderWidth: isUser ? 0 : 1,
             borderColor: palette.borderColor,
           }}>
-            <Text style={{ color: isUser ? '#000' : palette.textPrimary, fontSize: 14, lineHeight: 21 }}>
-              {item.content}
-            </Text>
+            {isUser ? (
+              <Text style={{ color: '#000', fontSize: 14, lineHeight: 21 }}>
+                {item.content}
+              </Text>
+            ) : (
+              <Markdown style={markdownStyles}>
+                {item.content}
+              </Markdown>
+            )}
           </View>
           {isUser && (
             <View style={{
@@ -226,11 +269,11 @@ export default function ChatScreen() {
           <Timestamp time={item.time} />
           {!isUser && (
             <View style={{ flexDirection: 'row', marginLeft: spacing.sm }}>
-              <TouchableOpacity style={{ marginRight: spacing.xs }}>
-                <Text style={{ color: palette.textMuted, fontSize: 12 }}>{'\uD83D\uDCBE'}</Text>
+              <TouchableOpacity style={{ marginRight: spacing.sm }}>
+                <Ionicons name={item.isSaved ? "bookmark" : "bookmark-outline"} size={16} color={item.isSaved ? "#FFD700" : palette.textMuted} />
               </TouchableOpacity>
               <TouchableOpacity>
-                <Text style={{ color: palette.textMuted, fontSize: 12 }}>{'\uD83D\uDD12'}</Text>
+                <Ionicons name="lock-closed-outline" size={16} color={palette.textMuted} />
               </TouchableOpacity>
             </View>
           )}

@@ -18,7 +18,7 @@ def run_git(args):
     return True
 
 def build_architecture():
-    print("🚀 Initializing VibeOS Git Architecture...\n")
+    print("🚀 Initializing SuperCyan Git Architecture...\n")
 
     # 1. Create Staging from Main
     print("[+] Creating 'staging' branch...")

@@ -12,7 +12,7 @@
 
 ## Context
 
-Your VOS-023 deployment just passed audit. The `vibeos-qwen` Cloud Run service is live and confirmed serving inference (`Pong!` smoke test, 2026-03-15). This means the health analysis pipeline has a working AI endpoint for the first time. Your job now is to prove the full chain works — from GitHub Actions trigger to Supabase write-back.
+Your VOS-023 deployment just passed audit. The `supercyan-qwen` Cloud Run service is live and confirmed serving inference (`Pong!` smoke test, 2026-03-15). This means the health analysis pipeline has a working AI endpoint for the first time. Your job now is to prove the full chain works — from GitHub Actions trigger to Supabase write-back.
 
 The model is `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8`. The endpoint URL is set in GitHub Secrets. The `analyze_health.py` script was already updated in VOS-023. This task is pure verification — no new code should be needed unless something breaks.
 
@@ -77,7 +77,7 @@ Confirm the `0 8 * * *` schedule is set in `.github/workflows/health_analysis.ym
 ## Environment
 
 - **GitHub Secrets required:** `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `QWEN_ENDPOINT_URL`, `QWEN_MODEL_NAME`
-- **Service URL:** `https://vibeos-qwen-599152061719.europe-west1.run.app`
+- **Service URL:** `https://supercyan-qwen-599152061719.europe-west1.run.app`
 - All secrets were confirmed set as of VOS-023 handoff (2026-03-15)
 
 ---
@@ -87,10 +87,10 @@ Confirm the `0 8 * * *` schedule is set in `.github/workflows/health_analysis.ym
 ```bash
 # If worktree doesn't exist:
 cd /home/marco/Personal\ AI\ Assistant
-git worktree add /home/marco/vibeos-worktrees/red feature/red/24-health-workflow-e2e
+git worktree add /home/marco/supercyan-worktrees/red feature/red/24-health-workflow-e2e
 
 # If it exists:
-cd /home/marco/vibeos-worktrees/red
+cd /home/marco/supercyan-worktrees/red
 git pull origin feature/red/24-health-workflow-e2e
 ```
 

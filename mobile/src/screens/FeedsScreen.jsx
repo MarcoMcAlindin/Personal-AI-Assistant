@@ -1,9 +1,9 @@
-// VibeOS Mobile -- Feeds Screen
 import React, { useState, useEffect } from 'react';
 import {
   View, FlatList, TouchableOpacity, Linking, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../components/Themed';
 import { palette, spacing } from '../theme';
 import { fetchTechFeeds, fetchConcerts } from '../services/api';
@@ -56,11 +56,15 @@ export default function FeedsScreen() {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <View style={{ flex: 1, marginRight: spacing.md }}>
           <Text style={{ fontSize: 16, fontWeight: '700', marginBottom: 4 }}>{item.artist}</Text>
-          <Text style={{ color: palette.textMuted, fontSize: 13 }}>
-            {'\uD83D\uDCCD'} {item.venue}, {item.city}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="location-outline" size={14} color={palette.textMuted} style={{ marginRight: 4 }} />
+            <Text style={{ color: palette.textMuted, fontSize: 13 }}>
+              {item.venue}, {item.city}
+            </Text>
+          </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-            <Text style={{ color: palette.textMuted, fontSize: 12 }}>{'\uD83D\uDCC5'} {item.date}</Text>
+            <Ionicons name="calendar-outline" size={14} color={palette.textMuted} style={{ marginRight: 4 }} />
+            <Text style={{ color: palette.textMuted, fontSize: 12 }}>{item.date}</Text>
             {item.genre && (
               <View style={{
                 backgroundColor: palette.accentSecondary, borderRadius: 4,

@@ -24,7 +24,7 @@ You cannot start the API sync portion of this task until Mr. Green delivers VOS-
 ### Step 1: Verify Library Installation
 Confirm `react-native-health-connect` is in `mobile/package.json`. If missing:
 ```bash
-cd /home/marco/vibeos-worktrees/blue/mobile
+cd /home/marco/supercyan-worktrees/blue/mobile
 npx expo install react-native-health-connect
 ```
 
@@ -101,10 +101,10 @@ Get the token via `supabase.auth.getSession()` → `session.access_token`. Plan 
 ```bash
 # If worktree doesn't exist:
 cd /home/marco/Personal\ AI\ Assistant
-git worktree add /home/marco/vibeos-worktrees/blue feature/blue/28-health-connect-real
+git worktree add /home/marco/supercyan-worktrees/blue feature/blue/28-health-connect-real
 
 # If it exists:
-cd /home/marco/vibeos-worktrees/blue
+cd /home/marco/supercyan-worktrees/blue
 git pull origin feature/blue/28-health-connect-real
 ```
 

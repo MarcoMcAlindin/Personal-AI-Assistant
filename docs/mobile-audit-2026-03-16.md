@@ -1,9 +1,9 @@
-# VibeOS Mobile App Audit — 2026-03-16
+# SuperCyan Mobile App Audit — 2026-03-16
 
 **Auditor:** Mr. Pink (Scout)
 **Device:** Samsung Galaxy (RFCY504R60T) via ADB + scrcpy
 **Build:** Expo Go tunnel from `staging` branch
-**Backend:** `https://vibeos-backend-enffsru5pa-ew.a.run.app` (confirmed online, HTTP 200)
+**Backend:** `https://supercyan-backend-enffsru5pa-ew.a.run.app` (confirmed online, HTTP 200)
 
 ---
 
@@ -107,7 +107,7 @@ content: 'AI is temporarily unavailable. Please try again shortly.'
 `src/screens/HealthScreen.jsx` calls `fetchHealth()` which hits `GET /api/v1/health/metrics`. The response likely wraps data (e.g., `{ metrics: { ... } }`) but the screen reads `data?.sleep_duration` and `data?.avg_heart_rate` directly from the top-level response object.
 
 ### Fix Instructions
-1. Test the endpoint: `curl https://vibeos-backend-enffsru5pa-ew.a.run.app/api/v1/health/metrics` with auth headers
+1. Test the endpoint: `curl https://supercyan-backend-enffsru5pa-ew.a.run.app/api/v1/health/metrics` with auth headers
 2. Compare response shape to what `HealthScreen.jsx` expects
 3. Either unwrap in `api.js` `fetchHealth()` or fix field access in the screen
 
@@ -181,7 +181,7 @@ Either:
 | OLED theme | Working | Deep black backgrounds, cyan accents, consistent palette |
 | Pull-to-refresh | Working | All screens (Feeds, Planner, Mail, Health) support RefreshControl |
 | Expo tunnel | Working | Metro bundler serving via ngrok tunnel |
-| Supabase auth | Working | Auto sign-in with `ceo@vibeos.app` test account |
+| Supabase auth | Working | Auto sign-in with `ceo@supercyan.app` test account |
 | Backend connectivity | Working | All endpoints returning HTTP 200 (except vLLM-dependent chat) |
 
 ---

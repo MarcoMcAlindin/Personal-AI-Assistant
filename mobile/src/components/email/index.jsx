@@ -1,1 +1,1 @@
-// VibeOS Mobile — Email Components
+// SuperCyan Mobile — Email Components

@@ -1,1 +1,1 @@
-// VibeOS Web — Utility Functions
+// SuperCyan Web — Utility Functions

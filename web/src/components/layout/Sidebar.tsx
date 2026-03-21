@@ -4,9 +4,9 @@ import './Sidebar.css';
 import { fetchVllmStatus, triggerVllmWarmup, VllmStatus } from '../../services/vllmService';
 
 const VLLM_STATUS_LABELS: Record<VllmStatus, string> = {
-  offline: 'Qwen: Offline',
-  warming: 'Qwen: Warming Up...',
-  online: 'Qwen: Online',
+  offline: 'Qwen3-Coder-30B: Offline',
+  warming: 'Qwen3-Coder-30B: Warming Up...',
+  online: 'Qwen3-Coder-30B: Online',
 };
 
 const VLLM_DOT_COLORS: Record<VllmStatus, string> = {
@@ -68,7 +68,7 @@ const Sidebar: React.FC = () => {
           </div>
           {!collapsed && (
             <div className="brand-info">
-              <span className="brand-name">VibeOS</span>
+              <span className="brand-name">SuperCyan</span>
               <span className="brand-tagline">Personal Command Center</span>
             </div>
           )}

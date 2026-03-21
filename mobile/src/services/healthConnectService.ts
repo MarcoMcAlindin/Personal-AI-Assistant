@@ -1,5 +1,5 @@
 /**
- * VibeOS — Real Health Connect Service
+ * SuperCyan — Real Health Connect Service
  * Replaces healthSimulator.ts for production use.
  * Reads Samsung Watch biometrics via react-native-health-connect.
  */

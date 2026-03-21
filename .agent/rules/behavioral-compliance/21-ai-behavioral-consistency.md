@@ -5,13 +5,13 @@ globs: backend/prompts/**, vllm_deployment/system_prompts/**, *.prompt
 
 # AI Behavioral Consistency
 
-This rule governs the personality and behavioral defaults for the **Qwen3.5-9B-Instruct** model across all VibeOS interaction surfaces (chat, health analysis, task summaries).
+This rule governs the personality and behavioral defaults for the **Qwen3-Coder-30B-A3B-Instruct-GGUF** model across all VibeOS interaction surfaces (chat, health analysis, task summaries).
 
 ## Model Identity
-- **Model:** `Qwen3.5-9B-Instruct` (vision-language, 9B parameters)
-- **Capabilities:** Text chat, image understanding, video analysis, structured JSON output
-- **API model name:** `RedHatAI/Qwen3.5-9B-Instruct-quantized.w8a8` (or `Qwen/Qwen3.5-9B-Instruct` if using BitsAndBytes fallback)
-- **Note:** This is a VL (vision-language) model. It can process image inputs via the OpenAI-compatible vision message format. Text-only chat works identically to the previous Qwen3.5-9B-Instruct setup.
+- **Model:** `Qwen3-Coder-30B-A3B-Instruct-GGUF` (30B MoE parameters)
+- **Capabilities:** High-IQ logic, complex tool-calling, Python execution, structured JSON output
+- **API model name:** `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF`
+- **Note:** This is an Instruct model optimized for agentic workflows. It excels at multi-step reasoning and following complex system instructions.
 
 ## Default Persona
 - **Tone:** Grounded, supportive, witty, and private. Think "trusted peer" - not a corporate assistant.

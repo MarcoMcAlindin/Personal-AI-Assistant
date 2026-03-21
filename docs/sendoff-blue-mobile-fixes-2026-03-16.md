@@ -10,7 +10,7 @@
 
 ## Context
 
-A full device-level audit of the VibeOS mobile app was performed on 2026-03-16 via ADB + scrcpy on a physical Samsung Galaxy. The backend is confirmed online and returning valid data for all endpoints. The bugs below are all **client-side** in your domain (`/mobile`).
+A full device-level audit of the SuperCyan mobile app was performed on 2026-03-16 via ADB + scrcpy on a physical Samsung Galaxy. The backend is confirmed online and returning valid data for all endpoints. The bugs below are all **client-side** in your domain (`/mobile`).
 
 **Important architectural note:** The running app does NOT use Expo Router. The entry point is `mobile/index.js` → `src/App.jsx` → `src/navigation/TabNavigator.jsx` → `src/screens/*.jsx`. The `app/(tabs)/` directory is dead code.
 
@@ -85,7 +85,7 @@ These 7 files are never loaded. The app's entry point (`index.js`) registers `sr
 **Investigation needed:** Run this from the device or with auth headers:
 ```
 curl -H "Authorization: Bearer <token>" \
-  https://vibeos-backend-enffsru5pa-ew.a.run.app/api/v1/health/metrics
+  https://supercyan-backend-enffsru5pa-ew.a.run.app/api/v1/health/metrics
 ```
 
 Compare the response shape to what the screen expects:
@@ -131,4 +131,4 @@ If the API wraps these in a sub-object (e.g., `{ metrics: { ... } }`), unwrap in
 
 ---
 
-**Mr. Pink** — VibeOS Project Auditor
+**Mr. Pink** — SuperCyan Project Auditor

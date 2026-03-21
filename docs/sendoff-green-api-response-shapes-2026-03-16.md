@@ -10,7 +10,7 @@
 
 ## Context
 
-A device-level audit of the VibeOS mobile app revealed that several API responses from the FastAPI backend are causing silent failures on the client because the response shapes don't match what the mobile app expects. Mr. Blue has been assigned the client-side unwrapping fixes, but the following tasks require backend investigation or changes in your domain (`/backend`).
+A device-level audit of the SuperCyan mobile app revealed that several API responses from the FastAPI backend are causing silent failures on the client because the response shapes don't match what the mobile app expects. Mr. Blue has been assigned the client-side unwrapping fixes, but the following tasks require backend investigation or changes in your domain (`/backend`).
 
 ---
 
@@ -110,4 +110,4 @@ This would update a `water_liters` column in `health_metrics` for the current us
 
 ---
 
-**Mr. Pink** — VibeOS Project Auditor
+**Mr. Pink** — SuperCyan Project Auditor

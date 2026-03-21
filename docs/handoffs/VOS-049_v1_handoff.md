@@ -23,7 +23,7 @@ Optimize the vLLM Cloud Run infrastructure to reduce data processing costs by ca
 ## 3. Verification Protocol (For Mr. Pink)
 
 ### 3.1. Infrastructure Audit
-1. Run `gcloud run services describe vibeos-qwen --region europe-west1`.
+1. Run `gcloud run services describe supercyan-qwen --region europe-west1`.
 2. **Verify Egress**: Ensure `VPC Egress` is set to `private-ranges-only`.
 3. **Verify Resources**: Confirm 4 CPUs and 16Gi RAM are allocated.
 

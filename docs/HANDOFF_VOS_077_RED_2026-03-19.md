@@ -8,7 +8,7 @@
 
 ## Summary
 
-Migrated the VibeOS vLLM Cloud Run deployment from a compile-from-source `llama-cpp-python` approach to the official `ghcr.io/ggerganov/llama.cpp:server-cuda` pre-built image. Fixed all stale model name references across `vllm_deployment` and `backend` to reflect the canonical `Qwen/Qwen3.5-35B-A3B-GGUF` model.
+Migrated the SuperCyan vLLM Cloud Run deployment from a compile-from-source `llama-cpp-python` approach to the official `ghcr.io/ggerganov/llama.cpp:server-cuda` pre-built image. Fixed all stale model name references across `vllm_deployment` and `backend` to reflect the canonical `Qwen/Qwen3.5-35B-A3B-GGUF` model.
 
 ---
 
@@ -64,7 +64,7 @@ grep "FROM" vllm_deployment/Dockerfile
 
 # 3. Post-deploy: probe /health endpoint
 TOKEN=$(gcloud auth print-identity-token)
-curl -H "Authorization: Bearer $TOKEN" https://vibeos-qwen-<hash>.europe-west1.run.app/health
+curl -H "Authorization: Bearer $TOKEN" https://supercyan-qwen-<hash>.europe-west1.run.app/health
 # Expected: {"status":"ok"}
 ```
 

@@ -1,1 +1,1 @@
-// VibeOS Mobile — Common/Shared Components
+// SuperCyan Mobile — Common/Shared Components

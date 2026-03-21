@@ -1,1 +1,1 @@
-// VibeOS Mobile — Feed Components
+// SuperCyan Mobile — Feed Components

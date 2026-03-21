@@ -36,6 +36,8 @@ CMD ["--model", "/models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_S.gguf", \
      "--host", "0.0.0.0", \
      "--port", "8080", \
      "-ngl", "999", \
-     "--ctx-size", "4096", \
-     "--parallel", "16", \
+     "--ctx-size", "32768", \
+     "--parallel", "8", \
+     "--cache-type-k", "q4_0", \
+     "--cache-type-v", "q4_0", \
      "--alias", "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"]

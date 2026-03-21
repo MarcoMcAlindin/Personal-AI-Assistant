@@ -28,8 +28,8 @@ This task is **UI and state management only**. You are not implementing the actu
 
 ```bash
 git worktree list
-git worktree add /home/marco/vibeos-worktrees/blue-059 feature/blue/059-model-selector-ui
-cd /home/marco/vibeos-worktrees/blue-059
+git worktree add /home/marco/supercyan-worktrees/blue-059 feature/blue/059-model-selector-ui
+cd /home/marco/supercyan-worktrees/blue-059
 ```
 
 ### Step 2 — Create `ModelContext`
@@ -233,5 +233,5 @@ VOS-062 (Green) adds `model_target` to the backend `/chat` route — that's inde
 
 ---
 
-**Mr. Pink** — VibeOS Project Manager & Scout
+**Mr. Pink** — SuperCyan Project Manager & Scout
 *Research: multi-model-inference-router skill — `.agent/skills/multi-model-inference-router/SKILL.md`*

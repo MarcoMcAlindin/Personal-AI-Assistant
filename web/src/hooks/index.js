@@ -1,1 +1,1 @@
-// VibeOS Web — Custom React Hooks
+// SuperCyan Web — Custom React Hooks

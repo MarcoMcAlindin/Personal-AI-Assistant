@@ -1,4 +1,4 @@
-# [cite_start]VibeOS: Final Technical Stack & Architecture Document [cite: 73]
+# [cite_start]SuperCyan: Final Technical Stack & Architecture Document [cite: 73]
 
 ## [cite_start]1. The Decoupled Frontend Clients [cite: 74]
 [cite_start]This layer handles all user interactions and UI rendering. [cite: 75] [cite_start]The system delivers optimized, platform-specific user experiences while maintaining a unified OLED-optimized cool dark theme. [cite: 75]

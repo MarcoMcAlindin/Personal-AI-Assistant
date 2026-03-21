@@ -24,7 +24,7 @@ The AI chat feature is unreliable from the user's perspective. When the vLLM Clo
 The vLLM service already exposes `/v1/models` as its readiness probe (see `service.yaml:48`). This endpoint returns 200 with the model list only after the model is fully loaded. Before that, it returns an error. This is the perfect signal for a health check.
 
 **Current vLLM URL pattern** (from `config.py`):
-- Env var: `QWEN_ENDPOINT_URL` — set to something like `https://vibeos-qwen-599152061719.europe-west1.run.app/v1`
+- Env var: `QWEN_ENDPOINT_URL` — set to something like `https://supercyan-qwen-599152061719.europe-west1.run.app/v1`
 - Chat calls: `{QWEN_ENDPOINT_URL}/chat/completions` (already correct after VOS-039 fix)
 - Models probe: The base URL without `/v1` + `/v1/models` — or simply `{QWEN_ENDPOINT_URL.rstrip('/')}/models` since the URL already ends in `/v1`
 
@@ -192,7 +192,7 @@ async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_
                     json={
                         "model": os.environ.get("QWEN_MODEL_NAME", "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8"),
                         "messages": [
-                            {"role": "system", "content": "You are VibeOS Assistant. Use the provided context to answer accurately."},
+                            {"role": "system", "content": "You are SuperCyan Assistant. Use the provided context to answer accurately."},
                             {"role": "user", "content": f"{context}\n\nUser Query: {request.message}"}
                         ],
                         "stream": False
@@ -358,14 +358,14 @@ curl -X POST "$BASE/chat" \
 **Production test (after deploy):**
 ```bash
 # Check live vLLM status
-curl "https://vibeos-gateway-XXXXX.europe-west1.run.app/api/v1/vllm/status"
+curl "https://supercyan-gateway-XXXXX.europe-west1.run.app/api/v1/vllm/status"
 
 # Warm it up
-curl -X POST "https://vibeos-gateway-XXXXX.europe-west1.run.app/api/v1/vllm/warmup"
+curl -X POST "https://supercyan-gateway-XXXXX.europe-west1.run.app/api/v1/vllm/warmup"
 
 # Wait 30s, check again
 sleep 30
-curl "https://vibeos-gateway-XXXXX.europe-west1.run.app/api/v1/vllm/status"
+curl "https://supercyan-gateway-XXXXX.europe-west1.run.app/api/v1/vllm/status"
 # Expected: {"status": "online", "model": "RedHatAI/Qwen2.5-VL-7B-Instruct-quantized.w8a8", ...}
 ```
 
@@ -374,7 +374,7 @@ curl "https://vibeos-gateway-XXXXX.europe-west1.run.app/api/v1/vllm/status"
 ## Worktree Setup
 
 ```bash
-cd /home/marco/vibeos-worktrees/green
+cd /home/marco/supercyan-worktrees/green
 git fetch origin staging
 git rebase origin/staging
 git checkout -b feature/green/046-vllm-status

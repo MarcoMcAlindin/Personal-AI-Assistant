@@ -97,7 +97,7 @@ export default function AIScreen() {
             style={styles.input}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="Talk to VibeOS..."
+            placeholder="Talk to SuperCyan..."
             placeholderTextColor={theme.colors.textMuted}
             multiline
           />

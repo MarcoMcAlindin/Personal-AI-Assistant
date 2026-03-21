@@ -1,7 +1,7 @@
-# Product Requirements Document (PRD): "VibeOS" Personal Assistant
+# Product Requirements Document (PRD): "SuperCyan" Personal Assistant
 
 ## 1. Objective & Vision
-To build a private, highly customized dashboard application that serves as a comprehensive "second brain." The system will deliver optimized, platform-specific user experiences by utilizing distinct codebases for mobile and web. It combines a private AI assistant, curated high-signal feeds, a focused email client, robust health tracking, and a transient daily task manager. By hosting the core routing and intelligence in the cloud, VibeOS remains accessible, secure, and fully automated 24/7, regardless of whether personal devices are powered on.
+To build a private, highly customized dashboard application that serves as a comprehensive "second brain." The system will deliver optimized, platform-specific user experiences by utilizing distinct codebases for mobile and web. It combines a private AI assistant, curated high-signal feeds, a focused email client, robust health tracking, and a transient daily task manager. By hosting the core routing and intelligence in the cloud, SuperCyan remains accessible, secure, and fully automated 24/7, regardless of whether personal devices are powered on.
 
 ## 2. Tech Stack & Architecture
 
@@ -26,7 +26,7 @@ A consistent, modern aesthetic tailored perfectly to the screen it is displayed 
 A secure conversational interface with intelligent, cost-effective memory management.
 * **10-Day Rolling Context:** To prevent context limit bloat, the Python backend uses Retrieval-Augmented Generation (RAG) powered by Supabase's pgvector. When chatting, the AI automatically retrieves relevant context strictly from the last 10 days of conversation history.
 * **Permanent "Save" Override:** The UI features a "Save/Pin" button on AI responses. Saved messages bypass the 10-day deletion/ignore rule and are permanently embedded into the AI's core knowledge base, ensuring it never forgets critical insights.
-* **Capabilities:** General reasoning, vibe coding assistance, and cross-referencing personal data from other VibeOS modules.
+* **Capabilities:** General reasoning, vibe coding assistance, and cross-referencing personal data from other SuperCyan modules.
 
 ### 3.3. Curated Information Feeds
 A split-feed system designed to surface high-signal content without traditional social media noise, parsed securely by the Python Cloud Run backend.
@@ -37,7 +37,7 @@ A split-feed system designed to surface high-signal content without traditional 
 A focused inbox that completely eliminates spam.
 * **Backend Proxy:** The Python backend securely connects to the Gmail API using OAuth, ensuring the client side never handles raw email tokens.
 * **Whitelist Filtering:** Incoming emails are checked against a Supabase table of "Approved Addresses." Unapproved emails are ignored entirely by the application.
-* **Full Editor:** Users can read, compose, reply, and forward emails natively within VibeOS using a rich text editor.
+* **Full Editor:** Users can read, compose, reply, and forward emails natively within SuperCyan using a rich text editor.
 
 ### 3.5. Health, Sleep & Self-Care Hub
 A dedicated wellness dashboard combining curated advice with automated biometric tracking.

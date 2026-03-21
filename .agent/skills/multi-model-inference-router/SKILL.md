@@ -1,6 +1,6 @@
 ---
 name: multi-model-inference-router
-description: Architecture and implementation patterns for routing VibeOS chat between three inference backends — Cloud vLLM (9B), Home PC Ollama (7B), and On-Device llama.rn (3.8B). Covers model selector UI, routing logic, and connection handling for each backend.
+description: Architecture and implementation patterns for routing VibeOS chat between three inference backends — Cloud vLLM (30B), Home PC Ollama (7B), and On-Device llama.rn (3.8B). Covers model selector UI, routing logic, and connection handling for each backend.
 ---
 
 # Multi-Model Inference Router
@@ -16,8 +16,8 @@ description: Architecture and implementation patterns for routing VibeOS chat be
 ```
 User picks model
       │
-      ├─ "Cloud (9B)" ──────► POST /api/v1/chat  ──────► Cloud Run vLLM
-      │                        (with RAG context)          Qwen2.5-9B
+      ├─ "Cloud (30B)" ──────► POST /api/v1/chat  ──────► Cloud Run vLLM
+      │                        (with RAG context)          Qwen3-Coder-30B-Instruct
       │
       ├─ "Home PC (7B)" ────► Direct HTTP to Ollama ────► RTX 4070 Ti
       │                        (no RAG in phase 1)         Qwen2.5-7B
@@ -30,7 +30,7 @@ User picks model
 
 | Backend | Model | Size | VRAM/RAM | Perf | API |
 |---------|-------|------|----------|------|-----|
-| Cloud vLLM | Qwen/Qwen3.5-9B | 9B | 9GB | ~30 tok/s | OpenAI compat |
+| Cloud vLLM | unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF | 30B | 24GB (L4) | ~15-25 tok/s | OpenAI compat |
 | Home PC Ollama | qwen2.5:7b | 7B | 4.7GB | 40-80 tok/s | OpenAI compat |
 | On-Device llama.rn | Phi-3.5-mini Q4_K_M | 3.8B | 2.5GB RAM | 50-100 tok/s | llama.rn API |
 

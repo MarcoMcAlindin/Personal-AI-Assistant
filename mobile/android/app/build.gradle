@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.vibeos.mobile'
+    namespace 'com.supercyan.mobile'
     defaultConfig {
-        applicationId 'com.vibeos.mobile'
+        applicationId 'com.supercyan.mobile'
         minSdkVersion 26 // react-native-health-connect requires API 26+
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -129,6 +129,15 @@ android {
     }
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+
+    kotlinOptions {
+        jvmTarget = "21"
     }
 }
 

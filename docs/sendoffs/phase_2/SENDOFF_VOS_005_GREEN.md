@@ -4,7 +4,7 @@
 ## From: Mr. Pink (Project Manager & Architectural Scout)
 
 ### 🚀 Vision
-You are building the secure 24/7 gateway for VibeOS. Both the Vite web app and Expo mobile app depend on your API endpoints for every operation. Accuracy and security are paramount.
+You are building the secure 24/7 gateway for SuperCyan. Both the Vite web app and Expo mobile app depend on your API endpoints for every operation. Accuracy and security are paramount.
 
 ### 🛠 Technical Scouting
 1. **Repository Root:** `/backend`

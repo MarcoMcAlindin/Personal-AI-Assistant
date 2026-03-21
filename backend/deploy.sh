@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# VibeOS Cloud Run Deployment Script
+# SuperCyan Cloud Run Deployment Script
 # Deploys the FastAPI gateway to Cloud Run (europe-west1)
 #
 # Prerequisites:
@@ -17,9 +17,9 @@ if ! command -v gcloud &>/dev/null; then
 fi
 
 PROJECT_ID=$(gcloud config get-value project)
-SERVICE_NAME="vibeos-backend"
+SERVICE_NAME="supercyan-backend"
 REGION="europe-west1"
-IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/vibeos/$SERVICE_NAME:latest"
+IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/supercyan/$SERVICE_NAME:latest"
 
 # Load .env file if it exists
 ENV_FILE="$SCRIPT_DIR/.env"
@@ -43,7 +43,7 @@ done
 # Using sed to replace existing keys or append if missing
 for pair in \
   "CORS_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:8081" \
-  "QWEN_ENDPOINT_URL:https://vibeos-qwen-599152061719.europe-west1.run.app/v1" \
+  "QWEN_ENDPOINT_URL:https://supercyan-qwen-599152061719.europe-west1.run.app/v1" \
   "QWEN_MODEL_NAME:unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"; do
   key="${pair%%:*}"
   val="${pair#*:}"
@@ -54,15 +54,15 @@ for pair in \
   fi
 done
 
-echo "Deploying VibeOS Backend to Cloud Run ($REGION)..."
+echo "Deploying SuperCyan Backend to Cloud Run ($REGION)..."
 
 # 1. Create Artifact Registry repo if needed
-if ! gcloud artifacts repositories describe vibeos --location=$REGION > /dev/null 2>&1; then
+if ! gcloud artifacts repositories describe supercyan --location=$REGION > /dev/null 2>&1; then
   echo "Creating Artifact Registry repository..."
-  gcloud artifacts repositories create vibeos \
+  gcloud artifacts repositories create supercyan \
     --repository-format=docker \
     --location=$REGION \
-    --description="VibeOS Containerized Services"
+    --description="SuperCyan Containerized Services"
 fi
 
 # 2. Build and push

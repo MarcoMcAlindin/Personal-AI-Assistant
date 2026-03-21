@@ -13,10 +13,10 @@ import { test, expect, request } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const BACKEND = 'https://vibeos-backend-enffsru5pa-ew.a.run.app';
+const BACKEND = 'https://supercyan-backend-enffsru5pa-ew.a.run.app';
 const DEV_USER_ID = 'd4f8a1b2-3c4d-5e6f-7890-abcdef123456';
 
-const GREEN_SRC = '/home/marco/vibeos-worktrees/green-062';
+const GREEN_SRC = '/home/marco/supercyan-worktrees/green-062';
 
 // ── API CONTRACT TESTS (against live backend on staging) ─────────────────────
 // Note: VOS-062 PR is not yet merged to staging, so these tests validate the

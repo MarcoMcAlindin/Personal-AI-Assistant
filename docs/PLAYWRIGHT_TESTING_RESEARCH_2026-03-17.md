@@ -1,7 +1,7 @@
 # Playwright Testing Research for AI Agent Workflows
 
 **Date:** 2026-03-17
-**Target:** VibeOS monorepo (`/web` React+Vite, `/mobile` React Native+Expo, `/backend` FastAPI)
+**Target:** SuperCyan monorepo (`/web` React+Vite, `/mobile` React Native+Expo, `/backend` FastAPI)
 
 ---
 
@@ -167,7 +167,7 @@ Most mistakes come from **fighting the framework** instead of working with it. P
 
 ## 3. Configuration Best Practices
 
-### Reference Configuration for VibeOS
+### Reference Configuration for SuperCyan
 
 ```typescript
 // playwright.config.ts
@@ -335,10 +335,10 @@ Playwright enforces strict mode: if a locator matches multiple elements, actions
 
 ## 5. Monorepo Test Structure
 
-### Recommended Directory Layout for VibeOS
+### Recommended Directory Layout for SuperCyan
 
 ```
-vibeos/
+supercyan/
 ├── web/                          # React + Vite app
 ├── mobile/                       # React Native + Expo
 ├── backend/                      # FastAPI
@@ -489,7 +489,7 @@ Playwright's `APIRequestContext` can test FastAPI endpoints directly:
 ```typescript
 import { test, expect } from '@playwright/test';
 
-test.describe('VibeOS API', () => {
+test.describe('SuperCyan API', () => {
   test('GET /feeds/tech returns RSS items', async ({ request }) => {
     const response = await request.get('/feeds/tech');
     expect(response.ok()).toBeTruthy();

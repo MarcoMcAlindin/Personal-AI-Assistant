@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**VibeOS** — a personal AI assistant monorepo with three decoupled services:
+**SuperCyan** — a personal AI assistant monorepo with three decoupled services:
 - `/web` — React + Vite desktop app (port 3000)
 - `/mobile` — React Native + Expo iOS/Android app
 - `/backend` — Python FastAPI cloud gateway (Cloud Run, port 8080)

@@ -3,7 +3,7 @@
 ## To: Mr. Blue (Frontend & Mobile Architect)
 ## From: Mr. Pink (Project Manager & Architectural Scout)
 
-### 🚀 Mission: The VibeOS Face
+### 🚀 Mission: The SuperCyan Face
 Mr. Blue, the backend foundation is now online (Mr. Green has successfully deployed the FastAPI gateway). It is time for you to establish the visual and structural footprint for both the Web and Mobile applications.
 
 #### **Task 1: VOS-012 (Web Scaffold)**
@@ -27,6 +27,6 @@ Mr. Blue, the backend foundation is now online (Mr. Green has successfully deplo
 ---
 
 ### 🎨 Design Note
-You are the guardian of the VibeOS aesthetic. Refer to the `oled-theme-enforcer` skill strictly. The first impression should be **Premium, Dark, and High-Contrast**. Shared Rule: You MUST implement the OLED Dark Theme (Rule 14) from Day 1. No light mode allowed.
+You are the guardian of the SuperCyan aesthetic. Refer to the `oled-theme-enforcer` skill strictly. The first impression should be **Premium, Dark, and High-Contrast**. Shared Rule: You MUST implement the OLED Dark Theme (Rule 14) from Day 1. No light mode allowed.
 
 **The board is synced. You are unblocked. Build the gate.**

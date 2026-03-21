@@ -1,4 +1,4 @@
-# VibeOS - Supabase Setup Guide
+# SuperCyan - Supabase Setup Guide
 
 ## 1. Create Project
 

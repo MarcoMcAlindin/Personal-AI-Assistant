@@ -81,7 +81,7 @@ The following three secrets must be added at: `github.com/MarcoMcAlindin/Persona
 | `GCP_SA_KEY` | GCP Console → IAM & Admin → Service Accounts → Create Key (JSON) | gcloud auth for Cloud Run identity token |
 
 **SA Requirements for `GCP_SA_KEY`:**
-- Service account needs `roles/run.invoker` on the `vibeos-qwen` Cloud Run service (`europe-west1`)
+- Service account needs `roles/run.invoker` on the `supercyan-qwen` Cloud Run service (`europe-west1`)
 - The `analyze_health.py` script calls `gcloud auth print-identity-token --audiences=<QWEN_ENDPOINT_URL>` to get a Bearer token for the IAM-protected vLLM endpoint
 
 ---

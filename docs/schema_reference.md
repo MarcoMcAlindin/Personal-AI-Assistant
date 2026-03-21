@@ -1,4 +1,4 @@
-# VibeOS - Supabase Schema Reference
+# SuperCyan - Supabase Schema Reference
 
 Full database schema derived from the PRD data model.
 

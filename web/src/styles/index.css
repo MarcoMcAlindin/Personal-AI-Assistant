@@ -1,1 +1,54 @@
-/* VibeOS Web — Global Styles */
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+/* Super Cyan Custom Styles */
+@layer base {
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism utilities */
+  .glass-effect {
+    background: rgba(26, 26, 26, 0.8);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  /* Cyan glow animations */
+  @keyframes cyan-pulse {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
+    }
+  }
+
+  .animate-cyan-pulse {
+    animation: cyan-pulse 2s ease-in-out infinite;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(10, 10, 10, 0.5);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 255, 0.4);
+  }
+}

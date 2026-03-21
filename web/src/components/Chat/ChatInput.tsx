@@ -22,7 +22,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Ask VibeOS anything..."
+        placeholder="Ask SuperCyan anything..."
         disabled={disabled}
         className="chat-input"
       />

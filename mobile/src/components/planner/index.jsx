@@ -1,1 +1,1 @@
-// VibeOS Mobile — Planner Components
+// SuperCyan Mobile — Planner Components

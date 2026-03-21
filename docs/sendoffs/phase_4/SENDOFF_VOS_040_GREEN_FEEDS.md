@@ -242,7 +242,7 @@ TICKETMASTER_API_KEY="" curl http://localhost:8000/api/v1/feeds/concerts
 ## Worktree Setup
 
 ```bash
-cd /home/marco/vibeos-worktrees/green
+cd /home/marco/supercyan-worktrees/green
 git fetch origin staging
 git rebase origin/staging  # Ensure VOS-039 changes are included
 git checkout -b feature/green/040-feeds-pipeline

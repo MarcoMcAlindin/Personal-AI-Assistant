@@ -313,7 +313,7 @@ After this task, the email API surface will be:
 ## Worktree Setup
 
 ```bash
-cd /home/marco/vibeos-worktrees/green
+cd /home/marco/supercyan-worktrees/green
 git fetch origin staging
 git rebase origin/staging  # Ensure VOS-039 and VOS-040 are included
 git checkout -b feature/green/041-email-pipeline

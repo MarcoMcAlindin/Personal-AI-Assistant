@@ -1,17 +1,17 @@
 steps:
   # Build the container image (two-stage: Python downloader fetches single GGUF Q4_K_M file; llama.cpp CUDA server runs it)
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest', '.']
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/supercyan/vllm-qwen:latest', '.']
 
   # Push the container image to Artifact Registry
   # Cloud Run deployment is handled by deploy.sh (gcloud run deploy)
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', '${_REGION}-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest']
+    args: ['push', '${_REGION}-docker.pkg.dev/$PROJECT_ID/supercyan/vllm-qwen:latest']
 
 substitutions:
   _REGION: europe-west1
 
 images:
-  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/vibeos/vllm-qwen:latest'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/supercyan/vllm-qwen:latest'
 
 timeout: 3600s

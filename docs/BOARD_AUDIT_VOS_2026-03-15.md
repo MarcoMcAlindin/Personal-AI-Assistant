@@ -1,4 +1,4 @@
-# VibeOS Project Board Audit
+# SuperCyan Project Board Audit
 **Date:** 2026-03-15
 **Auditor:** Mr. Pink (Project Manager & Architectural Scout)
 **Scope:** Full board review -- all VOS-001 to VOS-022. Physical codebase inspection against board claims.
@@ -38,7 +38,7 @@
 
 ### Finding 1: vLLM Never Deployed (Critical)
 VOS-009 was approved based on the presence of `Dockerfile`, `cloudbuild.yaml`, and `deploy.sh`.
-`deploy.sh` was never executed. No Cloud Run service `vibeos-qwen` exists in GCP. No L4 GPU instance is visible in the account.
+`deploy.sh` was never executed. No Cloud Run service `supercyan-qwen` exists in GCP. No L4 GPU instance is visible in the account.
 The backend silently falls back to mock mode via: `if not qwen_url: return "[MOCK CONTEXT]..."`.
 This masked the failure across every AI-dependent feature.
 

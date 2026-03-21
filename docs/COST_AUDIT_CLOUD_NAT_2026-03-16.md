@@ -7,9 +7,9 @@
 | **Charge** | £4.62 ($6.24 USD) |
 | **Data Processed** | 138.84 GB through Cloud NAT |
 | **Rate** | $0.045/GB |
-| **NAT Gateway** | `vibeos-nat` (always-on when configured) |
+| **NAT Gateway** | `supercyan-nat` (always-on when configured) |
 | **Gateway Hourly Cost** | ~$0.30/hour = **$220/month if left running** |
-| **Affected Service** | `vibeos-qwen` (vLLM GPU Cloud Run) |
+| **Affected Service** | `supercyan-qwen` (vLLM GPU Cloud Run) |
 
 ## Root Cause
 
@@ -76,10 +76,10 @@ If no external API requires a static IP whitelist, the Cloud NAT gateway can be 
 
 ```bash
 # Check if NAT exists
-gcloud compute routers nats list --router=vibeos-router --region=europe-west1
+gcloud compute routers nats list --router=supercyan-router --region=europe-west1
 
 # If no static IP needed, delete it
-gcloud compute routers nats delete vibeos-nat --router=vibeos-router --region=europe-west1
+gcloud compute routers nats delete supercyan-nat --router=supercyan-router --region=europe-west1
 ```
 
 **Impact:** Eliminates $0.30/hour gateway fee (~$220/month) + all per-GB charges.

@@ -70,7 +70,7 @@ curl -X POST https://<BACKEND_URL>/chat \
 ```bash
 cd vllm_deployment && bash deploy.sh
 # After deploy, check logs:
-gcloud run services logs read vibeos-qwen --region europe-west1 --limit 50
+gcloud run services logs read supercyan-qwen --region europe-west1 --limit 50
 # Expected: No "CUDA graph capture" errors
 # Expected: "compressed-tensors" appears in the model loading log
 ```
@@ -79,7 +79,7 @@ gcloud run services logs read vibeos-qwen --region europe-west1 --limit 50
 
 ```bash
 # Verify Cloud Run service timeout is 600s:
-gcloud run services describe vibeos-qwen --region europe-west1 \
+gcloud run services describe supercyan-qwen --region europe-west1 \
   --format="value(spec.template.spec.timeoutSeconds)"
 # Expected output: 600
 ```
@@ -95,7 +95,7 @@ None. All changes are code/config only.
 ### 6. API / Database Schema Changes
 
 None. The `chat_template_kwargs` field is passed in the request body to the vLLM
-OpenAI-compatible API -- it is transparent to callers of the VibeOS backend.
+OpenAI-compatible API -- it is transparent to callers of the SuperCyan backend.
 
 ---
 
@@ -107,7 +107,7 @@ OpenAI-compatible API -- it is transparent to callers of the VibeOS backend.
 >
 > **Description:**
 > `--enforce-eager` was added because the Qwen VL vision encoder crashes when CUDA graphs
-> are enabled. However, the vast majority of VibeOS requests are text-only (no images).
+> are enabled. However, the vast majority of SuperCyan requests are text-only (no images).
 > The hypothesis is that removing `--enforce-eager` will enable 2-5x faster decode via
 > CUDA graph pre-compilation and is safe when no images are in the payload.
 >
@@ -149,4 +149,4 @@ OpenAI-compatible API -- it is transparent to callers of the VibeOS backend.
 
 **I am Mr. Red. Changes committed to `feature/red/024-health-analysis-e2e-verify` (commit `8da6cbd`) and pushed. Awaiting Pink acknowledgment and VOS-065 board registration.**
 
-Signed-off-by: Mr. Red <red@vibeos.internal>
+Signed-off-by: Mr. Red <red@supercyan.internal>

@@ -7,7 +7,7 @@ export default function DashboardScreen() {
       <Text style={commonStyles.title}>Dashboard</Text>
       
       <Card style={{ marginBottom: theme.spacing.md }}>
-        <Text style={commonStyles.subtitle}>Welcome back, VibeOS User.</Text>
+        <Text style={commonStyles.subtitle}>Welcome back, SuperCyan User.</Text>
         <Text>Your assistant is ready.</Text>
       </Card>
 
