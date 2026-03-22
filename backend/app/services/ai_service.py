@@ -10,6 +10,13 @@ from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 
 
+def _sanitize_output(text: str) -> str:
+    """Post-processing pass applied to every Qwen response.
+    Replaces em dashes with a spaced hyphen so they never reach the UI.
+    """
+    return text.replace("\u2014", " - ").replace("\u2013", " - ")
+
+
 def _gcp_auth_headers(audience_url: str) -> dict:
     """
     Fetch a GCP identity token for IAM-protected Cloud Run endpoints.
@@ -38,10 +45,11 @@ async def call_ollama(message: str, rag_context: str, ollama_url: str) -> str:
     """Proxy chat request to a user's Ollama instance with RAG context."""
     base = ollama_url.rstrip('/')
     system_prompt = (
-        "You are SuperCyan Assistant. Use the following context to answer the user's question.\n\n"
+        "You are SuperCyan Assistant. Use the following context to answer the user's question. "
+        "Never use em dashes (—) in your responses; use a plain hyphen (-) instead.\n\n"
         f"Context:\n{rag_context}"
         if rag_context
-        else "You are SuperCyan Assistant."
+        else "You are SuperCyan Assistant. Never use em dashes (—); use a plain hyphen (-) instead."
     )
     async with httpx.AsyncClient(timeout=120.0) as client:
         response = await client.post(
@@ -57,7 +65,7 @@ async def call_ollama(message: str, rag_context: str, ollama_url: str) -> str:
             headers={"Content-Type": "application/json"},
         )
         response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"]
+        return _sanitize_output(response.json()["choices"][0]["message"]["content"])
 
 async def chat_with_tools(
     message: str,
@@ -145,7 +153,8 @@ async def chat_with_tools(
             "content": "You are SuperCyan Assistant, a premium AI personal assistant. "
                        "You have access to tools for email, tasks, and health. "
                        "If you use a tool, explain what you are doing in the final response. "
-                       "Always strip <think> tags from your final output."
+                       "Always strip <think> tags from your final output. "
+                       "Never use em dashes (—) in your responses; use a plain hyphen (-) instead."
         },
         {"role": "user", "content": content_list}
     ]
@@ -181,6 +190,7 @@ async def chat_with_tools(
                 final_content = message_obj.get("content") or ""
                 # Strip <think> tags
                 final_content = re.sub(r'<think>.*?</think>', '', final_content, flags=re.DOTALL).strip()
+                final_content = _sanitize_output(final_content)
                 
                 # Store history in Supabase via the provided service
                 try:
@@ -225,7 +235,7 @@ async def chat_with_tools(
                     "content": tool_result
                 })
 
-async def generate_cover_letter(job: dict, campaign: dict) -> str:
+async def generate_cover_letter(job: dict, campaign: dict, cv_text: str = "") -> str:
     """
     Generates an ATS-optimised cover letter for a specific job using the cloud Qwen instance.
     Falls back to a structured template if vLLM is unavailable.
@@ -249,18 +259,26 @@ async def generate_cover_letter(job: dict, campaign: dict) -> str:
             f"Yours sincerely,\n[Your Name]"
         )
 
+    cv_section = (
+        f"\nCandidate CV (use specific experience and skills from this):\n{cv_text[:4000]}\n"
+        if cv_text.strip() else
+        f"\nCandidate keywords/skills: {keywords}\n"
+    )
+
     prompt = (
         f"Write a professional, ATS-optimised cover letter for the following job.\n\n"
         f"Job Title: {job_title}\n"
         f"Company: {company}\n"
-        f"Job Description (excerpt):\n{description}\n\n"
-        f"Candidate keywords/skills: {keywords}\n"
+        f"Job Description (excerpt):\n{description}\n"
+        f"{cv_section}\n"
         f"Preferred location: {location_pref}\n\n"
         f"Requirements:\n"
         f"- 3 concise paragraphs: opening hook, skills alignment, closing call-to-action\n"
+        f"- Reference specific experience from the candidate's CV where relevant\n"
         f"- Formal but energetic tone\n"
         f"- No generic filler phrases (e.g. 'I am excited to...')\n"
         f"- Output plain text only — no markdown, no subject line, no date\n"
+        f"- Never use em dashes (—); use a plain hyphen (-) instead\n"
         f"- End with 'Yours sincerely,' on its own line followed by '[Your Name]'"
     )
 
@@ -273,14 +291,79 @@ async def generate_cover_letter(job: dict, campaign: dict) -> str:
             json={
                 "model": os.environ.get("QWEN_MODEL_NAME", "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"),
                 "messages": [
-                    {"role": "system", "content": "You are an expert career coach. Write cover letters that are concise, professional, and tailored to the specific job."},
+                    {"role": "system", "content": "You are an expert career coach. Write cover letters that are concise, professional, and tailored to the specific job. Never use em dashes (—); use a plain hyphen (-) instead."},
                     {"role": "user", "content": prompt}
                 ],
                 "temperature": 0.6,
             }
         )
         resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"].strip()
+        return _sanitize_output(resp.json()["choices"][0]["message"]["content"].strip())
+
+
+async def generate_interview_questions_ai(job_title: str, job_description: str, cv_text: str = "") -> list:
+    """
+    Generate 7 interview questions blending role-specific technical questions with
+    personal/behavioural questions grounded in the candidate's CV.
+    Falls back to generic questions if the AI is unavailable or parsing fails.
+    """
+    fallback = [
+        f"Walk me through your experience most relevant to the {job_title} role.",
+        "What is the most complex technical problem you have solved, and how did you approach it?",
+        "Describe a project where you had significant ownership — what was your impact?",
+        "Tell me about a professional achievement you are most proud of and why.",
+        "What are your main career goals for the next two to three years?",
+        "How do you handle disagreement with a colleague or manager on a technical decision?",
+        "What motivates you to apply for this particular role at this stage of your career?"
+    ]
+
+    qwen_url = os.environ.get("QWEN_ENDPOINT_URL")
+    if not qwen_url:
+        return fallback
+
+    excerpt = job_description[:2500] if job_description else ""
+    cv_section = (
+        f"\n\nCandidate CV (use this to make personal/achievement questions specific to their background):\n{cv_text[:3000]}"
+        if cv_text.strip() else ""
+    )
+    prompt = (
+        f"Generate exactly 7 interview questions for a {job_title} candidate.\n\n"
+        f"Job Requirements:\n{excerpt}{cv_section}\n\n"
+        f"Rules:\n"
+        f"- Questions 1–4: role-specific technical/situational questions based on the job requirements\n"
+        f"- Questions 5–7: personal questions about the candidate's past achievements, career goals, "
+        f"and motivations — reference specific experience from their CV where possible\n"
+        f"- Each question must be concise (one sentence), direct, and specific - no generic filler\n"
+        f"- Never use em dashes (—) in the questions; use a plain hyphen (-) instead\n"
+        f"Return ONLY a JSON array of 7 strings, no other text."
+    )
+
+    try:
+        headers = {"Content-Type": "application/json", **_gcp_auth_headers(qwen_url)}
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(
+                f"{qwen_url.rstrip('/')}/chat/completions",
+                headers=headers,
+                json={
+                    "model": os.environ.get("QWEN_MODEL_NAME", "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"),
+                    "messages": [
+                        {"role": "system", "content": "You are an expert interviewer. Return JSON only. Never use em dashes (—); use a plain hyphen (-) instead."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.5,
+                    "max_tokens": 768,
+                }
+            )
+            resp.raise_for_status()
+            content = resp.json()["choices"][0]["message"]["content"].strip()
+            # Strip markdown code fences if present
+            content = re.sub(r'```json\n?|\n?```', '', content).strip()
+            questions = json.loads(content)
+            if isinstance(questions, list) and len(questions) >= 1:
+                return [_sanitize_output(q) for q in questions[:7]]
+            return fallback
+    except Exception:
+        return fallback
 
 
 async def generate_campaign_analysis(campaign_data: dict, cv_text: Optional[str] = None) -> Dict[str, Any]:
@@ -316,7 +399,7 @@ async def generate_campaign_analysis(campaign_data: dict, cv_text: Optional[str]
     """
 
     messages = [
-        {"role": "system", "content": "You are a professional career strategist and executive recruiter AI. Return JSON only."},
+        {"role": "system", "content": "You are a professional career strategist and executive recruiter AI. Return JSON only. Never use em dashes (—); use a plain hyphen (-) instead."},
         {"role": "user", "content": prompt}
     ]
 
@@ -337,5 +420,6 @@ async def generate_campaign_analysis(campaign_data: dict, cv_text: Optional[str]
         content = resp.json()["choices"][0]["message"]["content"]
         # Strip potential markdown code blocks
         content = re.sub(r'```json\n?|\n?```', '', content).strip()
+        content = _sanitize_output(content)
         return json.loads(content)
 

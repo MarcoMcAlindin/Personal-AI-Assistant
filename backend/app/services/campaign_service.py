@@ -104,12 +104,16 @@ class CampaignService:
     async def create_application(self, user_id: str, data: dict) -> Dict:
         if not self.supabase:
             return {"error": "Supabase not initialized"}
-            
+
         payload = {
             "inbox_item_id": data["inbox_item_id"],
             "user_id": user_id,
             "cover_letter_text": data["cover_letter_text"],
             "status": "READY_TO_APPLY"
         }
+        if data.get("campaign_id"):
+            payload["campaign_id"] = data["campaign_id"]
+        if data.get("cover_letter_metadata"):
+            payload["cover_letter_metadata"] = data["cover_letter_metadata"]
         result = self.supabase.table("applications").insert(payload).execute()
         return result.data[0] if result.data else {"error": "Insert failed"}

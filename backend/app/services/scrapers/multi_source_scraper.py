@@ -8,6 +8,12 @@ from .crustdata import CrustdataScraper
 from .proxycurl import ProxycurlScraper
 from .remoteok import RemoteOKScraper
 from .remotive import RemotiveScraper
+from .adzuna import AdzunaScraper
+from .jobicy import JobicyScraper
+from .himalayas import HimalayasScraper
+from .reed import ReedScraper
+from .cvlibrary import CVLibraryScraper
+from .totaljobs import TotalJobsScraper
 
 # Modified: 2026-03-22
 # What: Added _write_scrape_log() to persist execution evidence to the scrape_logs table after
@@ -23,12 +29,18 @@ class MultiSourceScraper:
     def __init__(self, supabase_client):
         self.supabase = supabase_client
         self.scrapers = [
-            WeWorkRemotelyScraper(supabase_client),
+            AdzunaScraper(supabase_client),
+            ReedScraper(supabase_client),
+            CVLibraryScraper(supabase_client),
+            TotalJobsScraper(supabase_client),
+            JobicyScraper(supabase_client),
+            HimalayasScraper(supabase_client),
             SerperScraper(supabase_client),
-            CrustdataScraper(supabase_client),
-            ProxycurlScraper(supabase_client),
             RemoteOKScraper(supabase_client),
             RemotiveScraper(supabase_client),
+            WeWorkRemotelyScraper(supabase_client),
+            CrustdataScraper(supabase_client),
+            ProxycurlScraper(supabase_client),
         ]
 
     async def scrape_jobs_for_campaign(self, campaign: dict) -> Dict:

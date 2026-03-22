@@ -74,6 +74,16 @@ class RemoteOKScraper:
         title = job.get("position", "Unknown")
         description = job.get("description", "")
         match_score, match_reasoning = score_job(title, description, campaign)
+
+        # RemoteOK returns epoch seconds in "date" field
+        job_posted_at = None
+        if job.get("date"):
+            try:
+                from datetime import datetime, timezone
+                job_posted_at = datetime.fromtimestamp(int(job["date"]), tz=timezone.utc).isoformat()
+            except Exception:
+                pass
+
         return {
             "campaign_id": campaign["id"],
             "user_id": campaign["user_id"],
@@ -90,4 +100,5 @@ class RemoteOKScraper:
             "status": "PENDING_REVIEW",
             "match_score": match_score,
             "match_reasoning": match_reasoning,
+            "job_posted_at": job_posted_at,
         }

@@ -1,8 +1,9 @@
 import asyncio
+import logging
 import time
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, BackgroundTasks
 from typing import Literal, Optional, List
 from pydantic import BaseModel
 from app.services.email_service import EmailService
@@ -15,7 +16,8 @@ from app.models.schemas import (
     CampaignCreateRequest, CampaignUpdateRequest,
     InboxItemStatusUpdate, ApplicationCreateRequest, CoverLetterRequest
 )
-from app.services.ai_service import call_ollama, chat_with_tools, generate_cover_letter
+from app.services.ai_service import call_ollama, chat_with_tools, generate_cover_letter, generate_interview_questions_ai
+from app.services import cv_service
 from app.utils.auth import get_current_user
 import httpx
 import os
@@ -163,6 +165,7 @@ async def rewrite_email(
     system_prompt = (
         f"You are an email writing assistant. Rewrite the following email draft "
         f"to be more {request.tone}. Preserve the core message and intent. "
+        f"Never use em dashes (—); use a plain hyphen (-) instead. "
         f"Return ONLY the rewritten email body -- no preamble, no explanation."
     )
 
@@ -184,7 +187,8 @@ async def rewrite_email(
             )
             response.raise_for_status()
             data = response.json()
-            return {"rewritten": data["choices"][0]["message"]["content"]}
+            rewritten = data["choices"][0]["message"]["content"].replace("\u2014", " - ").replace("\u2013", " - ")
+            return {"rewritten": rewritten}
     except Exception as e:
         return {"rewritten": request.body, "error": f"AI rewrite failed: {str(e)}"}
 
@@ -440,6 +444,33 @@ async def update_campaign(campaign_id: str, request: CampaignUpdateRequest, user
         raise HTTPException(status_code=500, detail=result["error"])
     return result
 
+@router.delete("/campaigns/{campaign_id}")
+async def delete_campaign(campaign_id: str, user_id: str = Depends(get_current_user)):
+    """
+    Delete a campaign and cascade-delete all related inbox_items.
+    The cascade is enforced by the FK on inbox_items.campaign_id.
+    """
+    if not campaign_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+    try:
+        # Before deleting campaign, preserve applications by NULLing their FKs
+        campaign_service.supabase.table("applications") \
+            .update({"inbox_item_id": None, "campaign_id": None}) \
+            .eq("campaign_id", campaign_id).eq("user_id", user_id).execute()
+        # inbox_items FK has ON DELETE CASCADE — deleting the campaign removes inbox items
+        res = campaign_service.supabase.table("campaigns") \
+            .delete() \
+            .eq("id", campaign_id) \
+            .eq("user_id", user_id) \
+            .execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Campaign not found")
+        return {"deleted": campaign_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/inbox")
 async def get_inbox_items(campaign_id: Optional[str] = None, user_id: str = Depends(get_current_user)):
     data = await campaign_service.get_inbox(user_id, campaign_id)
@@ -472,21 +503,272 @@ async def generate_cover_letter_endpoint(request: CoverLetterRequest, user_id: s
         campaign_res = campaign_service.supabase.table("campaigns").select("*") \
             .eq("id", job["campaign_id"]).limit(1).execute()
         campaign = campaign_res.data[0] if campaign_res.data else {}
-        cover_letter = await generate_cover_letter(job, campaign)
+        # Inject the user's CV text so Qwen can personalise the letter
+        cv_text = cv_service.get_primary_cv_text(campaign_service.supabase, user_id) or ""
+        cover_letter = await generate_cover_letter(job, campaign, cv_text=cv_text)
         return {"cover_letter_text": cover_letter}
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Cover letter generation failed: {str(e)}")
 
-@router.post("/applications")
-async def create_application(request: ApplicationCreateRequest, user_id: str = Depends(get_current_user)):
-    result = await campaign_service.create_application(user_id, request.model_dump())
+async def _generate_cover_letter_background(
+    application_id: str,
+    user_id: str,
+    inbox_item_id: str,
+    supabase,
+):
+    """Background task: generate cover letter and write it back to the application row."""
+    try:
+        item_res = supabase.table("inbox_items").select("*") \
+            .eq("id", inbox_item_id).eq("user_id", user_id).limit(1).execute()
+        if not item_res.data:
+            return
+        job = item_res.data[0]
+        campaign_res = supabase.table("campaigns").select("*") \
+            .eq("id", job["campaign_id"]).limit(1).execute()
+        campaign = campaign_res.data[0] if campaign_res.data else {}
+        cv_text = cv_service.get_primary_cv_text(supabase, user_id) or ""
+        cover_letter = await generate_cover_letter(job, campaign, cv_text=cv_text)
+        supabase.table("applications") \
+            .update({"cover_letter_text": cover_letter}) \
+            .eq("id", application_id).execute()
+        logging.info(f"Background cover letter written for application {application_id}")
+    except Exception as e:
+        logging.error(f"Background cover letter generation failed for {application_id}: {e}")
+
+
+@router.post("/applications", status_code=201)
+async def create_application(
+    request: ApplicationCreateRequest,
+    background_tasks: BackgroundTasks,
+    user_id: str = Depends(get_current_user),
+):
+    if not campaign_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+    # Fetch inbox item for job snapshot
+    item_res = campaign_service.supabase.table("inbox_items").select("*") \
+        .eq("id", request.inbox_item_id).eq("user_id", user_id).limit(1).execute()
+    job = item_res.data[0] if item_res.data else {}
+    snapshot = {
+        "job_snapshot": {
+            "job_title": job.get("job_title"),
+            "company_name": job.get("company_name"),
+            "location": job.get("location"),
+            "remote_type": job.get("remote_type"),
+            "salary_range": job.get("salary_range"),
+            "job_url": job.get("job_url"),
+            "job_description": job.get("job_description"),
+            "source": job.get("source"),
+            "match_score": float(job.get("match_score") or 0),
+        },
+        "interview_questions": []
+    }
+    data = request.model_dump()
+    data["cover_letter_metadata"] = snapshot
+    data["campaign_id"] = job.get("campaign_id")
+    data["cover_letter_text"] = ""
+    result = await campaign_service.create_application(user_id, data)
     if "error" in result:
         raise HTTPException(status_code=500, detail=result["error"])
-    # Mark the inbox item as APPROVED now the application is committed
+    # Mark the inbox item as APPROVED
     await campaign_service.update_inbox_item(user_id, request.inbox_item_id, "APPROVED")
+    # Fire cover letter generation in the background — returns immediately
+    application_id = result.get("id")
+    if application_id:
+        background_tasks.add_task(
+            _generate_cover_letter_background,
+            application_id, user_id, request.inbox_item_id, campaign_service.supabase
+        )
     return result
+
+
+@router.delete("/applications/{application_id}")
+async def delete_application(application_id: str, user_id: str = Depends(get_current_user)):
+    """Permanently delete an application record."""
+    if not campaign_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+    try:
+        res = campaign_service.supabase.table("applications") \
+            .delete() \
+            .eq("id", application_id) \
+            .eq("user_id", user_id) \
+            .execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Application not found")
+        return {"deleted": application_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class CoverLetterSaveRequest(BaseModel):
+    cover_letter_text: str
+
+@router.patch("/applications/{application_id}/cover-letter")
+async def save_cover_letter(
+    application_id: str,
+    request: CoverLetterSaveRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Write a generated cover letter text back to the application row."""
+    if not campaign_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+    res = campaign_service.supabase.table("applications") \
+        .update({"cover_letter_text": request.cover_letter_text}) \
+        .eq("id", application_id).eq("user_id", user_id).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Application not found")
+    return res.data[0]
+
+
+@router.patch("/applications/{application_id}/confirm")
+async def confirm_application(application_id: str, user_id: str = Depends(get_current_user)):
+    """Set application status to APPLIED and record applied_at timestamp."""
+    if not campaign_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+    res = campaign_service.supabase.table("applications") \
+        .update({"status": "APPLIED", "applied_at": datetime.now(timezone.utc).isoformat()}) \
+        .eq("id", application_id).eq("user_id", user_id).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Application not found")
+    return res.data[0]
+
+
+@router.post("/applications/{application_id}/interview-questions")
+async def generate_interview_questions_endpoint(application_id: str, user_id: str = Depends(get_current_user)):
+    """Generate 5 interview questions for the job and store them in cover_letter_metadata."""
+    if not campaign_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+    res = campaign_service.supabase.table("applications").select("*") \
+        .eq("id", application_id).eq("user_id", user_id).limit(1).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Application not found")
+    app = res.data[0]
+    metadata = app.get("cover_letter_metadata") or {}
+    snapshot = metadata.get("job_snapshot", {})
+    job_title = snapshot.get("job_title", "the role")
+    job_description = (snapshot.get("job_description") or "")[:3000]
+    cv_text = cv_service.get_primary_cv_text(campaign_service.supabase, user_id) or ""
+
+    questions = await generate_interview_questions_ai(job_title, job_description, cv_text=cv_text)
+
+    # Store questions back in cover_letter_metadata
+    metadata["interview_questions"] = questions
+    campaign_service.supabase.table("applications") \
+        .update({"cover_letter_metadata": metadata}) \
+        .eq("id", application_id).execute()
+
+    return {"interview_questions": questions}
+
+# ── CV endpoints ──────────────────────────────────────────────────────────────
+
+ALLOWED_CV_TYPES = {
+    "application/pdf", "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+}
+MAX_CV_BYTES = 10 * 1024 * 1024  # 10 MB
+
+@router.post("/cv/upload")
+async def upload_cv(
+    file: UploadFile = File(...),
+    user_id: str = Depends(get_current_user),
+):
+    """
+    Accept a CV file (PDF / DOCX / TXT), extract text, generate an OpenAI
+    embedding, and store in cv_files.  Marks the new CV as primary and
+    demotes previous ones.
+    """
+    if not campaign_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    data = await file.read()
+    if len(data) > MAX_CV_BYTES:
+        raise HTTPException(status_code=413, detail="File too large (max 10 MB)")
+
+    mime = file.content_type or "application/octet-stream"
+    if mime not in ALLOWED_CV_TYPES and not file.filename.lower().endswith((".pdf", ".doc", ".docx", ".txt")):
+        raise HTTPException(status_code=415, detail=f"Unsupported file type: {mime}")
+
+    parsed_text = cv_service.extract_text(data, file.filename)
+    if not parsed_text.strip():
+        raise HTTPException(status_code=422, detail="Could not extract text from the file")
+
+    embedding = await cv_service.embed_text(parsed_text)
+
+    record = cv_service.save_cv(
+        supabase=campaign_service.supabase,
+        user_id=user_id,
+        filename=file.filename,
+        file_size_bytes=len(data),
+        mime_type=mime,
+        parsed_text=parsed_text,
+        embedding=embedding,
+    )
+    return {"cv": record, "chars_extracted": len(parsed_text)}
+
+
+@router.get("/cv")
+async def list_cvs(user_id: str = Depends(get_current_user)):
+    if not campaign_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+    cvs = cv_service.list_cvs(campaign_service.supabase, user_id)
+    return {"cvs": cvs}
+
+
+@router.get("/cv/primary")
+async def get_primary_cv(user_id: str = Depends(get_current_user)):
+    """Return the active (primary) CV's text for the current user."""
+    if not campaign_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+    text = cv_service.get_primary_cv_text(campaign_service.supabase, user_id)
+    if text is None:
+        raise HTTPException(status_code=404, detail="No CV found")
+    return {"parsed_text": text}
+
+
+@router.patch("/cv/{cv_id}/set-primary")
+async def set_primary_cv(cv_id: str, user_id: str = Depends(get_current_user)):
+    """Mark one CV as primary and demote all others for this user."""
+    if not campaign_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+    try:
+        campaign_service.supabase.table("cv_files") \
+            .update({"is_primary": False}).eq("user_id", user_id).execute()
+        res = campaign_service.supabase.table("cv_files") \
+            .update({"is_primary": True}).eq("id", cv_id).eq("user_id", user_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="CV not found")
+        return {"set_primary": cv_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/cv/{cv_id}")
+async def get_cv(cv_id: str, user_id: str = Depends(get_current_user)):
+    if not campaign_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+    res = campaign_service.supabase.table("cv_files") \
+        .select("id, filename, file_size_bytes, mime_type, uploaded_at, is_primary, parsed_text") \
+        .eq("id", cv_id).eq("user_id", user_id).limit(1).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="CV not found")
+    return res.data[0]
+
+
+@router.delete("/cv/{cv_id}")
+async def delete_cv(cv_id: str, user_id: str = Depends(get_current_user)):
+    if not campaign_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+    deleted = cv_service.delete_cv(campaign_service.supabase, cv_id, user_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="CV not found")
+    return {"deleted": cv_id}
+
 
 @router.post("/scrapers/run/{campaign_id}")
 async def run_campaign_scraper(campaign_id: str, user_id: str = Depends(get_current_user)):

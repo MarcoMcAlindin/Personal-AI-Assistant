@@ -30,17 +30,15 @@ class CrustdataScraper:
         logging.info(f"Starting Crustdata scrape for campaign: {campaign['id']}")
         
         prefs = campaign.get("job_preferences", {})
-        # Flatten role_titles as a query block
-        query = " OR ".join(prefs.get("role_titles", []))
-        
-        # Build params
+        query = prefs.get("keywords", "") or campaign.get("name", "")
+
         params = {
             "query": query,
             "limit": campaign.get("max_results_per_run", 50)
         }
-        
-        if prefs.get("locations"):
-            params["location"] = prefs["locations"][0] # simplified
+
+        if prefs.get("location"):
+            params["location"] = prefs["location"]
 
         try:
             async with httpx.AsyncClient(headers={"Authorization": f"Bearer {self.api_key}"}) as client:

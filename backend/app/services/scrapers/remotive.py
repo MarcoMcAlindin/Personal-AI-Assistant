@@ -66,6 +66,10 @@ class RemotiveScraper:
         description = job.get("description", "")
         salary = job.get("salary", "")
         match_score, match_reasoning = score_job(title, description, campaign)
+
+        # Remotive returns ISO date string in "publication_date"
+        job_posted_at = job.get("publication_date") or None
+
         return {
             "campaign_id": campaign["id"],
             "user_id": campaign["user_id"],
@@ -82,4 +86,5 @@ class RemotiveScraper:
             "status": "PENDING_REVIEW",
             "match_score": match_score,
             "match_reasoning": match_reasoning,
+            "job_posted_at": job_posted_at,
         }

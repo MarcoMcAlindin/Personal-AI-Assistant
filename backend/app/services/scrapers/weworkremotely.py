@@ -13,10 +13,45 @@ from .scoring import score_job
 #      in asyncio.gather. Duplicate inserts aborted the loop silently on repeat scraper runs.
 
 class WeWorkRemotelyScraper:
+    # All WWR category RSS feeds
+    _FEEDS = {
+        "programming":   "https://weworkremotely.com/categories/remote-programming-jobs.rss",
+        "devops":        "https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss",
+        "design":        "https://weworkremotely.com/categories/remote-design-jobs.rss",
+        "marketing":     "https://weworkremotely.com/categories/remote-marketing-jobs.rss",
+        "sales":         "https://weworkremotely.com/categories/remote-sales-jobs.rss",
+        "product":       "https://weworkremotely.com/categories/remote-product-jobs.rss",
+        "management":    "https://weworkremotely.com/categories/remote-management-executive-jobs.rss",
+        "finance":       "https://weworkremotely.com/categories/remote-finance-legal-jobs.rss",
+        "writing":       "https://weworkremotely.com/categories/remote-writing-editing-jobs.rss",
+        "data":          "https://weworkremotely.com/categories/remote-data-science-ai-statistics-jobs.rss",
+        "qa":            "https://weworkremotely.com/categories/remote-qa-jobs.rss",
+        "all":           "https://weworkremotely.com/remote-jobs.rss",
+    }
+    _KEYWORD_MAP = {
+        "devops": "devops", "sysadmin": "devops", "infrastructure": "devops", "cloud": "devops",
+        "design": "design", "ux": "design", "ui": "design", "figma": "design",
+        "marketing": "marketing", "seo": "marketing", "content": "marketing", "growth": "marketing",
+        "sales": "sales", "account": "sales", "revenue": "sales", "bdr": "sales", "sdr": "sales",
+        "product": "product", "pm": "product", "product manager": "product",
+        "cto": "management", "ceo": "management", "vp": "management", "director": "management", "head of": "management",
+        "finance": "finance", "accountant": "finance", "legal": "finance", "lawyer": "finance",
+        "writer": "writing", "editor": "writing", "copywriter": "writing",
+        "data": "data", "analyst": "data", "machine learning": "data", "ml": "data", "ai": "data",
+        "qa": "qa", "test": "qa", "quality": "qa",
+    }
+
     def __init__(self, supabase_client):
         self.supabase = supabase_client
-        # WWR feed for programming jobs
-        self.feed_url = "https://weworkremotely.com/categories/remote-programming-jobs.rss"
+
+    def _pick_feed(self, keywords: str) -> str:
+        """Pick the most relevant WWR RSS feed based on campaign keywords."""
+        kw_lower = keywords.lower()
+        for keyword, category in self._KEYWORD_MAP.items():
+            if keyword in kw_lower:
+                return self._FEEDS[category]
+        # Default to programming (largest category) — fallback to all if clearly non-tech
+        return self._FEEDS["programming"]
 
     async def scrape_jobs_for_campaign(self, campaign: dict) -> dict:
         """
@@ -27,6 +62,7 @@ class WeWorkRemotelyScraper:
 
         try:
             prefs = campaign.get("job_preferences", {})
+            keywords = prefs.get("keywords", "")
             job_type = (prefs.get("job_type") or "").lower()
             arrangement = (prefs.get("work_arrangement") or "").lower()
 
@@ -34,10 +70,12 @@ class WeWorkRemotelyScraper:
             if arrangement and arrangement != "remote":
                 return {"scraped_count": 0, "status": "success"}
 
+            feed_url = self._pick_feed(keywords)
+
             # feedparser.parse is synchronous blocking I/O — run in executor to avoid
             # stalling the event loop when called inside asyncio.gather.
             loop = asyncio.get_event_loop()
-            feed = await loop.run_in_executor(None, feedparser.parse, self.feed_url)
+            feed = await loop.run_in_executor(None, feedparser.parse, feed_url)
 
             scraped_count = 0
             max_results = campaign.get("max_results_per_run", 50)
@@ -77,6 +115,18 @@ class WeWorkRemotelyScraper:
 
         description = entry.get("description", "")
         match_score, match_reasoning = score_job(job_title, description, campaign)
+
+        # feedparser parses RSS <pubDate> into a time.struct_time in entry.published_parsed
+        job_posted_at = None
+        if entry.get("published_parsed"):
+            try:
+                from datetime import timezone
+                job_posted_at = datetime.fromtimestamp(
+                    time.mktime(entry["published_parsed"]), tz=timezone.utc
+                ).isoformat()
+            except Exception:
+                pass
+
         return {
             "campaign_id": campaign['id'],
             "user_id": campaign['user_id'],
@@ -93,4 +143,5 @@ class WeWorkRemotelyScraper:
             "status": "PENDING_REVIEW",
             "match_score": match_score,
             "match_reasoning": match_reasoning,
+            "job_posted_at": job_posted_at,
         }

@@ -100,5 +100,106 @@ export const campaignService = {
         throw new Error(`Scrape Trigger Failed: ${response.statusText}`);
     }
     return response.json();
-  }
+  },
+
+  deleteCampaign: async (campaignId: string): Promise<void> => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE}/campaigns/${campaignId}`, {
+      method: 'DELETE',
+      headers,
+    });
+    if (!res.ok) throw new Error(`Delete campaign failed: ${res.statusText}`);
+  },
+
+  uploadCV: async (file: File): Promise<{ cv: any; chars_extracted: number }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_BASE}/cv/upload`, {
+      method: 'POST',
+      headers: session ? { 'Authorization': `Bearer ${session.access_token}` } : {},
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `CV upload failed: ${res.statusText}`);
+    }
+    return res.json();
+  },
+
+  listCVs: async (): Promise<any[]> => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE}/cv`, { headers });
+    if (!res.ok) throw new Error('Failed to fetch CVs');
+    const data = await res.json();
+    return data.cvs;
+  },
+
+  getCV: async (cvId: string): Promise<any> => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE}/cv/${cvId}`, { headers });
+    if (!res.ok) throw new Error('Failed to fetch CV');
+    return res.json();
+  },
+
+  getPrimaryCV: async (): Promise<{ parsed_text: string } | null> => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE}/cv/primary`, { headers });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error('Failed to fetch primary CV');
+    return res.json();
+  },
+
+  setPrimaryCV: async (cvId: string): Promise<void> => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE}/cv/${cvId}/set-primary`, { method: 'PATCH', headers });
+    if (!res.ok) throw new Error('Failed to set primary CV');
+  },
+
+  deleteCV: async (cvId: string): Promise<void> => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE}/cv/${cvId}`, { method: 'DELETE', headers });
+    if (!res.ok) throw new Error('Failed to delete CV');
+  },
+
+  confirmApplication: async (applicationId: string): Promise<any> => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE}/applications/${applicationId}/confirm`, { method: 'PATCH', headers });
+    if (!res.ok) throw new Error('Failed to confirm application');
+    return res.json();
+  },
+
+  regenerateCoverLetter: async (applicationId: string, inboxItemId: string): Promise<string> => {
+    const headers = await getAuthHeaders();
+    // Generate the text
+    const genRes = await fetch(`${API_BASE}/applications/cover-letter`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ inbox_item_id: inboxItemId }),
+    });
+    if (!genRes.ok) throw new Error(`Cover letter generation failed: ${genRes.statusText}`);
+    const { cover_letter_text } = await genRes.json();
+    // Save it back to the application row
+    const saveRes = await fetch(`${API_BASE}/applications/${applicationId}/cover-letter`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ cover_letter_text }),
+    });
+    if (!saveRes.ok) throw new Error(`Failed to save cover letter: ${saveRes.statusText}`);
+    return cover_letter_text;
+  },
+
+  generateInterviewQuestions: async (applicationId: string): Promise<string[]> => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE}/applications/${applicationId}/interview-questions`, { method: 'POST', headers });
+    if (!res.ok) throw new Error('Failed to generate questions');
+    const data = await res.json();
+    return data.interview_questions;
+  },
+
+  deleteApplication: async (applicationId: string): Promise<void> => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE}/applications/${applicationId}`, { method: 'DELETE', headers });
+    if (!res.ok) throw new Error(`Delete application failed: ${res.statusText}`);
+  },
 };
