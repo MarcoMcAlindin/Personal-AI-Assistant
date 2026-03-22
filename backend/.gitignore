@@ -22,6 +22,10 @@ htmlcov/
 .env.local
 .env.*.local
 
+# GCP credentials (never commit)
+gcp-service-account.json
+*.service-account.json
+
 # Docker
 *.log
 

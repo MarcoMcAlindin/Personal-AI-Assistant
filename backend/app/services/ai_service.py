@@ -9,6 +9,31 @@ import json
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 
+
+def _gcp_auth_headers(audience_url: str) -> dict:
+    """
+    Fetch a GCP identity token for IAM-protected Cloud Run endpoints.
+    Raises RuntimeError if credentials are unavailable and the URL is a real Cloud Run host
+    (so callers get a clear error instead of a silent 403).
+    Modified: 2026-03-22 — extracted shared helper; previously each caller silently swallowed
+    auth failures, causing 403s from Cloud Run with no feedback.
+    """
+    try:
+        import google.auth.transport.requests
+        import google.oauth2.id_token
+        auth_req = google.auth.transport.requests.Request()
+        base = audience_url.rstrip("/v1").rstrip("/")
+        token = google.oauth2.id_token.fetch_id_token(auth_req, base)
+        return {"Authorization": f"Bearer {token}"}
+    except Exception as e:
+        # If the URL is localhost / dev, proceed without auth — it's expected.
+        if "localhost" in audience_url or "127.0.0.1" in audience_url:
+            return {}
+        raise RuntimeError(
+            f"GCP identity token unavailable for {audience_url}. "
+            f"Run 'gcloud auth application-default login' locally. Original error: {e}"
+        )
+
 async def call_ollama(message: str, rag_context: str, ollama_url: str) -> str:
     """Proxy chat request to a user's Ollama instance with RAG context."""
     base = ollama_url.rstrip('/')
@@ -127,18 +152,7 @@ async def chat_with_tools(
 
     # 3. Execution Loop
     max_iterations = 5
-    headers = {"Content-Type": "application/json"}
-    
-    # GCP Identity Token logic for IAM-protected vLLM
-    try:
-        import google.auth.transport.requests
-        import google.oauth2.id_token
-        auth_req = google.auth.transport.requests.Request()
-        qwen_base = qwen_url.rstrip("/v1").rstrip("/")
-        identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
-        headers["Authorization"] = f"Bearer {identity_token}"
-    except Exception:
-        pass
+    headers = {"Content-Type": "application/json", **_gcp_auth_headers(qwen_url)}
 
     async with httpx.AsyncClient(timeout=300.0) as client:
         for i in range(max_iterations):
@@ -250,16 +264,7 @@ async def generate_cover_letter(job: dict, campaign: dict) -> str:
         f"- End with 'Yours sincerely,' on its own line followed by '[Your Name]'"
     )
 
-    headers = {"Content-Type": "application/json"}
-    try:
-        import google.auth.transport.requests
-        import google.oauth2.id_token
-        auth_req = google.auth.transport.requests.Request()
-        qwen_base = qwen_url.rstrip("/v1").rstrip("/")
-        identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
-        headers["Authorization"] = f"Bearer {identity_token}"
-    except Exception:
-        pass
+    headers = {"Content-Type": "application/json", **_gcp_auth_headers(qwen_url)}
 
     async with httpx.AsyncClient(timeout=90.0) as client:
         resp = await client.post(
@@ -315,16 +320,7 @@ async def generate_campaign_analysis(campaign_data: dict, cv_text: Optional[str]
         {"role": "user", "content": prompt}
     ]
 
-    headers = {"Content-Type": "application/json"}
-    try:
-        import google.auth.transport.requests
-        import google.oauth2.id_token
-        auth_req = google.auth.transport.requests.Request()
-        qwen_base = qwen_url.rstrip("/v1").rstrip("/")
-        identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
-        headers["Authorization"] = f"Bearer {identity_token}"
-    except Exception:
-        pass
+    headers = {"Content-Type": "application/json", **_gcp_auth_headers(qwen_url)}
 
     async with httpx.AsyncClient(timeout=60.0) as client:
         resp = await client.post(
