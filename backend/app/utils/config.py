@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     gmail_refresh_token: str = ""
     ticketmaster_api_key: str = ""
     serper_api_key: str = ""
+    google_redirect_uri: str = ""
+    frontend_url: str = "http://localhost:3000"
     vibeos_dev_mode: bool = False
     vibeos_dev_user_id: str = "ceo-dev-user"
 

@@ -3,7 +3,8 @@ import logging
 import time
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, BackgroundTasks, Query
+from fastapi.responses import RedirectResponse
 from typing import Literal, Optional, List
 from pydantic import BaseModel
 from app.services.email_service import EmailService
@@ -19,8 +20,10 @@ from app.models.schemas import (
 from app.services.ai_service import call_ollama, chat_with_tools, generate_cover_letter, generate_interview_questions_ai
 from app.services import cv_service
 from app.utils.auth import get_current_user
+from app.utils.config import settings
 import httpx
 import os
+import secrets
 
 router = APIRouter()
 email_service = EmailService()
@@ -336,6 +339,161 @@ async def save_chat_message(message_id: str, user_id: str = Depends(get_current_
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save message: {str(e)}")
+
+
+# -- Google OAuth ----------------------------------------------------------
+
+GOOGLE_SCOPES = [
+    "https://www.googleapis.com/auth/gmail.modify",
+    "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/contacts.readonly",
+]
+
+def _build_google_flow():
+    """Build an OAuth2 Flow from env-based client config."""
+    from google_auth_oauthlib.flow import Flow
+    client_config = {
+        "web": {
+            "client_id": settings.gmail_client_id,
+            "client_secret": settings.gmail_client_secret,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "redirect_uris": [settings.google_redirect_uri],
+        }
+    }
+    flow = Flow.from_client_config(
+        client_config,
+        scopes=GOOGLE_SCOPES,
+        redirect_uri=settings.google_redirect_uri,
+    )
+    return flow
+
+
+@router.get("/auth/google/authorize")
+async def google_authorize(user_id: str = Depends(get_current_user)):
+    """
+    Return a Google OAuth authorization URL for the current user.
+    The frontend should redirect the browser to the returned authorization_url.
+    """
+    if not email_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    flow = _build_google_flow()
+    random_token = secrets.token_urlsafe(32)
+    # Encode user_id into state so callback can identify the user without JWT
+    state_value = f"{user_id}:{random_token}"
+
+    authorization_url, _ = flow.authorization_url(
+        access_type="offline",
+        prompt="consent",
+        include_granted_scopes="true",
+        state=state_value,
+    )
+
+    # Persist the random token portion in users.settings for CSRF validation
+    settings_row = email_service.supabase.table("users") \
+        .select("settings") \
+        .eq("id", user_id).single().execute()
+    current_settings = settings_row.data.get("settings") or {}
+    current_settings["google_oauth_state"] = random_token
+    email_service.supabase.table("users").update({
+        "settings": current_settings
+    }).eq("id", user_id).execute()
+
+    return {"authorization_url": authorization_url, "state": state_value}
+
+
+@router.get("/auth/google/callback")
+async def google_callback(
+    code: str = Query(...),
+    state: str = Query(...),
+):
+    """
+    Google OAuth callback -- no JWT auth, this is a browser redirect from Google.
+    State format: "{user_id}:{random_token}"
+    """
+    if not email_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    # Split state to recover user_id and the stored CSRF token
+    parts = state.split(":", 1)
+    if len(parts) != 2:
+        raise HTTPException(status_code=400, detail="Invalid state parameter")
+    user_id, random_token = parts
+
+    # CSRF check: compare random_token against users.settings.google_oauth_state
+    row = email_service.supabase.table("users") \
+        .select("settings") \
+        .eq("id", user_id).single().execute()
+    stored_state = (row.data.get("settings") or {}).get("google_oauth_state")
+    if not stored_state or stored_state != random_token:
+        raise HTTPException(status_code=400, detail="OAuth state mismatch -- possible CSRF")
+
+    # Exchange authorization code for tokens
+    flow = _build_google_flow()
+    flow.fetch_token(code=code)
+    creds = flow.credentials
+
+    expiry_iso = creds.expiry.isoformat() if creds.expiry else None
+
+    # Store tokens in users.oauth_tokens.google (service role key client)
+    email_service.supabase.table("users").update({
+        "oauth_tokens": {
+            "google": {
+                "access_token": creds.token,
+                "refresh_token": creds.refresh_token,
+                "token_expiry": expiry_iso,
+                "scopes": list(creds.scopes) if creds.scopes else GOOGLE_SCOPES,
+            }
+        }
+    }).eq("id", user_id).execute()
+
+    # Clear the one-time CSRF state from settings
+    current_settings = (row.data.get("settings") or {})
+    current_settings.pop("google_oauth_state", None)
+    email_service.supabase.table("users").update({
+        "settings": current_settings
+    }).eq("id", user_id).execute()
+
+    redirect_target = f"{settings.frontend_url}/integrations?connected=gmail"
+    return RedirectResponse(url=redirect_target)
+
+
+@router.get("/auth/google/status")
+async def google_status(user_id: str = Depends(get_current_user)):
+    """Return Gmail connection status for the current user."""
+    if not email_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    row = email_service.supabase.table("users") \
+        .select("oauth_tokens, email") \
+        .eq("id", user_id).single().execute()
+
+    google_tokens = (row.data.get("oauth_tokens") or {}).get("google", {})
+    connected = bool(google_tokens.get("refresh_token"))
+    user_email = row.data.get("email") if connected else None
+
+    return {"gmail": {"connected": connected, "email": user_email}}
+
+
+@router.delete("/auth/google/disconnect")
+async def google_disconnect(user_id: str = Depends(get_current_user)):
+    """Remove stored Google tokens for the current user."""
+    if not email_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    # Read current oauth_tokens and clear the google key
+    row = email_service.supabase.table("users") \
+        .select("oauth_tokens") \
+        .eq("id", user_id).single().execute()
+    current_tokens = row.data.get("oauth_tokens") or {}
+    current_tokens.pop("google", None)
+
+    email_service.supabase.table("users").update({
+        "oauth_tokens": current_tokens
+    }).eq("id", user_id).execute()
+
+    return {"disconnected": True}
 
 
 # -- vLLM Status & Warmup --------------------------------------------------

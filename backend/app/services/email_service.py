@@ -84,22 +84,50 @@ class EmailService:
         return {"removed": True, "id": entry_id}
 
     async def get_user_gmail_credentials(self, user_id: str) -> Credentials:
-        """Fetch OAuth credentials for the user from Supabase."""
+        """Fetch OAuth credentials for the user from users.oauth_tokens JSONB."""
         if not self.supabase:
             raise Exception("Supabase not initialized")
-            
-        # This assumes the 'users' table or a dedicated 'tokens' table stores the necessary fields
-        response = self.supabase.table("users").select("settings").eq("id", user_id).single().execute()
-        settings = response.data.get("settings", {})
-        tokens = settings.get("google_tokens", {})
-        
-        return Credentials(
+
+        from google.auth.transport.requests import Request
+
+        row = self.supabase.table("users") \
+            .select("oauth_tokens") \
+            .eq("id", user_id).single().execute()
+        tokens = (row.data.get("oauth_tokens") or {}).get("google", {})
+
+        if not tokens.get("refresh_token"):
+            raise Exception("Google not connected for this user")
+
+        creds = Credentials(
             token=tokens.get("access_token"),
             refresh_token=tokens.get("refresh_token"),
             token_uri="https://oauth2.googleapis.com/token",
             client_id=os.environ.get("GMAIL_CLIENT_ID"),
-            client_secret=os.environ.get("GMAIL_CLIENT_SECRET")
+            client_secret=os.environ.get("GMAIL_CLIENT_SECRET"),
+            scopes=tokens.get("scopes"),
         )
+
+        if creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+            self._save_google_tokens(user_id, creds)
+
+        return creds
+
+    def _save_google_tokens(self, user_id: str, creds: Credentials) -> None:
+        """Persist refreshed Google credentials back to users.oauth_tokens."""
+        if not self.supabase:
+            return
+        expiry_iso = creds.expiry.isoformat() if creds.expiry else None
+        self.supabase.table("users").update({
+            "oauth_tokens": {
+                "google": {
+                    "access_token": creds.token,
+                    "refresh_token": creds.refresh_token,
+                    "token_expiry": expiry_iso,
+                    "scopes": list(creds.scopes) if creds.scopes else [],
+                }
+            }
+        }).eq("id", user_id).execute()
 
     async def fetch_inbox(self, user_id: str) -> List[Dict]:
         """Fetch emails from Gmail but strictly filter via Supabase whitelist."""
