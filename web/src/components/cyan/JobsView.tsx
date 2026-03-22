@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useOutletContext } from "react-router";
 import {
   Menu, Briefcase, Search, MapPin, DollarSign, Building2,
@@ -407,6 +407,112 @@ function ApplyModal({ job, campaign, onConfirm, onClose }: {
   );
 }
 
+// ---------------------------------------------------------------------------
+// MemoJobCard — memoized so it only re-renders when its own job data changes,
+// not when the parent filter state changes. Prevents ReactMarkdown from
+// re-parsing descriptions on every filter click.
+// ---------------------------------------------------------------------------
+const MemoJobCard = memo(function JobCard({
+  job, prefs, onApply, onAction, onView, showReject
+}: {
+  job: InboxItem;
+  prefs?: Record<string, any>;
+  onApply: (job: InboxItem) => void;
+  onAction?: (id: string, action: "APPROVED" | "REJECTED") => void;
+  onView: (url: string) => void;
+  showReject?: boolean;
+}) {
+  const src = getSourceMeta(job.source);
+  const descMarkdown = useMemo(() => htmlToMarkdown(job.job_description || ""), [job.job_description]);
+  return (
+    <GlassCard className="!p-5 hover:border-[#00FFFF]/40 transition-all flex flex-col">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <span className="text-xs font-bold px-2 py-1 rounded-md"
+          style={{ color: src.color, backgroundColor: src.bg, border: `1px solid ${src.border}` }}>
+          {src.label}
+        </span>
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-500/15 border border-green-500/25">
+          <Sparkles className="w-3.5 h-3.5 text-green-400" />
+          <span className="text-xs font-bold text-green-400">{job.match_score ? Math.round(job.match_score * 100) : 0}%</span>
+        </div>
+      </div>
+
+      <div className="flex items-start gap-3 mb-3">
+        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00FFFF]/20 to-[#0099CC]/20 border border-[#00FFFF]/30 flex items-center justify-center flex-shrink-0">
+          <Building2 className="w-5 h-5 text-[#00FFFF]" />
+        </div>
+        <div className="min-w-0">
+          <h3 className="font-bold text-[#DAE2FD] text-base leading-tight mb-0.5 truncate">{job.job_title}</h3>
+          <p className="text-sm text-[#BBC9CD] truncate">{job.company_name} · {job.remote_type || "remote"}</p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-3 text-xs mb-3">
+        <span className="flex items-center gap-1 text-[#BBC9CD]"><MapPin className="w-3.5 h-3.5 text-[#00FFFF]" />{job.location || "Anywhere"}</span>
+        <span className="flex items-center gap-1 text-[#BBC9CD]"><DollarSign className="w-3.5 h-3.5 text-[#00FFFF]" />{job.salary_range || "Undisclosed"}</span>
+        <span className="flex items-center gap-1 text-[#BBC9CD]"><Clock className="w-3.5 h-3.5 text-[#00FFFF]" />Recently</span>
+      </div>
+
+      <div className="h-48 overflow-y-auto mb-3 pr-1 prose prose-sm prose-invert max-w-none
+        [&>p]:text-[#BBC9CD] [&>p]:text-sm [&>p]:leading-relaxed [&>p]:mb-2
+        [&>ul]:text-[#BBC9CD] [&>ul]:text-sm [&>ul]:pl-4 [&>ul]:mb-2
+        [&>li]:mb-0.5 [&>h3]:text-white [&>h3]:text-sm [&>h3]:font-semibold [&>h3]:mb-1 [&>strong]:text-white">
+        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+          {descMarkdown || "No description available."}
+        </ReactMarkdown>
+      </div>
+
+      <div className="bg-[#0A0A0A]/50 rounded-lg p-3 border border-[#00FFFF]/10 mb-3">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Zap className="w-3.5 h-3.5 text-[#00FFFF]" />
+          <span className="font-semibold text-white text-xs">Why This Matches</span>
+        </div>
+        {prefs?.keywords && (
+          <div className="flex items-start gap-1.5 text-xs text-[#BBC9CD]">
+            <Check className="w-3 h-3 text-green-400 flex-shrink-0 mt-0.5" />
+            Keywords: {prefs.keywords}
+          </div>
+        )}
+        {job.match_reasoning && (
+          <div className="flex items-start gap-1.5 text-xs text-[#BBC9CD] mt-1">
+            <Check className="w-3 h-3 text-green-400 flex-shrink-0 mt-0.5" />
+            {job.match_reasoning}
+          </div>
+        )}
+        {!prefs?.keywords && !job.match_reasoning && (
+          <div className="flex items-center gap-1.5 text-xs text-[#BBC9CD]">
+            <Check className="w-3 h-3 text-green-400 flex-shrink-0" />
+            Sourced from {src.label}
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-2 mt-auto">
+        <button
+          onClick={() => onView(job.job_url || "")}
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00FFFF]/15 to-[#0099CC]/15 hover:from-[#00FFFF]/25 hover:to-[#0099CC]/25 text-[#00FFFF] text-xs font-semibold transition-all border border-[#00FFFF]/30"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />View
+        </button>
+        <button
+          onClick={() => onApply(job)}
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-green-500/15 hover:bg-green-500/25 text-green-400 text-xs font-semibold transition-colors border border-green-500/25"
+        >
+          <Send className="w-3.5 h-3.5" />Apply
+        </button>
+        {showReject && onAction && (
+          <button
+            onClick={() => onAction(job.id, "REJECTED")}
+            className="p-2 rounded-lg bg-[#1A1A1A]/50 hover:bg-red-500/20 text-[#BBC9CD] hover:text-red-400 border border-[#00FFFF]/20 hover:border-red-500/40 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+    </GlassCard>
+  );
+});
+
 export function JobsView() {
   const { isMobile } = useOutletContext<{ isMobile: boolean }>();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -507,14 +613,14 @@ export function JobsView() {
     }
   };
 
-  const handleInboxAction = async (itemId: string, action: 'APPROVED' | 'REJECTED') => {
+  const handleInboxAction = useCallback(async (itemId: string, action: 'APPROVED' | 'REJECTED') => {
     try {
       await campaignService.updateInboxStatus(itemId, action);
       setInboxItems(prev => prev.filter(i => i.id !== itemId));
     } catch (e) {
       console.error("Action failed", e);
     }
-  };
+  }, []);
 
   const handleApplyConfirm = useCallback(async (coverLetter: string) => {
     if (!applyJob) return;
@@ -523,8 +629,9 @@ export function JobsView() {
     setApplyJob(null);
   }, [applyJob]);
 
-  const activeCampaigns = campaigns.filter(c => c.status === "RUNNING" || c.status === "DRAFT").length;
-  const pendingInbox = inboxItems.filter(i => i.status === "PENDING_REVIEW");
+  const activeCampaigns = useMemo(() => campaigns.filter(c => c.status === "RUNNING" || c.status === "DRAFT").length, [campaigns]);
+  // Memoized so useMemo deps below only invalidate when inboxItems actually changes
+  const pendingInbox = useMemo(() => inboxItems.filter(i => i.status === "PENDING_REVIEW"), [inboxItems]);
 
   // Pre-compute filtered items for campaign detail (hooks must be called unconditionally)
   const allCampaignItems = selectedCampaign
@@ -688,106 +795,15 @@ export function JobsView() {
               {campaignItems.length === 0 && (
                 <div className="col-span-full text-[#BBC9CD] py-4">No matched jobs found for this campaign yet.</div>
               )}
-              {campaignItems.map((job) => {
-                const src = getSourceMeta(job.source);
-                const descMarkdown = htmlToMarkdown(job.job_description || "");
-                return (
-                  <GlassCard key={job.id} className="!p-5 hover:border-[#00FFFF]/40 transition-all flex flex-col">
-                    {/* Card Header: source badge + match score */}
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <span
-                        className="text-xs font-bold px-2 py-1 rounded-md"
-                        style={{ color: src.color, backgroundColor: src.bg, border: `1px solid ${src.border}` }}
-                      >
-                        {src.label}
-                      </span>
-                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-500/15 border border-green-500/25">
-                        <Sparkles className="w-3.5 h-3.5 text-green-400" />
-                        <span className="text-xs font-bold text-green-400">
-                          {job.match_score ? Math.round(job.match_score * 100) : 0}%
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Company icon + title */}
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00FFFF]/20 to-[#0099CC]/20 border border-[#00FFFF]/30 flex items-center justify-center flex-shrink-0">
-                        <Building2 className="w-5 h-5 text-[#00FFFF]" />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-[#DAE2FD] text-base leading-tight mb-0.5 truncate">{job.job_title}</h3>
-                        <p className="text-sm text-[#BBC9CD] truncate">{job.company_name} · {job.remote_type}</p>
-                      </div>
-                    </div>
-
-                    {/* Meta tags */}
-                    <div className="flex flex-wrap gap-3 text-xs mb-3">
-                      <div className="flex items-center gap-1 text-[#BBC9CD]">
-                        <MapPin className="w-3.5 h-3.5 text-[#00FFFF]" />
-                        {job.location || "N/A"}
-                      </div>
-                      <div className="flex items-center gap-1 text-[#BBC9CD]">
-                        <DollarSign className="w-3.5 h-3.5 text-[#00FFFF]" />
-                        {job.salary_range || "Undisclosed"}
-                      </div>
-                      <div className="flex items-center gap-1 text-[#BBC9CD]">
-                        <Clock className="w-3.5 h-3.5 text-[#00FFFF]" />
-                        Recently
-                      </div>
-                    </div>
-
-                    {/* Description — rendered as Markdown */}
-                    <div className="h-48 overflow-y-auto mb-3 pr-1 prose prose-sm prose-invert max-w-none
-                      [&>p]:text-[#BBC9CD] [&>p]:text-sm [&>p]:leading-relaxed [&>p]:mb-2
-                      [&>ul]:text-[#BBC9CD] [&>ul]:text-sm [&>ul]:pl-4 [&>ul]:mb-2
-                      [&>li]:mb-0.5 [&>h3]:text-white [&>h3]:text-sm [&>h3]:font-semibold [&>h3]:mb-1">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
-                        {descMarkdown || "No description available."}
-                      </ReactMarkdown>
-                    </div>
-
-                    {/* Match reason */}
-                    {(job.match_reasoning || prefs?.keywords) && (
-                      <div className="bg-[#0A0A0A]/50 rounded-lg p-3 border border-[#00FFFF]/10 mb-3">
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <Zap className="w-3.5 h-3.5 text-[#00FFFF]" />
-                          <span className="font-semibold text-white text-xs">Why This Matches</span>
-                        </div>
-                        {prefs?.keywords && (
-                          <div className="flex items-start gap-1.5 text-xs text-[#BBC9CD]">
-                            <Check className="w-3.5 h-3.5 text-[#00FFFF] mt-0.5 flex-shrink-0" />
-                            <span>Keywords: {prefs.keywords}</span>
-                          </div>
-                        )}
-                        {job.match_reasoning && (
-                          <div className="flex items-start gap-1.5 text-xs text-[#BBC9CD] mt-1">
-                            <Check className="w-3.5 h-3.5 text-[#00FFFF] mt-0.5 flex-shrink-0" />
-                            <span>{job.match_reasoning}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex gap-2 mt-auto">
-                      <button
-                        onClick={() => window.open(job.job_url || "", "_blank")}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00FFFF]/15 to-[#0099CC]/15 hover:from-[#00FFFF]/25 hover:to-[#0099CC]/25 text-[#00FFFF] text-xs font-semibold transition-all border border-[#00FFFF]/30"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        View
-                      </button>
-                      <button
-                        onClick={() => setApplyJob(job)}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-green-500/15 hover:bg-green-500/25 text-green-400 text-xs font-semibold transition-colors border border-green-500/25"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        Apply
-                      </button>
-                    </div>
-                  </GlassCard>
-                );
-              })}
+              {campaignItems.map((job) => (
+                <MemoJobCard
+                  key={job.id}
+                  job={job}
+                  prefs={prefs}
+                  onApply={setApplyJob}
+                  onView={(url) => window.open(url, "_blank")}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -1114,107 +1130,17 @@ export function JobsView() {
                 {pendingInbox.length > 0 ? "No results match the selected filters." : "No new search results."}
               </div>
             )}
-            {filteredPendingInbox.map((job) => {
-              const src = getSourceMeta(job.source);
-              const prefs = campaigns.find(c => c.id === job.campaign_id)?.job_preferences as any;
-              return (
-                <GlassCard key={job.id} className="!p-5 hover:border-[#00FFFF]/40 transition-all flex flex-col">
-                  {/* Source badge + match score */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="text-xs font-bold px-2 py-1 rounded-md"
-                      style={{ color: src.color, backgroundColor: src.bg, border: `1px solid ${src.border}` }}>
-                      {src.label}
-                    </span>
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-500/15 border border-green-500/25">
-                      <Sparkles className="w-3.5 h-3.5 text-green-400" />
-                      <span className="text-xs font-bold text-green-400">
-                        {job.match_score ? Math.round(job.match_score * 100) : 0}%
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Company icon + title */}
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00FFFF]/20 to-[#0099CC]/20 border border-[#00FFFF]/30 flex items-center justify-center flex-shrink-0">
-                      <Building2 className="w-5 h-5 text-[#00FFFF]" />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-[#DAE2FD] text-base leading-tight mb-0.5 truncate">{job.job_title}</h3>
-                      <p className="text-sm text-[#BBC9CD] truncate">{job.company_name} · {job.remote_type || "remote"}</p>
-                    </div>
-                  </div>
-
-                  {/* Meta */}
-                  <div className="flex flex-wrap gap-3 text-xs mb-3">
-                    <div className="flex items-center gap-1 text-[#BBC9CD]">
-                      <MapPin className="w-3.5 h-3.5 text-[#00FFFF]" />
-                      {job.location || "Anywhere"}
-                    </div>
-                    <div className="flex items-center gap-1 text-[#BBC9CD]">
-                      <DollarSign className="w-3.5 h-3.5 text-[#00FFFF]" />
-                      {job.salary_range || "Undisclosed"}
-                    </div>
-                    <div className="flex items-center gap-1 text-[#BBC9CD]">
-                      <Clock className="w-3.5 h-3.5 text-[#00FFFF]" />
-                      Recently
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <div className="h-48 overflow-y-auto mb-3 pr-1 prose prose-sm prose-invert max-w-none
-                    [&>p]:text-[#BBC9CD] [&>p]:text-sm [&>p]:leading-relaxed [&>p]:mb-2
-                    [&>ul]:text-[#BBC9CD] [&>ul]:text-sm [&>ul]:pl-4 [&>ul]:mb-2
-                    [&>li]:mb-0.5 [&>h3]:text-white [&>h3]:text-sm [&>h3]:font-semibold [&>h3]:mb-1
-                    [&>strong]:text-white">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
-                      {htmlToMarkdown(job.job_description || "") || "No description available."}
-                    </ReactMarkdown>
-                  </div>
-
-                  {/* Why This Matches */}
-                  <div className="bg-[#0A0A0A]/50 rounded-lg p-3 border border-[#00FFFF]/10 mb-3">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <Zap className="w-3.5 h-3.5 text-[#00FFFF]" />
-                      <span className="font-semibold text-white text-xs">Why This Matches</span>
-                    </div>
-                    {prefs?.keywords && (
-                      <div className="flex items-center gap-1.5 text-xs text-[#BBC9CD]">
-                        <Check className="w-3 h-3 text-green-400 flex-shrink-0" />
-                        Keywords: {prefs.keywords}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1.5 text-xs text-[#BBC9CD] mt-1">
-                      <Check className="w-3 h-3 text-green-400 flex-shrink-0" />
-                      Sourced from {src.label} {src.label !== "Unknown" ? "feed." : "source."}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2 mt-auto">
-                    <button
-                      onClick={() => window.open(job.job_url, '_blank')}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gradient-to-r from-[#00FFFF]/20 to-[#0099CC]/20 hover:from-[#00FFFF]/30 hover:to-[#0099CC]/30 text-[#00FFFF] text-sm font-semibold border border-[#00FFFF]/40 transition-all"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      View
-                    </button>
-                    <button
-                      onClick={() => setApplyJob(job)}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 text-sm font-semibold border border-green-500/30 transition-all"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      Apply
-                    </button>
-                    <button
-                      onClick={() => handleInboxAction(job.id, 'REJECTED')}
-                      className="p-2 rounded-lg bg-[#1A1A1A]/50 hover:bg-red-500/20 text-[#BBC9CD] hover:text-red-400 border border-[#00FFFF]/20 hover:border-red-500/40 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </GlassCard>
-              );
-            })}
+            {filteredPendingInbox.map((job) => (
+              <MemoJobCard
+                key={job.id}
+                job={job}
+                prefs={campaigns.find(c => c.id === job.campaign_id)?.job_preferences as any}
+                onApply={setApplyJob}
+                onAction={handleInboxAction}
+                onView={(url) => window.open(url, "_blank")}
+                showReject
+              />
+            ))}
           </div>
         </div>
       </div>

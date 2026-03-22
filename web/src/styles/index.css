@@ -9,6 +9,15 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Pointer cursor on all interactive elements */
+  button,
+  [role="button"],
+  label[for],
+  select,
+  a[href] {
+    cursor: pointer;
+  }
 }
 
 @layer utilities {
