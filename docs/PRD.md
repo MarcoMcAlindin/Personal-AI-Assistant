@@ -1,5 +1,10 @@
 # Product Requirements Document (PRD): "SuperCyan" Personal Assistant
-
+Created: 2026-03-22
+<!-- 
+Modified: 2026-03-22
+What: Added 7-Day Staleness Protocol (Rule 31) and Phase 4/5 roadmap refinement.
+Why: User requested periodic PRD audits and roadmap sync.
+-->
 ## 1. Objective & Vision
 To build a private, highly customized dashboard application that serves as a comprehensive "second brain." The system will deliver optimized, platform-specific user experiences by utilizing distinct codebases for mobile and web. It combines a private AI assistant, curated high-signal feeds, a focused email client, robust health tracking, and a transient daily task manager. By hosting the core routing and intelligence in the cloud, SuperCyan remains accessible, secure, and fully automated 24/7, regardless of whether personal devices are powered on.
 
@@ -14,6 +19,14 @@ The architecture strictly decouples the web and mobile clients for layout flexib
 * **Database & Auth:** Supabase (PostgreSQL). Handles real-time syncing, Row Level Security (RLS) zero-trust authentication, and server-side automation (pg_cron).
 * **Private AI:** unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF (via Google Cloud Run). Deployed in a customized llama.cpp / vLLM container with GPU allocation for private, highly capable inference.
 * **Cloud Automation:** GitHub Actions. Executes strict time-based workflows (like the 8:00 AM daily health analysis) entirely independent of the user's hardware.
+
+# Agent Performance Log
+Created: 2026-03-15
+<!--
+Modified: 2026-03-22
+What: Logged VOS-100 (Cyan UI) and VOS-101 (Scraper Audit). Added PRD-AUDIT pass.
+Why: Closing out integration phase and starting reality sync.
+-->
 
 ## 3. Core Features & Functional Requirements
 
