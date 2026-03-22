@@ -156,12 +156,12 @@ function DateFilterBar({
   );
 }
 
-function applyDateFilter<T extends { created_at?: string | null }>(items: T[], days: number | null): T[] {
+function applyDateFilter<T extends { discovered_at?: string | null }>(items: T[], days: number | null): T[] {
   if (!days) return items;
   const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
   return items.filter(i => {
-    if (!i.created_at) return true; // no date = include
-    return new Date(i.created_at).getTime() >= cutoff;
+    if (!i.discovered_at) return true; // no date = include
+    return new Date(i.discovered_at).getTime() >= cutoff;
   });
 }
 
