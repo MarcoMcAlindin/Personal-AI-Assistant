@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from app.services.email_service import EmailService
 from app.services.feed_service import FeedService
 from app.services.health_service import HealthService
+from app.services.notification_service import NotificationService
 from app.services.rag_service import RAGService
 from app.services.task_service import TaskService
 from app.services.campaign_service import CampaignService
@@ -29,6 +30,7 @@ router = APIRouter()
 email_service = EmailService()
 feed_service = FeedService()
 health_service = HealthService()
+notification_service = NotificationService()
 rag_service = RAGService()
 task_service = TaskService()
 campaign_service = CampaignService()
@@ -38,6 +40,9 @@ class EmailSendRequest(BaseModel):
     subject: str
     body: str
     thread_id: Optional[str] = None
+
+class PushTokenRequest(BaseModel):
+    token: str
 
 class ChatRequest(BaseModel):
     message: str
@@ -944,12 +949,110 @@ async def delete_cv(cv_id: str, user_id: str = Depends(get_current_user)):
 async def run_campaign_scraper(campaign_id: str, user_id: str = Depends(get_current_user)):
     from app.services.scrapers.multi_source_scraper import MultiSourceScraper
     scraper = MultiSourceScraper(campaign_service.supabase)
-    
+
     campaigns = await campaign_service.get_campaigns(user_id)
     campaign = next((c for c in campaigns if c["id"] == campaign_id), None)
     if not campaign:
          raise HTTPException(status_code=404, detail="Campaign not found")
-         
+
     result = await scraper.scrape_jobs_for_campaign(campaign)
     return result
+
+
+# -- Push Notifications ----------------------------------------------------
+
+@router.post("/users/push-token")
+async def register_push_token(
+    body: PushTokenRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Store an Expo push token for the authenticated user."""
+    if not email_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    row = email_service.supabase.table("users") \
+        .select("push_tokens") \
+        .eq("id", user_id).single().execute()
+
+    tokens: list = row.data.get("push_tokens") or []
+    if body.token not in tokens:
+        tokens.append(body.token)
+        email_service.supabase.table("users") \
+            .update({"push_tokens": tokens}) \
+            .eq("id", user_id).execute()
+
+    return {"registered": True}
+
+
+@router.delete("/users/push-token")
+async def deregister_push_token(
+    body: PushTokenRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Remove a specific Expo push token for the authenticated user."""
+    if not email_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    row = email_service.supabase.table("users") \
+        .select("push_tokens") \
+        .eq("id", user_id).single().execute()
+
+    tokens: list = row.data.get("push_tokens") or []
+    if body.token in tokens:
+        tokens.remove(body.token)
+        email_service.supabase.table("users") \
+            .update({"push_tokens": tokens}) \
+            .eq("id", user_id).execute()
+
+    return {"removed": True}
+
+
+@router.post("/email/poll")
+async def poll_email(user_id: str = Depends(get_current_user)):
+    """Fetch latest emails, compare against last-seen ID, and push-notify on new messages."""
+    if not email_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    # Fetch settings and push tokens for this user
+    row = email_service.supabase.table("users") \
+        .select("settings, push_tokens") \
+        .eq("id", user_id).single().execute()
+
+    user_settings: dict = row.data.get("settings") or {}
+    push_tokens: list = row.data.get("push_tokens") or []
+    last_email_id: str = user_settings.get("last_email_id", "")
+
+    # Fetch inbox (newest-first from Gmail)
+    emails = await email_service.fetch_inbox(user_id)
+
+    if not emails:
+        return {"polled": True, "new_emails": 0}
+
+    # Determine which emails are new (those appearing before last_email_id)
+    ids = [e["id"] for e in emails]
+    if last_email_id and last_email_id in ids:
+        cutoff = ids.index(last_email_id)
+        new_emails = emails[:cutoff]
+    else:
+        # First poll or ID has rotated out -- treat everything as new
+        new_emails = emails
+
+    # Send push notifications for each new email
+    if push_tokens:
+        for email in new_emails:
+            sender = email.get("from", "Unknown sender")
+            await notification_service.send_push_notification(
+                tokens=push_tokens,
+                title="New Email",
+                body=f"From: {sender}",
+                data={"email_id": email["id"]},
+            )
+
+    # Update last_email_id to the newest message seen this poll
+    user_settings["last_email_id"] = emails[0]["id"]
+    email_service.supabase.table("users") \
+        .update({"settings": user_settings}) \
+        .eq("id", user_id).execute()
+
+    return {"polled": True, "new_emails": len(new_emails)}
 
