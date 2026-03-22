@@ -12,6 +12,10 @@ from .proxycurl import ProxycurlScraper
 #       each scraper run. Changed error messages to use scraper class names instead of index numbers.
 # Why: The scrape_logs table existed in migrations but was never written to, causing the Job Engine
 #      to appear as a "Ghost feature" with no verifiable execution history (flagged in Rule 18/31 audit).
+#
+# Modified: 2026-03-22
+# What: Added _update_campaign_total() to write total_jobs_found back to campaigns table after scrape.
+# Why: total_jobs_found was never written by the backend, so the UI always showed "0 results".
 
 class MultiSourceScraper:
     def __init__(self, supabase_client):
@@ -56,11 +60,25 @@ class MultiSourceScraper:
                 total_scraped += count
                 self._write_scrape_log(campaign, scraper_name, count, started_at, completed_at, None)
 
+        self._update_campaign_total(campaign["id"], total_scraped)
+
         return {
             "scraped_count": total_scraped,
             "status": "success" if not errors else "partial_success",
             "errors": errors if errors else None
         }
+
+    def _update_campaign_total(self, campaign_id: str, total: int):
+        """Increment total_jobs_found on the campaigns row so the UI reflects real counts."""
+        if not self.supabase:
+            return
+        try:
+            # Fetch current value and add to it so repeated runs accumulate correctly
+            row = self.supabase.table("campaigns").select("total_jobs_found").eq("id", campaign_id).single().execute()
+            current = (row.data or {}).get("total_jobs_found") or 0
+            self.supabase.table("campaigns").update({"total_jobs_found": current + total}).eq("id", campaign_id).execute()
+        except Exception as e:
+            logging.warning(f"Failed to update total_jobs_found for campaign {campaign_id}: {e}")
 
     def _write_scrape_log(
         self,

@@ -231,7 +231,7 @@ export function JobsView() {
                   <Inbox className="w-4 h-4 text-[#00FFFF]" />
                   <span className="text-sm text-[#BBC9CD]">Results</span>
                 </div>
-                <div className="font-semibold text-white">{selectedCampaign.total_jobs_found || 0} jobs</div>
+                <div className="font-semibold text-white">{inboxItems.filter(i => i.campaign_id === selectedCampaign.id).length} jobs</div>
               </GlassCard>
             </div>
           </div>
@@ -639,7 +639,7 @@ export function JobsView() {
                       </div>
                       <div className="flex items-center gap-2 text-[#BBC9CD]">
                         <Inbox className="w-4 h-4 text-[#00FFFF]" />
-                        {campaign.total_jobs_found || 0} results
+                        {inboxItems.filter(i => i.campaign_id === campaign.id).length} results
                       </div>
                     </div>
                   </div>
@@ -653,7 +653,7 @@ export function JobsView() {
           </div>
         </div>
 
-        {/* Job Results Inbox (HITL) */}
+        {/* Job Results Inbox (HITL) — Modified: align card layout to match campaign detail grid */}
         <div>
           <div className="flex items-center gap-2 mb-4">
             <div className="h-1 w-12 bg-gradient-to-r from-[#00FFFF] to-transparent rounded-full"></div>
@@ -662,88 +662,111 @@ export function JobsView() {
             </span>
           </div>
 
-          <div className="space-y-3">
-             {pendingInbox.length === 0 && (
-              <div className="text-center py-6 text-[#BBC9CD]">No new search results.</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {pendingInbox.length === 0 && (
+              <div className="col-span-full text-center py-6 text-[#BBC9CD]">No new search results.</div>
             )}
-            {pendingInbox.map((job) => (
-              <GlassCard key={job.id} className="!p-6 hover:border-[#00FFFF]/40 transition-all group">
-                <div className="flex flex-col md:flex-row gap-4">
-                  {/* Company Icon */}
-                  <div className="flex-shrink-0">
-                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#00FFFF]/20 to-[#0099CC]/20 border border-[#00FFFF]/30 flex items-center justify-center">
-                      <Building2 className="w-8 h-8 text-[#00FFFF]" />
+            {pendingInbox.map((job) => {
+              const src = getSourceMeta(job.source);
+              const prefs = campaigns.find(c => c.id === job.campaign_id)?.job_preferences as any;
+              return (
+                <GlassCard key={job.id} className="!p-5 hover:border-[#00FFFF]/40 transition-all flex flex-col">
+                  {/* Source badge + match score */}
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="text-xs font-bold px-2 py-1 rounded-md"
+                      style={{ color: src.color, backgroundColor: src.bg, border: `1px solid ${src.border}` }}>
+                      {src.label}
+                    </span>
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-500/15 border border-green-500/25">
+                      <Sparkles className="w-3.5 h-3.5 text-green-400" />
+                      <span className="text-xs font-bold text-green-400">
+                        {job.match_score ? Math.round(job.match_score * 100) : 0}%
+                      </span>
                     </div>
                   </div>
 
-                  {/* Job Details */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-[#DAE2FD] text-lg mb-1">{job.job_title}</h3>
-                        <div className="flex items-center gap-2 text-[#BBC9CD] mb-2">
-                          <span className="font-semibold">{job.company_name}</span>
-                          <span>•</span>
-                          <span>{job.remote_type || job.source}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-green-500/20 border border-green-500/30">
-                        <Sparkles className="w-4 h-4 text-green-400" />
-                        <span className="text-sm font-bold text-green-400">
-                          {job.match_score ? Math.round(job.match_score * 100) : 0}% Match
-                        </span>
-                      </div>
+                  {/* Company icon + title */}
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00FFFF]/20 to-[#0099CC]/20 border border-[#00FFFF]/30 flex items-center justify-center flex-shrink-0">
+                      <Building2 className="w-5 h-5 text-[#00FFFF]" />
                     </div>
-
-                    {/* Description — Modified: VOS-102 apply htmlToMarkdown + ReactMarkdown (was raw HTML string) */}
-                    <div className="text-sm text-[#BBC9CD] mb-4 line-clamp-3 overflow-hidden prose prose-sm prose-invert max-w-none
-                      [&>p]:text-[#BBC9CD] [&>p]:text-sm [&>p]:mb-1 [&>ul]:text-[#BBC9CD] [&>ul]:text-sm [&>ul]:pl-4
-                      [&>li]:mb-0.5 [&>strong]:text-white [&>h3]:text-white [&>h3]:text-sm [&>h3]:font-semibold">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
-                        {htmlToMarkdown(job.job_description || "") || "No description available."}
-                      </ReactMarkdown>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-4 mb-4">
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="w-4 h-4 text-[#00FFFF]" />
-                        <span className="text-[#BBC9CD]">{job.location || 'N/A'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <DollarSign className="w-4 h-4 text-[#00FFFF]" />
-                        <span className="text-[#BBC9CD]">{job.salary_range || 'Undisclosed'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="w-4 h-4 text-[#00FFFF]" />
-                        <span className="text-[#BBC9CD]">Recently</span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-3">
-                      <button 
-                        onClick={() => window.open(job.job_url, '_blank')}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#00FFFF]/20 to-[#0099CC]/20 hover:from-[#00FFFF]/30 hover:to-[#0099CC]/30 text-[#00FFFF] font-semibold transition-all border border-[#00FFFF]/40"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        View Job
-                      </button>
-                      <button 
-                        onClick={() => handleInboxAction(job.id, 'APPROVED')}
-                        className="px-4 py-2 rounded-xl bg-[#1A1A1A]/50 hover:bg-[#1A1A1A] text-[#BBC9CD] hover:text-[#00FFFF] font-semibold transition-colors border border-[#00FFFF]/20"
-                      >
-                        Save for Later
-                      </button>
-                      <button 
-                        onClick={() => handleInboxAction(job.id, 'REJECTED')}
-                        className="px-4 py-2 rounded-xl bg-[#1A1A1A]/50 hover:bg-red-500/20 text-[#BBC9CD] hover:text-red-400 border border-[#00FFFF]/20 hover:border-red-500/40 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-[#DAE2FD] text-base leading-tight mb-0.5 truncate">{job.job_title}</h3>
+                      <p className="text-sm text-[#BBC9CD] truncate">{job.company_name} · {job.remote_type || "remote"}</p>
                     </div>
                   </div>
-                </div>
-              </GlassCard>
-            ))}
+
+                  {/* Meta */}
+                  <div className="flex flex-wrap gap-3 text-xs mb-3">
+                    <div className="flex items-center gap-1 text-[#BBC9CD]">
+                      <MapPin className="w-3.5 h-3.5 text-[#00FFFF]" />
+                      {job.location || "Anywhere"}
+                    </div>
+                    <div className="flex items-center gap-1 text-[#BBC9CD]">
+                      <DollarSign className="w-3.5 h-3.5 text-[#00FFFF]" />
+                      {job.salary_range || "Undisclosed"}
+                    </div>
+                    <div className="flex items-center gap-1 text-[#BBC9CD]">
+                      <Clock className="w-3.5 h-3.5 text-[#00FFFF]" />
+                      Recently
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div className="flex-1 overflow-hidden mb-3 prose prose-sm prose-invert max-w-none
+                    [&>p]:text-[#BBC9CD] [&>p]:text-sm [&>p]:leading-relaxed [&>p]:mb-2
+                    [&>ul]:text-[#BBC9CD] [&>ul]:text-sm [&>ul]:pl-4 [&>ul]:mb-2
+                    [&>li]:mb-0.5 [&>h3]:text-white [&>h3]:text-sm [&>h3]:font-semibold [&>h3]:mb-1
+                    [&>strong]:text-white line-clamp-[8]">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+                      {htmlToMarkdown(job.job_description || "") || "No description available."}
+                    </ReactMarkdown>
+                  </div>
+
+                  {/* Why This Matches */}
+                  <div className="bg-[#0A0A0A]/50 rounded-lg p-3 border border-[#00FFFF]/10 mb-3">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Zap className="w-3.5 h-3.5 text-[#00FFFF]" />
+                      <span className="font-semibold text-white text-xs">Why This Matches</span>
+                    </div>
+                    {prefs?.keywords && (
+                      <div className="flex items-center gap-1.5 text-xs text-[#BBC9CD]">
+                        <Check className="w-3 h-3 text-green-400 flex-shrink-0" />
+                        Keywords: {prefs.keywords}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1.5 text-xs text-[#BBC9CD] mt-1">
+                      <Check className="w-3 h-3 text-green-400 flex-shrink-0" />
+                      Sourced from {src.label} {src.label !== "Unknown" ? "feed." : "source."}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 mt-auto">
+                    <button
+                      onClick={() => window.open(job.job_url, '_blank')}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gradient-to-r from-[#00FFFF]/20 to-[#0099CC]/20 hover:from-[#00FFFF]/30 hover:to-[#0099CC]/30 text-[#00FFFF] text-sm font-semibold border border-[#00FFFF]/40 transition-all"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      View
+                    </button>
+                    <button
+                      onClick={() => handleInboxAction(job.id, 'APPROVED')}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 text-sm font-semibold border border-green-500/30 transition-all"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      Apply
+                    </button>
+                    <button
+                      onClick={() => handleInboxAction(job.id, 'REJECTED')}
+                      className="p-2 rounded-lg bg-[#1A1A1A]/50 hover:bg-red-500/20 text-[#BBC9CD] hover:text-red-400 border border-[#00FFFF]/20 hover:border-red-500/40 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </GlassCard>
+              );
+            })}
           </div>
         </div>
       </div>
