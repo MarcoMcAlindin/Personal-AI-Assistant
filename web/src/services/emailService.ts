@@ -87,4 +87,52 @@ export const emailService = {
     });
     if (!response.ok) throw new Error('Google disconnect failed');
   },
+
+  searchContacts: async (q: string): Promise<Array<{ name: string; email: string }>> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(
+      `${BACKEND_URL}/email/contacts?q=${encodeURIComponent(q)}`,
+      { headers }
+    );
+    if (!response.ok) throw new Error('Contact search failed');
+    const data = await response.json();
+    return data.contacts ?? [];
+  },
+
+  getWhitelist: async (): Promise<Array<{ id: string; email_address: string; contact_name: string }>> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${BACKEND_URL}/email/whitelist`, { headers });
+    if (!response.ok) throw new Error('Get whitelist failed');
+    const data = await response.json();
+    return data.whitelist ?? [];
+  },
+
+  addToWhitelist: async (email_address: string, contact_name: string): Promise<void> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${BACKEND_URL}/email/whitelist`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ email_address, contact_name }),
+    });
+    if (!response.ok) throw new Error('Add to whitelist failed');
+  },
+
+  removeFromWhitelist: async (id: string): Promise<void> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${BACKEND_URL}/email/whitelist/${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+    if (!response.ok) throw new Error('Remove from whitelist failed');
+  },
+
+  registerPushToken: async (token: string): Promise<void> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${BACKEND_URL}/users/push-token`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ token }),
+    });
+    if (!response.ok) throw new Error('Push token registration failed');
+  },
 };
