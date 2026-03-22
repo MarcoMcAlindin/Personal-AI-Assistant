@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useOutletContext } from "react-router";
 import {
   Menu, Briefcase, Search, MapPin, DollarSign, Building2,
   Clock, ExternalLink, Sparkles, Plus, X, Send, Inbox, Check, XCircle,
-  ArrowLeft, Upload, FileText, Target, TrendingUp, Award, Zap
+  ArrowLeft, Upload, FileText, Target, TrendingUp, Award, Zap, Loader2, Edit3
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -55,6 +55,111 @@ import { Database } from "../../types/supabase";
 type Campaign = Database['public']['Tables']['campaigns']['Row'];
 type InboxItem = Database['public']['Tables']['inbox_items']['Row'];
 
+// ---------------------------------------------------------------------------
+// ApplyModal — generates cover letter via Qwen, lets user edit, then submits
+// ---------------------------------------------------------------------------
+function ApplyModal({ job, campaign, onConfirm, onClose }: {
+  job: InboxItem;
+  campaign: Campaign | undefined;
+  onConfirm: (coverLetter: string) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [phase, setPhase] = useState<'loading' | 'review' | 'submitting' | 'error'>('loading');
+  const [coverLetter, setCoverLetter] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    campaignService.generateCoverLetter(job.id)
+      .then(text => { setCoverLetter(text); setPhase('review'); })
+      .catch(() => { setError('Failed to generate cover letter. You can write one manually.'); setCoverLetter(''); setPhase('review'); });
+  }, [job.id]);
+
+  const handleConfirm = async () => {
+    setPhase('submitting');
+    try {
+      await onConfirm(coverLetter);
+    } catch {
+      setError('Failed to submit application. Please try again.');
+      setPhase('review');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="w-full max-w-2xl bg-[#0D0D0D] border border-[#00FFFF]/30 rounded-2xl shadow-[0_0_60px_rgba(0,255,255,0.15)] flex flex-col max-h-[90vh]">
+
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 p-6 border-b border-[#1A1A1A]">
+          <div>
+            <h2 className="text-xl font-bold text-[#DAE2FD] mb-1">{job.job_title}</h2>
+            <p className="text-sm text-[#BBC9CD]">{job.company_name}</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-[#1A1A1A] text-[#BBC9CD] hover:text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {phase === 'loading' && (
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <div className="relative">
+                <Loader2 className="w-12 h-12 text-[#00FFFF] animate-spin" />
+                <Sparkles className="w-5 h-5 text-[#00FFFF] absolute -top-1 -right-1 animate-pulse" />
+              </div>
+              <p className="text-[#BBC9CD] text-sm">Qwen is writing your cover letter…</p>
+            </div>
+          )}
+
+          {(phase === 'review' || phase === 'submitting') && (
+            <div className="flex flex-col gap-4">
+              {error && (
+                <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 text-sm">
+                  <XCircle className="w-4 h-4 flex-shrink-0" />
+                  {error}
+                </div>
+              )}
+              <div className="flex items-center gap-2 text-xs text-[#BBC9CD] mb-1">
+                <Edit3 className="w-3.5 h-3.5 text-[#00FFFF]" />
+                Review and edit your cover letter before submitting
+              </div>
+              <textarea
+                value={coverLetter}
+                onChange={e => setCoverLetter(e.target.value)}
+                disabled={phase === 'submitting'}
+                rows={16}
+                className="w-full bg-[#0A0A0A] border border-[#00FFFF]/20 rounded-xl p-4 text-sm text-[#DAE2FD] leading-relaxed resize-none focus:outline-none focus:border-[#00FFFF]/50 placeholder-[#BBC9CD]/40 disabled:opacity-60"
+                placeholder="Your cover letter will appear here…"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {(phase === 'review' || phase === 'submitting') && (
+          <div className="flex gap-3 p-6 border-t border-[#1A1A1A]">
+            <button
+              onClick={onClose}
+              disabled={phase === 'submitting'}
+              className="flex-1 py-3 rounded-xl bg-[#1A1A1A] hover:bg-[#222] text-[#BBC9CD] font-semibold border border-[#00FFFF]/20 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={phase === 'submitting' || !coverLetter.trim()}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-green-500/30 to-green-600/30 hover:from-green-500/40 hover:to-green-600/40 text-green-400 font-semibold border border-green-500/40 transition-all disabled:opacity-50"
+            >
+              {phase === 'submitting' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {phase === 'submitting' ? 'Submitting…' : 'Confirm & Apply'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function JobsView() {
   const { isMobile } = useOutletContext<{ isMobile: boolean }>();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -63,7 +168,8 @@ export function JobsView() {
   const [inboxItems, setInboxItems] = useState<InboxItem[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [uploadedCV, setUploadedCV] = useState<File | null>(null);
-  
+  const [applyJob, setApplyJob] = useState<InboxItem | null>(null);
+
   // New campaign form state
   const [newCampaign, setNewCampaign] = useState({
     name: "", keywords: "", location: "", salary: ""
@@ -149,6 +255,13 @@ export function JobsView() {
       console.error("Action failed", e);
     }
   };
+
+  const handleApplyConfirm = useCallback(async (coverLetter: string) => {
+    if (!applyJob) return;
+    await campaignService.createApplication(applyJob.id, coverLetter);
+    setInboxItems(prev => prev.filter(i => i.id !== applyJob.id));
+    setApplyJob(null);
+  }, [applyJob]);
 
   const activeCampaigns = campaigns.filter(c => c.status === "RUNNING" || c.status === "DRAFT").length;
   const pendingInbox = inboxItems.filter(i => i.status === "PENDING_REVIEW");
@@ -379,7 +492,7 @@ export function JobsView() {
                         View
                       </button>
                       <button
-                        onClick={() => handleInboxAction(job.id, "APPROVED")}
+                        onClick={() => setApplyJob(job)}
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-green-500/15 hover:bg-green-500/25 text-green-400 text-xs font-semibold transition-colors border border-green-500/25"
                       >
                         <Send className="w-3.5 h-3.5" />
@@ -399,6 +512,15 @@ export function JobsView() {
 
 
   return (
+    <>
+    {applyJob && (
+      <ApplyModal
+        job={applyJob}
+        campaign={campaigns.find(c => c.id === applyJob.campaign_id)}
+        onConfirm={handleApplyConfirm}
+        onClose={() => setApplyJob(null)}
+      />
+    )}
     <div className={`${isMobile ? 'pt-16 pb-8' : 'pl-64'} min-h-screen`}>
       {!isMobile && <Sidebar />}
       <BurgerMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
@@ -750,7 +872,7 @@ export function JobsView() {
                       View
                     </button>
                     <button
-                      onClick={() => handleInboxAction(job.id, 'APPROVED')}
+                      onClick={() => setApplyJob(job)}
                       className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 text-sm font-semibold border border-green-500/30 transition-all"
                     >
                       <Send className="w-3.5 h-3.5" />
@@ -770,5 +892,6 @@ export function JobsView() {
         </div>
       </div>
     </div>
+    </>
   );
 }

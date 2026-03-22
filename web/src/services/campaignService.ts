@@ -59,12 +59,35 @@ export const campaignService = {
     if (!res.ok) throw new Error("Failed to update status");
   },
 
+  createApplication: async (inboxItemId: string, coverLetterText: string): Promise<Application> => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE}/applications`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ inbox_item_id: inboxItemId, cover_letter_text: coverLetterText })
+    });
+    if (!res.ok) throw new Error(`Create application failed: ${res.statusText}`);
+    return res.json();
+  },
+
   getApplications: async (): Promise<Application[]> => {
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_BASE}/applications`, { headers });
     if (!res.ok) throw new Error("Failed to fetch apps");
     const data = await res.json();
     return data.applications;
+  },
+
+  generateCoverLetter: async (inboxItemId: string): Promise<string> => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_BASE}/applications/cover-letter`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ inbox_item_id: inboxItemId })
+    });
+    if (!res.ok) throw new Error(`Cover letter generation failed: ${res.statusText}`);
+    const data = await res.json();
+    return data.cover_letter_text;
   },
 
   triggerScrapeRun: async (campaignId: string): Promise<any> => {

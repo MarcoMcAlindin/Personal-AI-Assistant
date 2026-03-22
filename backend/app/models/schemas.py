@@ -21,3 +21,6 @@ class InboxItemStatusUpdate(BaseModel):
 class ApplicationCreateRequest(BaseModel):
     inbox_item_id: str
     cover_letter_text: str
+
+class CoverLetterRequest(BaseModel):
+    inbox_item_id: str

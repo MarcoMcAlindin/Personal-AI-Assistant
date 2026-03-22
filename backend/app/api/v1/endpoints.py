@@ -12,10 +12,10 @@ from app.services.rag_service import RAGService
 from app.services.task_service import TaskService
 from app.services.campaign_service import CampaignService
 from app.models.schemas import (
-    CampaignCreateRequest, CampaignUpdateRequest, 
-    InboxItemStatusUpdate, ApplicationCreateRequest
+    CampaignCreateRequest, CampaignUpdateRequest,
+    InboxItemStatusUpdate, ApplicationCreateRequest, CoverLetterRequest
 )
-from app.services.ai_service import call_ollama, chat_with_tools
+from app.services.ai_service import call_ollama, chat_with_tools, generate_cover_letter
 from app.utils.auth import get_current_user
 import httpx
 import os
@@ -457,11 +457,27 @@ async def get_applications(user_id: str = Depends(get_current_user)):
     data = await campaign_service.get_applications(user_id)
     return {"applications": data}
 
+@router.post("/applications/cover-letter")
+async def generate_cover_letter_endpoint(request: CoverLetterRequest, user_id: str = Depends(get_current_user)):
+    # Modified: 2026-03-22 — New endpoint: fetches inbox item + campaign, calls Qwen to generate cover letter.
+    if not campaign_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+    item_res = campaign_service.supabase.table("inbox_items").select("*").eq("id", request.inbox_item_id).eq("user_id", user_id).single().execute()
+    if not item_res.data:
+        raise HTTPException(status_code=404, detail="Inbox item not found")
+    job = item_res.data
+    campaign_res = campaign_service.supabase.table("campaigns").select("*").eq("id", job["campaign_id"]).single().execute()
+    campaign = campaign_res.data or {}
+    cover_letter = await generate_cover_letter(job, campaign)
+    return {"cover_letter_text": cover_letter}
+
 @router.post("/applications")
 async def create_application(request: ApplicationCreateRequest, user_id: str = Depends(get_current_user)):
     result = await campaign_service.create_application(user_id, request.model_dump())
     if "error" in result:
         raise HTTPException(status_code=500, detail=result["error"])
+    # Mark the inbox item as APPROVED now the application is committed
+    await campaign_service.update_inbox_item(user_id, request.inbox_item_id, "APPROVED")
     return result
 
 @router.post("/scrapers/run/{campaign_id}")

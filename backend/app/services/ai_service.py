@@ -211,6 +211,73 @@ async def chat_with_tools(
                     "content": tool_result
                 })
 
+async def generate_cover_letter(job: dict, campaign: dict) -> str:
+    """
+    Generates an ATS-optimised cover letter for a specific job using the cloud Qwen instance.
+    Falls back to a structured template if vLLM is unavailable.
+    """
+    # Modified: 2026-03-22
+    # What: New function — generates cover letter from job + campaign context via Qwen.
+    # Why: Apply button previously only updated inbox status; cover letter was never generated.
+    qwen_url = os.environ.get("QWEN_ENDPOINT_URL")
+    job_title    = job.get("job_title", "the role")
+    company      = job.get("company_name", "the company")
+    description  = job.get("job_description", "")[:3000]
+    keywords     = campaign.get("job_preferences", {}).get("keywords", "")
+    location_pref = campaign.get("job_preferences", {}).get("location", "")
+
+    if not qwen_url:
+        return (
+            f"Dear Hiring Manager at {company},\n\n"
+            f"I am writing to express my strong interest in the {job_title} position.\n\n"
+            f"[AI cover letter generation is offline — QWEN_ENDPOINT_URL not set. "
+            f"Please edit this letter manually before submitting.]\n\n"
+            f"Yours sincerely,\n[Your Name]"
+        )
+
+    prompt = (
+        f"Write a professional, ATS-optimised cover letter for the following job.\n\n"
+        f"Job Title: {job_title}\n"
+        f"Company: {company}\n"
+        f"Job Description (excerpt):\n{description}\n\n"
+        f"Candidate keywords/skills: {keywords}\n"
+        f"Preferred location: {location_pref}\n\n"
+        f"Requirements:\n"
+        f"- 3 concise paragraphs: opening hook, skills alignment, closing call-to-action\n"
+        f"- Formal but energetic tone\n"
+        f"- No generic filler phrases (e.g. 'I am excited to...')\n"
+        f"- Output plain text only — no markdown, no subject line, no date\n"
+        f"- End with 'Yours sincerely,' on its own line followed by '[Your Name]'"
+    )
+
+    headers = {"Content-Type": "application/json"}
+    try:
+        import google.auth.transport.requests
+        import google.oauth2.id_token
+        auth_req = google.auth.transport.requests.Request()
+        qwen_base = qwen_url.rstrip("/v1").rstrip("/")
+        identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
+        headers["Authorization"] = f"Bearer {identity_token}"
+    except Exception:
+        pass
+
+    async with httpx.AsyncClient(timeout=90.0) as client:
+        resp = await client.post(
+            f"{qwen_url.rstrip('/')}/chat/completions",
+            headers=headers,
+            json={
+                "model": os.environ.get("QWEN_MODEL_NAME", "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"),
+                "messages": [
+                    {"role": "system", "content": "You are an expert career coach. Write cover letters that are concise, professional, and tailored to the specific job."},
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0.6,
+            }
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"].strip()
+
+
 async def generate_campaign_analysis(campaign_data: dict, cv_text: Optional[str] = None) -> Dict[str, Any]:
     """
     Generates a 'cold-start' analysis for a new job campaign.
