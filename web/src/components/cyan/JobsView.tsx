@@ -854,39 +854,20 @@ export function JobsView() {
           </div>
         </header>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <GlassCard className="!p-4">
-            <div className="p-2 rounded-lg bg-[#00FFFF]/10 inline-flex mb-3">
-              <Search className="w-5 h-5 text-[#00FFFF]" />
+        {/* Stats strip — compact inline pills */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {[
+            { icon: <Search className="w-3.5 h-3.5" />, value: activeCampaigns,      label: "Active Campaigns", color: "text-[#00FFFF]",   bg: "bg-[#00FFFF]/10"    },
+            { icon: <Inbox  className="w-3.5 h-3.5" />, value: pendingInbox.length,   label: "Pending Review",   color: "text-green-400",   bg: "bg-green-500/10"    },
+            { icon: <Send   className="w-3.5 h-3.5" />, value: 0,                     label: "Applications",     color: "text-yellow-400",  bg: "bg-yellow-500/10"   },
+            { icon: <Sparkles className="w-3.5 h-3.5" />, value: "0%",               label: "Match Score",      color: "text-purple-400",  bg: "bg-purple-500/10"   },
+          ].map(({ icon, value, label, color, bg }) => (
+            <div key={label} className={`flex items-center gap-2 px-3 py-2 rounded-xl border border-[#00FFFF]/10 bg-[#0D0D0D]/60`}>
+              <span className={`${color} ${bg} p-1 rounded-md`}>{icon}</span>
+              <span className={`text-base font-bold ${color}`}>{value}</span>
+              <span className="text-xs text-[#BBC9CD]">{label}</span>
             </div>
-            <div className="text-2xl font-bold text-[#00FFFF] mb-1">{activeCampaigns}</div>
-            <div className="text-sm text-[#BBC9CD]">Active Campaigns</div>
-          </GlassCard>
-
-          <GlassCard className="!p-4">
-            <div className="p-2 rounded-lg bg-green-500/10 inline-flex mb-3">
-              <Inbox className="w-5 h-5 text-green-400" />
-            </div>
-            <div className="text-2xl font-bold text-green-400 mb-1">{pendingInbox.length}</div>
-            <div className="text-sm text-[#BBC9CD]">Pending Review</div>
-          </GlassCard>
-
-          <GlassCard className="!p-4">
-            <div className="p-2 rounded-lg bg-yellow-500/10 inline-flex mb-3">
-              <Send className="w-5 h-5 text-yellow-400" />
-            </div>
-            <div className="text-2xl font-bold text-yellow-400 mb-1">0</div>
-            <div className="text-sm text-[#BBC9CD]">Applications</div>
-          </GlassCard>
-
-          <GlassCard className="!p-4">
-            <div className="p-2 rounded-lg bg-purple-500/10 inline-flex mb-3">
-              <Sparkles className="w-5 h-5 text-purple-400" />
-            </div>
-            <div className="text-2xl font-bold text-purple-400 mb-1">0%</div>
-            <div className="text-sm text-[#BBC9CD]">Match Score</div>
-          </GlassCard>
+          ))}
         </div>
 
         {/* Active Campaigns Section */}
