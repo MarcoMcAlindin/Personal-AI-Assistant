@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS match_cv_to_jobs(VECTOR(1536), FLOAT, INT);
