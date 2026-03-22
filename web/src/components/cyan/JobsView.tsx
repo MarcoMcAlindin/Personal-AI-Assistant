@@ -60,7 +60,7 @@ type InboxItem = Database['public']['Tables']['inbox_items']['Row'];
 // ApplyModal — warmup-aware cover letter generation + review + submit
 // Phases: checking → warming (polls) → generating → review → submitting
 // ---------------------------------------------------------------------------
-type ModalPhase = 'checking' | 'warming' | 'generating' | 'review' | 'submitting';
+type ModalPhase = 'checking' | 'warming' | 'generating' | 'failed' | 'review' | 'submitting';
 
 function ApplyModal({ job, campaign, onConfirm, onClose }: {
   job: InboxItem;
@@ -70,9 +70,9 @@ function ApplyModal({ job, campaign, onConfirm, onClose }: {
 }) {
   const [phase, setPhase] = useState<ModalPhase>('checking');
   const [coverLetter, setCoverLetter] = useState('');
-  const [error, setError] = useState('');
+  const [failReason, setFailReason] = useState('');
   const [warmupDots, setWarmupDots] = useState(0);
-  const pollRef = useEffect(() => {}, []); // placeholder — real poll via useEffect below
+  const [retryCount, setRetryCount] = useState(0);
 
   // Animated dots for warmup label
   useEffect(() => {
@@ -82,9 +82,12 @@ function ApplyModal({ job, campaign, onConfirm, onClose }: {
   }, [phase]);
 
   // Main orchestration: check status → warmup if needed → generate
+  // retryCount in deps means a retry resets and reruns the whole flow
   useEffect(() => {
     let cancelled = false;
     let pollTimer: ReturnType<typeof setTimeout>;
+    setPhase('checking');
+    setFailReason('');
 
     const generate = async () => {
       if (cancelled) return;
@@ -94,9 +97,8 @@ function ApplyModal({ job, campaign, onConfirm, onClose }: {
         if (!cancelled) { setCoverLetter(text); setPhase('review'); }
       } catch (e: any) {
         if (!cancelled) {
-          setError('Generation failed. You can write the cover letter manually below.');
-          setCoverLetter('');
-          setPhase('review');
+          setFailReason(e?.message || 'The AI server returned an error.');
+          setPhase('failed');
         }
       }
     };
@@ -119,13 +121,11 @@ function ApplyModal({ job, campaign, onConfirm, onClose }: {
       });
     };
 
-    // Step 1: check current status
     fetchVllmStatus().then(({ status }) => {
       if (cancelled) return;
       if (status === 'online') {
         generate();
       } else {
-        // Trigger warmup ping then start polling
         triggerVllmWarmup().catch(() => {});
         setPhase('warming');
         pollTimer = setTimeout(pollUntilOnline, 5000);
@@ -139,15 +139,15 @@ function ApplyModal({ job, campaign, onConfirm, onClose }: {
     });
 
     return () => { cancelled = true; clearTimeout(pollTimer); };
-  }, [job.id]);
+  }, [job.id, retryCount]);
 
   const handleConfirm = async () => {
     setPhase('submitting');
     try {
       await onConfirm(coverLetter);
     } catch {
-      setError('Failed to submit application. Please try again.');
-      setPhase('review');
+      setFailReason('Failed to submit application. Please try again.');
+      setPhase('failed');
     }
   };
 
@@ -213,15 +213,35 @@ function ApplyModal({ job, campaign, onConfirm, onClose }: {
             </div>
           )}
 
+          {/* Failed */}
+          {phase === 'failed' && (
+            <div className="flex flex-col items-center justify-center py-12 gap-5">
+              <div className="w-16 h-16 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center">
+                <XCircle className="w-8 h-8 text-red-400" />
+              </div>
+              <div className="text-center">
+                <p className="text-white font-semibold mb-2">Generation Failed</p>
+                <p className="text-[#BBC9CD] text-sm max-w-sm">{failReason || 'Something went wrong. The server may still be warming up.'}</p>
+              </div>
+              <button
+                onClick={() => setRetryCount(c => c + 1)}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00FFFF]/15 hover:bg-[#00FFFF]/25 text-[#00FFFF] font-semibold border border-[#00FFFF]/30 transition-all"
+              >
+                <Loader2 className="w-4 h-4" />
+                Retry
+              </button>
+              <button
+                onClick={() => { setCoverLetter(''); setPhase('review'); }}
+                className="text-xs text-[#BBC9CD] hover:text-white underline underline-offset-2 transition-colors"
+              >
+                Write manually instead
+              </button>
+            </div>
+          )}
+
           {/* Review */}
           {(phase === 'review' || phase === 'submitting') && (
             <div className="flex flex-col gap-4">
-              {error && (
-                <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 text-sm">
-                  <XCircle className="w-4 h-4 flex-shrink-0" />
-                  {error}
-                </div>
-              )}
               <div className="flex items-center gap-2 text-xs text-[#BBC9CD] mb-1">
                 <Edit3 className="w-3.5 h-3.5 text-[#00FFFF]" />
                 Review and edit your cover letter before submitting
@@ -258,7 +278,7 @@ function ApplyModal({ job, campaign, onConfirm, onClose }: {
             </button>
           </div>
         )}
-        {(phase === 'checking' || phase === 'warming' || phase === 'generating') && (
+        {(phase === 'checking' || phase === 'warming' || phase === 'generating' || phase === 'failed') && (
           <div className="p-6 border-t border-[#1A1A1A]">
             <button onClick={onClose} className="w-full py-3 rounded-xl bg-[#1A1A1A] hover:bg-[#222] text-[#BBC9CD] font-semibold border border-[#00FFFF]/20 transition-colors">
               Cancel
