@@ -1054,56 +1054,58 @@ export function JobsView() {
             </GlassCard>
           )}
 
-          {/* Campaign List */}
-          <div className="space-y-3">
+          {/* Campaign Grid — compact cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {campaigns.length === 0 && (
-              <div className="text-center py-6 text-[#BBC9CD]">No active campaigns.</div>
+              <div className="col-span-full text-center py-6 text-[#BBC9CD]">No active campaigns.</div>
             )}
             {campaigns.map((campaign) => {
               const prefs = campaign.job_preferences as Record<string, any>;
+              const jobCount = inboxItems.filter(i => i.campaign_id === campaign.id).length;
+              const isActive = campaign.status === "RUNNING" || campaign.status === "DRAFT";
               return (
-              <GlassCard 
-                key={campaign.id} 
-                className="!p-4 hover:border-[#00FFFF]/40 transition-all cursor-pointer"
-                onClick={() => setSelectedCampaign(campaign)}
-              >
-                <div className="flex flex-col md:flex-row md:items-center gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-bold text-[#DAE2FD] text-lg">{campaign.name}</h3>
-                      {(campaign.status === "RUNNING" || campaign.status === "DRAFT") && (
-                        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/20 border border-green-500/30">
-                          <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse"></div>
-                          <span className="text-xs text-green-400 font-semibold">{campaign.status}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="flex items-center gap-2 text-[#BBC9CD]">
-                        <Search className="w-4 h-4 text-[#00FFFF]" />
-                        {prefs?.keywords || "Any"}
+                <GlassCard
+                  key={campaign.id}
+                  className="!p-4 hover:border-[#00FFFF]/40 transition-all cursor-pointer flex flex-col gap-2"
+                  onClick={() => setSelectedCampaign(campaign)}
+                >
+                  {/* Name + status */}
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <h3 className="font-bold text-[#DAE2FD] text-sm truncate">{campaign.name}</h3>
+                    {isActive && (
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-500/20 border border-green-500/30 flex-shrink-0">
+                        <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                        <span className="text-[10px] text-green-400 font-semibold">{campaign.status}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-[#BBC9CD]">
-                        <MapPin className="w-4 h-4 text-[#00FFFF]" />
-                        {prefs?.location || "Any"}
-                      </div>
-                      <div className="flex items-center gap-2 text-[#BBC9CD]">
-                        <DollarSign className="w-4 h-4 text-[#00FFFF]" />
-                        {prefs?.salary || "Any"}
-                      </div>
-                      <div className="flex items-center gap-2 text-[#BBC9CD]">
-                        <Inbox className="w-4 h-4 text-[#00FFFF]" />
-                        {inboxItems.filter(i => i.campaign_id === campaign.id).length} results
-                      </div>
-                    </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 text-[#00FFFF]">
-                    <span className="text-sm font-semibold">View Results</span>
-                    <ExternalLink className="w-4 h-4" />
+
+                  {/* Key details */}
+                  <div className="flex flex-col gap-1 text-xs text-[#BBC9CD]">
+                    {prefs?.keywords && (
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Search className="w-3 h-3 text-[#00FFFF] flex-shrink-0" />
+                        <span className="truncate">{prefs.keywords}</span>
+                      </div>
+                    )}
+                    {prefs?.location && (
+                      <div className="flex items-center gap-1.5 truncate">
+                        <MapPin className="w-3 h-3 text-[#00FFFF] flex-shrink-0" />
+                        <span className="truncate">{prefs.location}</span>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </GlassCard>
-            )})}
+
+                  {/* Footer: result count + arrow */}
+                  <div className="flex items-center justify-between mt-auto pt-2 border-t border-[#00FFFF]/10">
+                    <span className="text-xs text-[#BBC9CD]">
+                      <span className="font-semibold text-[#00FFFF]">{jobCount}</span> results
+                    </span>
+                    <ExternalLink className="w-3.5 h-3.5 text-[#00FFFF]/60" />
+                  </div>
+                </GlassCard>
+              );
+            })}
           </div>
         </div>
 
