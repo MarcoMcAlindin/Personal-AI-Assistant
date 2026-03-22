@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useOutletContext } from "react-router";
 import {
   Menu, Briefcase, Search, MapPin, DollarSign, Building2,
   Clock, ExternalLink, Sparkles, Plus, X, Send, Inbox, Check, XCircle,
-  ArrowLeft, Upload, FileText, Target, TrendingUp, Award, Zap, Loader2, Edit3
+  ArrowLeft, Upload, FileText, Target, TrendingUp, Award, Zap, Loader2, Edit3, Filter
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -12,12 +12,20 @@ import { GlassCard } from "./GlassCard";
 import { BurgerMenu } from "./BurgerMenu";
 import { Sidebar } from "./Sidebar";
 
-// Modified: VOS-102 — HTML description rendering + source badge support
 const SOURCE_META: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  "weworkremotely": { label: "We Work Remotely", color: "#4ade80", bg: "rgba(74, 222, 128, 0.12)", border: "rgba(74, 222, 128, 0.3)" },
-  "serper-linkedin": { label: "LinkedIn", color: "#60a5fa", bg: "rgba(96, 165, 250, 0.12)", border: "rgba(96, 165, 250, 0.3)" },
-  "proxycurl": { label: "LinkedIn", color: "#60a5fa", bg: "rgba(96, 165, 250, 0.12)", border: "rgba(96, 165, 250, 0.3)" },
-  "crustdata": { label: "Crustdata", color: "#c084fc", bg: "rgba(192, 132, 252, 0.12)", border: "rgba(192, 132, 252, 0.3)" },
+  "weworkremotely":  { label: "We Work Remotely", color: "#4ade80",  bg: "rgba(74,222,128,0.12)",  border: "rgba(74,222,128,0.3)" },
+  "linkedin":        { label: "LinkedIn",          color: "#60a5fa",  bg: "rgba(96,165,250,0.12)",  border: "rgba(96,165,250,0.3)" },
+  "serper-linkedin": { label: "LinkedIn",          color: "#60a5fa",  bg: "rgba(96,165,250,0.12)",  border: "rgba(96,165,250,0.3)" },
+  "proxycurl":       { label: "LinkedIn",          color: "#60a5fa",  bg: "rgba(96,165,250,0.12)",  border: "rgba(96,165,250,0.3)" },
+  "indeed":          { label: "Indeed",            color: "#f59e0b",  bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.3)" },
+  "glassdoor":       { label: "Glassdoor",         color: "#34d399",  bg: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.3)" },
+  "reed":            { label: "Reed",              color: "#f87171",  bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.3)" },
+  "totaljobs":       { label: "TotalJobs",         color: "#a78bfa",  bg: "rgba(167,139,250,0.12)", border: "rgba(167,139,250,0.3)" },
+  "ziprecruiter":    { label: "ZipRecruiter",      color: "#38bdf8",  bg: "rgba(56,189,248,0.12)",  border: "rgba(56,189,248,0.3)" },
+  "remoteok":        { label: "RemoteOK",          color: "#fb923c",  bg: "rgba(251,146,60,0.12)",  border: "rgba(251,146,60,0.3)" },
+  "remotive":        { label: "Remotive",          color: "#e879f9",  bg: "rgba(232,121,249,0.12)", border: "rgba(232,121,249,0.3)" },
+  "google-jobs":     { label: "Google Jobs",       color: "#facc15",  bg: "rgba(250,204,21,0.12)",  border: "rgba(250,204,21,0.3)" },
+  "crustdata":       { label: "Crustdata",         color: "#c084fc",  bg: "rgba(192,132,252,0.12)", border: "rgba(192,132,252,0.3)" },
 };
 
 function getSourceMeta(source?: string | null) {
@@ -48,6 +56,115 @@ function htmlToMarkdown(raw: string): string {
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
+// ---------------------------------------------------------------------------
+// PlatformFilterBar — multi-select source chips above job grids
+// ---------------------------------------------------------------------------
+function PlatformFilterBar({
+  items, selected, onToggle, onClear
+}: {
+  items: { source?: string | null }[];
+  selected: Set<string>;
+  onToggle: (s: string) => void;
+  onClear: () => void;
+}) {
+  const sources = useMemo(() => {
+    const counts = new Map<string, number>();
+    items.forEach(i => { const s = i.source || "unknown"; counts.set(s, (counts.get(s) || 0) + 1); });
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  }, [items]);
+
+  if (sources.length <= 1) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-4">
+      <Filter className="w-3.5 h-3.5 text-[#BBC9CD] flex-shrink-0" />
+      <button
+        onClick={onClear}
+        className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
+          selected.size === 0
+            ? "bg-[#00FFFF]/15 border-[#00FFFF]/50 text-[#00FFFF]"
+            : "bg-[#1A1A1A] border-[#00FFFF]/15 text-[#BBC9CD] hover:border-[#00FFFF]/35"
+        }`}
+      >
+        All ({items.length})
+      </button>
+      {sources.map(([source, count]) => {
+        const meta = getSourceMeta(source);
+        const active = selected.has(source);
+        return (
+          <button
+            key={source}
+            onClick={() => onToggle(source)}
+            className="px-3 py-1 rounded-lg text-xs font-semibold border transition-all"
+            style={{
+              backgroundColor: active ? meta.bg : "rgba(26,26,26,0.8)",
+              borderColor: active ? meta.border : "rgba(0,255,255,0.12)",
+              color: active ? meta.color : "#BBC9CD",
+            }}
+          >
+            {meta.label} ({count})
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DateFilterBar — filter by how recently jobs were scraped
+// ---------------------------------------------------------------------------
+const DATE_OPTIONS = [
+  { label: "Today",      days: 1  },
+  { label: "3 Days",     days: 3  },
+  { label: "This Week",  days: 7  },
+  { label: "This Month", days: 30 },
+] as const;
+
+function DateFilterBar({
+  selected, onChange
+}: {
+  selected: number | null;
+  onChange: (days: number | null) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-3">
+      <Clock className="w-3.5 h-3.5 text-[#BBC9CD] flex-shrink-0" />
+      <button
+        onClick={() => onChange(null)}
+        className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
+          selected === null
+            ? "bg-[#00FFFF]/15 border-[#00FFFF]/50 text-[#00FFFF]"
+            : "bg-[#1A1A1A] border-[#00FFFF]/15 text-[#BBC9CD] hover:border-[#00FFFF]/35"
+        }`}
+      >
+        Any time
+      </button>
+      {DATE_OPTIONS.map(({ label, days }) => (
+        <button
+          key={days}
+          onClick={() => onChange(days)}
+          className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
+            selected === days
+              ? "bg-[#00FFFF]/15 border-[#00FFFF]/50 text-[#00FFFF]"
+              : "bg-[#1A1A1A] border-[#00FFFF]/15 text-[#BBC9CD] hover:border-[#00FFFF]/35"
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function applyDateFilter<T extends { created_at?: string | null }>(items: T[], days: number | null): T[] {
+  if (!days) return items;
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  return items.filter(i => {
+    if (!i.created_at) return true; // no date = include
+    return new Date(i.created_at).getTime() >= cutoff;
+  });
+}
+
 import { campaignService } from "../../services/campaignService";
 import { supabase } from "../../services/supabase";
 
@@ -299,10 +416,22 @@ export function JobsView() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [uploadedCV, setUploadedCV] = useState<File | null>(null);
   const [applyJob, setApplyJob] = useState<InboxItem | null>(null);
+  // Platform + date filters — campaign detail view
+  const [campaignPlatformFilter, setCampaignPlatformFilter] = useState<Set<string>>(new Set());
+  const [campaignDateFilter, setCampaignDateFilter] = useState<number | null>(null);
+  // Platform + date filters — search results (main view)
+  const [platformFilter, setPlatformFilter] = useState<Set<string>>(new Set());
+  const [dateFilter, setDateFilter] = useState<number | null>(null);
+
+  const togglePlatform = (filter: Set<string>, setFilter: (s: Set<string>) => void, source: string) => {
+    const next = new Set(filter);
+    if (next.has(source)) next.delete(source); else next.add(source);
+    setFilter(next);
+  };
 
   // New campaign form state
   const [newCampaign, setNewCampaign] = useState({
-    name: "", keywords: "", location: "", salary: ""
+    name: "", keywords: "", location: "", salary: "", posted_within_days: "7"
   });
 
   const handleCVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -362,11 +491,12 @@ export function JobsView() {
           job_preferences: {
             keywords: newCampaign.keywords,
             location: newCampaign.location,
-            salary: newCampaign.salary
+            salary: newCampaign.salary,
+            posted_within_days: newCampaign.posted_within_days || null,
           }
         });
         setCampaigns([created, ...campaigns]);
-        setNewCampaign({ name: "", keywords: "", location: "", salary: "" });
+        setNewCampaign({ name: "", keywords: "", location: "", salary: "", posted_within_days: "7" });
         setShowNewCampaign(false);
         
         // Trigger background proxy scrape logic
@@ -396,9 +526,27 @@ export function JobsView() {
   const activeCampaigns = campaigns.filter(c => c.status === "RUNNING" || c.status === "DRAFT").length;
   const pendingInbox = inboxItems.filter(i => i.status === "PENDING_REVIEW");
 
+  // Pre-compute filtered items for campaign detail (hooks must be called unconditionally)
+  const allCampaignItems = selectedCampaign
+    ? inboxItems.filter(i => i.campaign_id === selectedCampaign.id)
+    : [];
+  const campaignItems = useMemo(() => {
+    let items = applyDateFilter(allCampaignItems, campaignDateFilter);
+    if (campaignPlatformFilter.size > 0)
+      items = items.filter(i => campaignPlatformFilter.has(i.source || "unknown"));
+    return items;
+  }, [allCampaignItems, campaignDateFilter, campaignPlatformFilter]);
+
+  // Pre-compute filtered search results
+  const filteredPendingInbox = useMemo(() => {
+    let items = applyDateFilter(pendingInbox, dateFilter);
+    if (platformFilter.size > 0)
+      items = items.filter(i => platformFilter.has(i.source || "unknown"));
+    return items;
+  }, [pendingInbox, dateFilter, platformFilter]);
+
   // If a campaign is selected, show detailed view
   if (selectedCampaign) {
-    const campaignItems = inboxItems.filter(i => i.campaign_id === selectedCampaign.id);
     const prefs = selectedCampaign.job_preferences as any;
 
     return (
@@ -519,14 +667,22 @@ export function JobsView() {
             </div>
           </GlassCard>
 
-          {/* Matched Jobs — Modified: VOS-102 grid layout, Markdown descriptions, source badges */}
+          {/* Matched Jobs — platform + date filters */}
           <div>
             <div className="flex items-center gap-2 mb-4">
               <div className="h-1 w-12 bg-gradient-to-r from-[#00FFFF] to-transparent rounded-full"></div>
               <span className="text-xs font-semibold text-[#BBC9CD] uppercase tracking-widest">
-                Matched Opportunities ({campaignItems.length})
+                Matched Opportunities ({campaignItems.length}{campaignPlatformFilter.size > 0 || campaignDateFilter ? ` filtered` : ""})
               </span>
             </div>
+
+            <DateFilterBar selected={campaignDateFilter} onChange={setCampaignDateFilter} />
+            <PlatformFilterBar
+              items={allCampaignItems}
+              selected={campaignPlatformFilter}
+              onToggle={(s) => togglePlatform(campaignPlatformFilter, setCampaignPlatformFilter, s)}
+              onClear={() => setCampaignPlatformFilter(new Set())}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {campaignItems.length === 0 && (
@@ -798,6 +954,37 @@ export function JobsView() {
                   </div>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-semibold text-[#BBC9CD] mb-2">
+                    <span className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-[#00FFFF]" />
+                      Posted Within
+                    </span>
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: "24 Hours", value: "1" },
+                      { label: "3 Days",   value: "3" },
+                      { label: "1 Week",   value: "7" },
+                      { label: "1 Month",  value: "30" },
+                      { label: "Any time", value: "" },
+                    ].map(({ label, value }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setNewCampaign({ ...newCampaign, posted_within_days: value })}
+                        className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
+                          newCampaign.posted_within_days === value
+                            ? "bg-[#00FFFF]/20 border-[#00FFFF]/50 text-[#00FFFF]"
+                            : "bg-[#0A0A0A]/50 border-[#00FFFF]/15 text-[#BBC9CD] hover:border-[#00FFFF]/35"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* CV Upload Section */}
                 <div>
                   <label className="block text-sm font-semibold text-[#BBC9CD] mb-2">Upload CV/Resume</label>
@@ -904,20 +1091,30 @@ export function JobsView() {
           </div>
         </div>
 
-        {/* Job Results Inbox (HITL) — Modified: align card layout to match campaign detail grid */}
+        {/* Job Results Inbox (HITL) — platform + date filters */}
         <div>
           <div className="flex items-center gap-2 mb-4">
             <div className="h-1 w-12 bg-gradient-to-r from-[#00FFFF] to-transparent rounded-full"></div>
             <span className="text-xs font-semibold text-[#BBC9CD] uppercase tracking-widest">
-              Search Results
+              Search Results ({filteredPendingInbox.length}{platformFilter.size > 0 || dateFilter ? " filtered" : ""})
             </span>
           </div>
 
+          <DateFilterBar selected={dateFilter} onChange={setDateFilter} />
+          <PlatformFilterBar
+            items={pendingInbox}
+            selected={platformFilter}
+            onToggle={(s) => togglePlatform(platformFilter, setPlatformFilter, s)}
+            onClear={() => setPlatformFilter(new Set())}
+          />
+
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {pendingInbox.length === 0 && (
-              <div className="col-span-full text-center py-6 text-[#BBC9CD]">No new search results.</div>
+            {filteredPendingInbox.length === 0 && (
+              <div className="col-span-full text-center py-6 text-[#BBC9CD]">
+                {pendingInbox.length > 0 ? "No results match the selected filters." : "No new search results."}
+              </div>
             )}
-            {pendingInbox.map((job) => {
+            {filteredPendingInbox.map((job) => {
               const src = getSourceMeta(job.source);
               const prefs = campaigns.find(c => c.id === job.campaign_id)?.job_preferences as any;
               return (

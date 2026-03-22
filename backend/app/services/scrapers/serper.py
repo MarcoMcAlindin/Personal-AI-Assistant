@@ -43,12 +43,21 @@ class SerperScraper:
         else:
             gl = "us"
 
-        payload = {
+        # tbs = time-based search: qdr:d (24h), qdr:w (7d), qdr:m (30d)
+        posted_within_days = prefs.get("posted_within_days")
+        tbs = None
+        if posted_within_days:
+            d = int(posted_within_days)
+            tbs = "qdr:d" if d <= 1 else "qdr:w" if d <= 7 else "qdr:m"
+
+        payload: dict = {
             "q": query,
             "gl": gl,
             "hl": "en",
             "num": min(campaign.get("max_results_per_run", 50), 100)
         }
+        if tbs:
+            payload["tbs"] = tbs
 
         headers = {
             "X-API-KEY": self.api_key,
