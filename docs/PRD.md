@@ -51,14 +51,23 @@ A transient, day-by-day task manager designed to keep focus strictly on the pres
 * **Server-Side Nightly Archiving:** At exactly midnight, a native pg_cron job running directly inside the Supabase PostgreSQL database automatically flips the is_archived status of all active tasks. This guarantees a clean slate every morning without relying on the phone or PC to trigger the event.
 * **Archive View:** Accessible via settings to review past productivity.
 53:
-54: ### 3.7. AI-Driven Job Campaign & Application Engine
-55: A high-performance pipeline for autonomous job searching and application preparation.
-56: * **Job Scraping:** Python-based scrapers (scrapfly-sdk) for multiple job boards, integrated into a unified campaign dashboard.
-57: * **Semantic Matching:** pgvector similarity scoring between job descriptions and user's CV.
-58: * **Cover Letter Generator:** Context-aware generation using the cloud Qwen instance, optimized for ATS.
-59: * **Status Dashboard:** Visual tracking of application stages (Applied, Interviewing, Rejected) with real-time feedback.
 
-## 4. Data Model (Supabase Schema Overview)
+### 3.7. AI-Driven Job Campaign & Application Engine
+A high-performance pipeline for autonomous job searching and application preparation.
+* **Job Scraping:** Python-based scrapers (scrapfly-sdk) for multiple job boards, integrated into a unified campaign dashboard.
+* **Semantic Matching:** pgvector similarity scoring between job descriptions and user's CV.
+* **Cover Letter Generator:** Context-aware generation using the cloud Qwen instance, optimized for ATS.
+* **Status Dashboard:** Visual tracking of application stages (Applied, Interviewing, Rejected) with real-time feedback.
+
+## 4. Project Governance & PRD Audit Rule
+To maintain document accuracy as the project evolves:
+> [!IMPORTANT]
+> **7-Day Staleness Protocol:** If the `PRD.md` file has not been modified for more than 7 consecutive days, Mr. Pink MUST perform a comprehensive audit. This includes:
+> 1. Verifying if implemented features match the document.
+> 2. Updating document and product versioning to reflect the current state.
+> 3. Aligning the implementation roadmap with actual progress.
+
+## 5. Data Model (Supabase Schema Overview)
 
 
 * **users:** OAuth tokens, general settings.
@@ -67,19 +76,22 @@ A transient, day-by-day task manager designed to keep focus strictly on the pres
 * **health_metrics:** id, date, water_liters, sleep_duration, avg_heart_rate, raw_watch_data (JSON), ai_analysis (Text).
 * **tasks:** id, date, title, description, duration, time, status, is_archived (Boolean).
 
-## 5. Implementation Roadmap
+## 6. Implementation Roadmap
 
-* **Phase 1: Foundation & Cloud Database**
-    * Initialize Supabase. Set up tables, Row Level Security (RLS), Google OAuth, the pgvector extension, and the pg_cron midnight archiving job (Mr. White).
-    * Set up the three decoupled GitHub repositories: /mobile (Expo), /web (Vite), and/backend (FastAPI).
-    * Set up the three decoupled GitHub repositories: /mobile (Expo), /web (Vite), and /backend (FastAPI).
-* **Phase 2: The Python Gateway & AI**
-    * Deploy the vLLM Qwen3.5-9B-Instruct container to Google Cloud Run (Mr. Red).
-    * Deploy the Python FastAPI backend to Cloud Run to handle the Gmail proxy, feed parsing, and RAG embedding logic (Mr. Green).
-* **Phase 3: Frontends & Hardware Integration**
-    * Build the multi-pane desktop UI in the/web repo and the tabbed mobile UI in the/mobile repo (Mr. Blue).
-    * Implement the foreground react-native-health-connect sync trigger on mobile.
-* **Phase 4: Automation & Job Engine**
-    * Configure the GitHub Action to run the 8:00 AM AI health analysis.
-    * Implement the AI-Driven Job Campaign & Application Engine (Mr. Blue).
-    * Finalize the dark theme styling and cross-platform syncing tests.
+* **Phase 1: Foundation & Cloud Database [x]**
+    * Initialize Supabase. Set up tables, RLS, Google OAuth, pgvector, and pg_cron (Mr. White).
+    * Set up the decoupled GitHub monorepo structure: `/mobile`, `/web`, and `/backend`.
+* **Phase 2: The Python Gateway & AI [x]**
+    * Deploy the `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` container to Google Cloud Run (Mr. Red).
+    * Deploy the Python FastAPI backend to handle Gmail proxy, feed parsing, and RAG logic (Mr. Green).
+* **Phase 3: Frontends & Core Integration [x]**
+    * Build the multi-pane desktop UI and the tabbed mobile UI (Mr. Blue).
+    * Implement the foreground `react-native-health-connect` sync trigger on mobile.
+* **Phase 4: Automation & Job Engine [/]**
+    * Configure the GitHub Action for 8:00 AM AI health analysis [x].
+    * Implement AI-Driven Job Campaign & Application Engine [/].
+    * Implement Markdown rendering for AI responses in Chat [x].
+* **Phase 5: Deep Dives & Optimization [Planned]**
+    * Audit Mobile Chat UI vs Ground Truth (VibeOS Figma compliance).
+    * Harden Job Engine Scrapers & AI Matching Logic.
+    * Implement vLLM Health Probe Hardening & Cold-Start Notifications.
