@@ -1,6 +1,17 @@
 import { Email, EmailSendRequest } from '../types/email';
+import { supabase } from './supabase';
 
 const BACKEND_URL = import.meta.env.VITE_CLOUD_GATEWAY_URL || 'http://localhost:8000/api/v1';
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  if (!token) return { 'Content-Type': 'application/json' };
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  };
+}
 
 export const emailService = {
   fetchInbox: async (): Promise<Email[]> => {
@@ -13,20 +24,20 @@ export const emailService = {
       console.error('[EmailService] Fetch Error:', error);
       // Fallback for demo
       return [
-        { 
-          id: '1', 
-          from: "system@supercyan.com", 
-          subject: "Welcome to your Intelligence Dashboard", 
-          body: "Your personal health sync is now active...", 
+        {
+          id: '1',
+          from: "system@supercyan.com",
+          subject: "Welcome to your Intelligence Dashboard",
+          body: "Your personal health sync is now active...",
           timestamp: new Date().toISOString(),
           is_read: false,
           status: 'whitelisted'
         },
-        { 
-          id: '2', 
-          from: "unknown@spam.com", 
-          subject: "Limited Offer!", 
-          body: "Buy this now...", 
+        {
+          id: '2',
+          from: "unknown@spam.com",
+          subject: "Limited Offer!",
+          body: "Buy this now...",
           timestamp: new Date().toISOString(),
           is_read: false,
           status: 'pending'
@@ -47,5 +58,33 @@ export const emailService = {
       console.error('[EmailService] Send Error:', error);
       throw error;
     }
-  }
+  },
+
+  getGoogleAuthUrl: async (): Promise<string> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${BACKEND_URL}/auth/google/authorize`, { headers });
+    if (!response.ok) throw new Error('Google Auth URL fetch failed');
+    const data = await response.json();
+    return data.authorization_url;
+  },
+
+  getGoogleStatus: async (): Promise<{ connected: boolean; email: string | null }> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${BACKEND_URL}/auth/google/status`, { headers });
+    if (!response.ok) throw new Error('Google status fetch failed');
+    const data = await response.json();
+    return {
+      connected: data.gmail?.connected ?? false,
+      email: data.gmail?.email ?? null,
+    };
+  },
+
+  disconnectGoogle: async (): Promise<void> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${BACKEND_URL}/auth/google/disconnect`, {
+      method: 'DELETE',
+      headers,
+    });
+    if (!response.ok) throw new Error('Google disconnect failed');
+  },
 };
