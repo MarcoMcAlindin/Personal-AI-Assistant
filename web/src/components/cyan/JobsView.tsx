@@ -622,6 +622,16 @@ export function JobsView() {
     }
   }, []);
 
+  // Stable reference map: campaign_id → job_preferences (avoids inline campaigns.find on every render)
+  const campaignPrefsMap = useMemo(() => {
+    const m = new Map<string, any>();
+    campaigns.forEach(c => m.set(c.id, c.job_preferences));
+    return m;
+  }, [campaigns]);
+
+  // Stable onView callback so MemoJobCard props don't change on every render
+  const handleOpenUrl = useCallback((url: string) => window.open(url, "_blank"), []);
+
   const handleApplyConfirm = useCallback(async (coverLetter: string) => {
     if (!applyJob) return;
     await campaignService.createApplication(applyJob.id, coverLetter);
@@ -801,7 +811,7 @@ export function JobsView() {
                   job={job}
                   prefs={prefs}
                   onApply={setApplyJob}
-                  onView={(url) => window.open(url, "_blank")}
+                  onView={handleOpenUrl}
                 />
               ))}
             </div>
@@ -1117,10 +1127,10 @@ export function JobsView() {
               <MemoJobCard
                 key={job.id}
                 job={job}
-                prefs={campaigns.find(c => c.id === job.campaign_id)?.job_preferences as any}
+                prefs={campaignPrefsMap.get(job.campaign_id ?? "") as any}
                 onApply={setApplyJob}
                 onAction={handleInboxAction}
-                onView={(url) => window.open(url, "_blank")}
+                onView={handleOpenUrl}
                 showReject
               />
             ))}
