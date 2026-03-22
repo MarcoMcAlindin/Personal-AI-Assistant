@@ -2,6 +2,7 @@ import logging
 import httpx
 import os
 from typing import Dict, Optional
+from .scoring import score_job
 
 class SerperScraper:
     """
@@ -25,10 +26,16 @@ class SerperScraper:
         prefs = campaign.get("job_preferences", {})
         keywords = prefs.get("keywords", "Software Engineer")
         location = prefs.get("location", "Remote")
+        job_type = (prefs.get("job_type") or "").lower()            # "full-time" | "part-time"
+        arrangement = (prefs.get("work_arrangement") or "").lower() # "remote" | "hybrid" | "onsite"
 
-        # Clean query targeting job boards — no site: operator needed; Google naturally
-        # returns LinkedIn/Indeed/Glassdoor results for job searches.
-        query = f"{keywords} {location} jobs"
+        # Build query — append job_type and arrangement to narrow Google results at source
+        query_parts = [keywords, location, "jobs"]
+        if job_type:
+            query_parts.append(job_type)
+        if arrangement:
+            query_parts.append(arrangement)
+        query = " ".join(query_parts)
 
         # Infer country code from location for better geo-targeting
         location_lower = location.lower()
@@ -117,6 +124,7 @@ class SerperScraper:
 
         remote_type = "remote" if "remote" in (snippet + title + link).lower() else "onsite"
 
+        match_score, match_reasoning = score_job(title, snippet, campaign)
         return {
             "campaign_id": campaign["id"],
             "user_id": campaign["user_id"],
@@ -131,8 +139,8 @@ class SerperScraper:
             "job_url": link,
             "job_description": snippet,
             "status": "PENDING_REVIEW",
-            "match_score": 0.75,
-            "match_reasoning": f"Sourced from Google Search ({source_label})."
+            "match_score": match_score,
+            "match_reasoning": match_reasoning,
         }
 
     def _extract_salary(self, text: str) -> Optional[str]:

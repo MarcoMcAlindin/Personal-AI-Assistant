@@ -56,6 +56,17 @@ function htmlToMarkdown(raw: string): string {
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
+function relativeDate(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return `${Math.floor(days / 30)}mo ago`;
+}
+
 // ---------------------------------------------------------------------------
 // PlatformFilterBar — multi-select source chips above job grids
 // ---------------------------------------------------------------------------
@@ -109,6 +120,46 @@ function PlatformFilterBar({
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// InlineFilterBar — generic pill row for any string-keyed filter set
+// ---------------------------------------------------------------------------
+function InlineFilterBar({ label, options, selected, onChange }: {
+  label: string;
+  options: { label: string; value: string }[];
+  selected: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-3">
+      <span className="text-[10px] font-semibold text-[#BBC9CD]/60 uppercase tracking-widest w-16 flex-shrink-0">{label}</span>
+      {options.map(({ label: l, value: v }) => (
+        <button key={v} onClick={() => onChange(v)}
+          className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
+            selected === v
+              ? "bg-[#00FFFF]/15 border-[#00FFFF]/50 text-[#00FFFF]"
+              : "bg-[#1A1A1A] border-[#00FFFF]/15 text-[#BBC9CD] hover:border-[#00FFFF]/35"
+          }`}
+        >{l}</button>
+      ))}
+    </div>
+  );
+}
+
+const JOB_TYPE_OPTIONS = [
+  { label: "Any type",    value: "" },
+  { label: "Full-time",   value: "full-time" },
+  { label: "Part-time",   value: "part-time" },
+  { label: "Contract",    value: "contract" },
+  { label: "Freelance",   value: "freelance" },
+];
+
+const ARRANGEMENT_OPTIONS = [
+  { label: "Any",     value: "" },
+  { label: "Remote",  value: "remote" },
+  { label: "Hybrid",  value: "hybrid" },
+  { label: "On-site", value: "onsite" },
+];
 
 // ---------------------------------------------------------------------------
 // DateFilterBar — filter by how recently jobs were scraped
@@ -450,7 +501,7 @@ const MemoJobCard = memo(function JobCard({
       <div className="flex flex-wrap gap-3 text-xs mb-3">
         <span className="flex items-center gap-1 text-[#BBC9CD]"><MapPin className="w-3.5 h-3.5 text-[#00FFFF]" />{job.location || "Anywhere"}</span>
         <span className="flex items-center gap-1 text-[#BBC9CD]"><DollarSign className="w-3.5 h-3.5 text-[#00FFFF]" />{job.salary_range || "Undisclosed"}</span>
-        <span className="flex items-center gap-1 text-[#BBC9CD]"><Clock className="w-3.5 h-3.5 text-[#00FFFF]" />Recently</span>
+        <span className="flex items-center gap-1 text-[#BBC9CD]"><Clock className="w-3.5 h-3.5 text-[#00FFFF]" />{job.discovered_at ? relativeDate(job.discovered_at) : "Recently"}</span>
       </div>
 
       <div className="h-48 overflow-y-auto mb-3 pr-1 prose prose-sm prose-invert max-w-none
@@ -522,12 +573,16 @@ export function JobsView() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [uploadedCV, setUploadedCV] = useState<File | null>(null);
   const [applyJob, setApplyJob] = useState<InboxItem | null>(null);
-  // Platform + date filters — campaign detail view
+  // Filters — campaign detail view
   const [campaignPlatformFilter, setCampaignPlatformFilter] = useState<Set<string>>(new Set());
   const [campaignDateFilter, setCampaignDateFilter] = useState<number | null>(null);
-  // Platform + date filters — search results (main view)
+  const [campaignJobTypeFilter, setCampaignJobTypeFilter] = useState("");
+  const [campaignArrangementFilter, setCampaignArrangementFilter] = useState("");
+  // Filters — search results (main view)
   const [platformFilter, setPlatformFilter] = useState<Set<string>>(new Set());
   const [dateFilter, setDateFilter] = useState<number | null>(null);
+  const [jobTypeFilter, setJobTypeFilter] = useState("");
+  const [arrangementFilter, setArrangementFilter] = useState("");
 
   const togglePlatform = (filter: Set<string>, setFilter: (s: Set<string>) => void, source: string) => {
     const next = new Set(filter);
@@ -535,9 +590,12 @@ export function JobsView() {
     setFilter(next);
   };
 
+  const [applicationsCount, setApplicationsCount] = useState(0);
+
   // New campaign form state
   const [newCampaign, setNewCampaign] = useState({
-    name: "", keywords: "", location: "", salary: "", posted_within_days: "7"
+    name: "", keywords: "", location: "", salary: "",
+    posted_within_days: "7", job_type: "", work_arrangement: ""
   });
 
   const handleCVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -553,10 +611,15 @@ export function JobsView() {
 
   const loadData = async () => {
     try {
-      const dbCampaigns = await campaignService.getCampaigns();
+      const [dbCampaigns, dbInbox, appCount] = await Promise.all([
+        campaignService.getCampaigns(),
+        campaignService.getInboxItems(),
+        supabase.from("applications").select("id", { count: "exact", head: true })
+          .then(r => r.count ?? 0),
+      ]);
       setCampaigns(dbCampaigns);
-      const dbInbox = await campaignService.getInboxItems();
       setInboxItems(dbInbox);
+      setApplicationsCount(appCount as number);
     } catch (e) {
       console.error("Failed to load jobs data", e);
     }
@@ -599,10 +662,13 @@ export function JobsView() {
             location: newCampaign.location,
             salary: newCampaign.salary,
             posted_within_days: newCampaign.posted_within_days || null,
+            job_type: newCampaign.job_type || null,
+            work_arrangement: newCampaign.work_arrangement || null,
           }
         });
         setCampaigns([created, ...campaigns]);
-        setNewCampaign({ name: "", keywords: "", location: "", salary: "", posted_within_days: "7" });
+        setNewCampaign({ name: "", keywords: "", location: "", salary: "",
+          posted_within_days: "7", job_type: "", work_arrangement: "" });
         setShowNewCampaign(false);
         
         // Trigger background proxy scrape logic
@@ -651,16 +717,28 @@ export function JobsView() {
     let items = applyDateFilter(allCampaignItems, campaignDateFilter);
     if (campaignPlatformFilter.size > 0)
       items = items.filter(i => campaignPlatformFilter.has(i.source || "unknown"));
+    if (campaignJobTypeFilter)
+      items = items.filter(i => (i.job_description || "").toLowerCase().includes(campaignJobTypeFilter) ||
+        (i.job_title || "").toLowerCase().includes(campaignJobTypeFilter));
+    if (campaignArrangementFilter)
+      items = items.filter(i => (i.remote_type || "").toLowerCase() === campaignArrangementFilter ||
+        (i.job_description || "").toLowerCase().includes(campaignArrangementFilter));
     return items;
-  }, [allCampaignItems, campaignDateFilter, campaignPlatformFilter]);
+  }, [allCampaignItems, campaignDateFilter, campaignPlatformFilter, campaignJobTypeFilter, campaignArrangementFilter]);
 
   // Pre-compute filtered search results
   const filteredPendingInbox = useMemo(() => {
     let items = applyDateFilter(pendingInbox, dateFilter);
     if (platformFilter.size > 0)
       items = items.filter(i => platformFilter.has(i.source || "unknown"));
+    if (jobTypeFilter)
+      items = items.filter(i => (i.job_description || "").toLowerCase().includes(jobTypeFilter) ||
+        (i.job_title || "").toLowerCase().includes(jobTypeFilter));
+    if (arrangementFilter)
+      items = items.filter(i => (i.remote_type || "").toLowerCase() === arrangementFilter ||
+        (i.job_description || "").toLowerCase().includes(arrangementFilter));
     return items;
-  }, [pendingInbox, dateFilter, platformFilter]);
+  }, [pendingInbox, dateFilter, platformFilter, jobTypeFilter, arrangementFilter]);
 
   // If a campaign is selected, show detailed view
   if (selectedCampaign) {
@@ -794,6 +872,8 @@ export function JobsView() {
             </div>
 
             <DateFilterBar selected={campaignDateFilter} onChange={setCampaignDateFilter} />
+            <InlineFilterBar label="Type" options={JOB_TYPE_OPTIONS} selected={campaignJobTypeFilter} onChange={setCampaignJobTypeFilter} />
+            <InlineFilterBar label="Arrange" options={ARRANGEMENT_OPTIONS} selected={campaignArrangementFilter} onChange={setCampaignArrangementFilter} />
             <PlatformFilterBar
               items={allCampaignItems}
               selected={campaignPlatformFilter}
@@ -869,8 +949,8 @@ export function JobsView() {
           {[
             { icon: <Search className="w-3.5 h-3.5" />, value: activeCampaigns,      label: "Active Campaigns", color: "text-[#00FFFF]",   bg: "bg-[#00FFFF]/10"    },
             { icon: <Inbox  className="w-3.5 h-3.5" />, value: pendingInbox.length,   label: "Pending Review",   color: "text-green-400",   bg: "bg-green-500/10"    },
-            { icon: <Send   className="w-3.5 h-3.5" />, value: 0,                     label: "Applications",     color: "text-yellow-400",  bg: "bg-yellow-500/10"   },
-            { icon: <Sparkles className="w-3.5 h-3.5" />, value: "0%",               label: "Match Score",      color: "text-purple-400",  bg: "bg-purple-500/10"   },
+            { icon: <Send   className="w-3.5 h-3.5" />, value: applicationsCount,        label: "Applications",     color: "text-yellow-400",  bg: "bg-yellow-500/10"   },
+            { icon: <Sparkles className="w-3.5 h-3.5" />, value: pendingInbox.length > 0 ? `${Math.round((pendingInbox.reduce((s,i) => s + (i.match_score ?? 0), 0) / pendingInbox.length) * 100)}%` : "—", label: "Avg Match",  color: "text-purple-400",  bg: "bg-purple-500/10"   },
           ].map(({ icon, value, label, color, bg }) => (
             <div key={label} className={`flex items-center gap-2 px-3 py-2 rounded-xl border border-[#00FFFF]/10 bg-[#0D0D0D]/60`}>
               <span className={`${color} ${bg} p-1 rounded-md`}>{icon}</span>
@@ -992,6 +1072,53 @@ export function JobsView() {
                   </div>
                 </div>
 
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Job Type */}
+                  <div>
+                    <label className="block text-sm font-semibold text-[#BBC9CD] mb-2">Job Type</label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: "Any",        value: "" },
+                        { label: "Full-time",  value: "full-time" },
+                        { label: "Part-time",  value: "part-time" },
+                        { label: "Contract",   value: "contract" },
+                        { label: "Freelance",  value: "freelance" },
+                      ].map(({ label, value }) => (
+                        <button key={value} type="button"
+                          onClick={() => setNewCampaign({ ...newCampaign, job_type: value })}
+                          className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all ${
+                            newCampaign.job_type === value
+                              ? "bg-[#00FFFF]/20 border-[#00FFFF]/50 text-[#00FFFF]"
+                              : "bg-[#0A0A0A]/50 border-[#00FFFF]/15 text-[#BBC9CD] hover:border-[#00FFFF]/35"
+                          }`}
+                        >{label}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Work Arrangement */}
+                  <div>
+                    <label className="block text-sm font-semibold text-[#BBC9CD] mb-2">Work Arrangement</label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: "Any",     value: "" },
+                        { label: "Remote",  value: "remote" },
+                        { label: "Hybrid",  value: "hybrid" },
+                        { label: "On-site", value: "onsite" },
+                      ].map(({ label, value }) => (
+                        <button key={value} type="button"
+                          onClick={() => setNewCampaign({ ...newCampaign, work_arrangement: value })}
+                          className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all ${
+                            newCampaign.work_arrangement === value
+                              ? "bg-[#00FFFF]/20 border-[#00FFFF]/50 text-[#00FFFF]"
+                              : "bg-[#0A0A0A]/50 border-[#00FFFF]/15 text-[#BBC9CD] hover:border-[#00FFFF]/35"
+                          }`}
+                        >{label}</button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
                 {/* CV Upload Section */}
                 <div>
                   <label className="block text-sm font-semibold text-[#BBC9CD] mb-2">Upload CV/Resume</label>
@@ -1110,6 +1237,8 @@ export function JobsView() {
           </div>
 
           <DateFilterBar selected={dateFilter} onChange={setDateFilter} />
+          <InlineFilterBar label="Type" options={JOB_TYPE_OPTIONS} selected={jobTypeFilter} onChange={setJobTypeFilter} />
+          <InlineFilterBar label="Arrange" options={ARRANGEMENT_OPTIONS} selected={arrangementFilter} onChange={setArrangementFilter} />
           <PlatformFilterBar
             items={pendingInbox}
             selected={platformFilter}

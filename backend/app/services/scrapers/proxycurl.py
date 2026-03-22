@@ -3,6 +3,7 @@ import os
 import logging
 import asyncio
 from typing import Dict, Optional, List
+from .scoring import score_job
 
 class ProxycurlScraper:
     def __init__(self, supabase_client):
@@ -58,20 +59,24 @@ class ProxycurlScraper:
 
     def _normalize_job(self, raw_job: Dict, campaign: dict) -> Dict:
         """Convert Proxycurl schema to inbox_items schema."""
+        title = raw_job.get("job_title", "Unknown Title")
+        description = raw_job.get("job_description", "")
+        remote_type = "remote" if "remote" in (title + description).lower() else "onsite"
+        match_score, match_reasoning = score_job(title, description, campaign)
         return {
             "campaign_id": campaign['id'],
             "user_id": campaign['user_id'],
             "source": "proxycurl",
             "external_job_id": str(raw_job.get("job_url", "")),
-            "job_title": raw_job.get("job_title", "Unknown Title"),
+            "job_title": title,
             "company_name": raw_job.get("company_name", "Unknown Company"),
             "company_logo_url": None,
             "location": raw_job.get("location"),
-            "remote_type": "onsite",
+            "remote_type": remote_type,
             "salary_range": None,
             "job_url": raw_job.get("job_url", ""),
-            "job_description": raw_job.get("job_description", ""),
+            "job_description": description,
             "status": "PENDING_REVIEW",
-            "match_score": 0.7,
-            "match_reasoning": "Keyword match based on Campaign preferences."
+            "match_score": match_score,
+            "match_reasoning": match_reasoning,
         }

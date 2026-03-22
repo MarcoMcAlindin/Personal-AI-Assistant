@@ -4,6 +4,7 @@ import feedparser
 from typing import Dict, Optional, List
 from datetime import datetime
 import time
+from .scoring import score_job
 
 # Modified: 2026-03-22
 # What: Wrapped feedparser.parse() in run_in_executor to prevent blocking the asyncio event loop.
@@ -25,6 +26,14 @@ class WeWorkRemotelyScraper:
         logging.info(f"Starting WeWorkRemotely scrape for campaign: {campaign['id']}")
 
         try:
+            prefs = campaign.get("job_preferences", {})
+            job_type = (prefs.get("job_type") or "").lower()
+            arrangement = (prefs.get("work_arrangement") or "").lower()
+
+            # WWR is remote-only — skip if onsite/hybrid explicitly requested
+            if arrangement and arrangement != "remote":
+                return {"scraped_count": 0, "status": "success"}
+
             # feedparser.parse is synchronous blocking I/O — run in executor to avoid
             # stalling the event loop when called inside asyncio.gather.
             loop = asyncio.get_event_loop()
@@ -36,7 +45,11 @@ class WeWorkRemotelyScraper:
             for entry in feed.entries:
                 if scraped_count >= max_results:
                     break
-
+                # Client-side job_type filter
+                if job_type:
+                    combined = f"{entry.get('title','')} {entry.get('description','')}".lower()
+                    if job_type not in combined and job_type.replace("-", " ") not in combined:
+                        continue
                 normalized = self._normalize_job(entry, campaign)
                 try:
                     self.supabase.table("inbox_items").insert(normalized).execute()
@@ -61,7 +74,9 @@ class WeWorkRemotelyScraper:
         else:
             company_name = "Unknown Company"
             job_title = entry.get("title", "Unknown")
-            
+
+        description = entry.get("description", "")
+        match_score, match_reasoning = score_job(job_title, description, campaign)
         return {
             "campaign_id": campaign['id'],
             "user_id": campaign['user_id'],
@@ -69,13 +84,13 @@ class WeWorkRemotelyScraper:
             "external_job_id": entry.get("id", entry.get("link", "")),
             "job_title": job_title,
             "company_name": company_name,
-            "company_logo_url": None, # WWR RSS doesn't provide it reliably
-            "location": "Anywhere", # Remote by default
+            "company_logo_url": None,
+            "location": "Anywhere",
             "remote_type": "remote",
-            "salary_range": None, # Not usually cleanly provided in WWR RSS
+            "salary_range": None,
             "job_url": entry.get("link", ""),
-            "job_description": entry.get("description", ""),
+            "job_description": description,
             "status": "PENDING_REVIEW",
-            "match_score": 0.8, # Placeholder until semantic matching
-            "match_reasoning": "Sourced from WeWorkRemotely remote programming feed."
+            "match_score": match_score,
+            "match_reasoning": match_reasoning,
         }

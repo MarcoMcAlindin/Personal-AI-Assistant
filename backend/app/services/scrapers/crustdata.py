@@ -3,6 +3,7 @@ import os
 import logging
 from typing import Dict, Optional, List
 from datetime import datetime
+from .scoring import score_job
 
 # Modified: 2026-03-22
 # What: Added try/except around inbox_items insert to handle duplicate external_job_id gracefully.
@@ -70,22 +71,25 @@ class CrustdataScraper:
 
     def _normalize_job(self, raw_job: Dict, campaign: dict) -> Dict:
         """Convert Crustdata schema to inbox_items schema."""
+        title = raw_job.get("title", "Unknown Title")
+        description = raw_job.get("description", "")
+        match_score, match_reasoning = score_job(title, description, campaign)
         return {
             "campaign_id": campaign['id'],
             "user_id": campaign['user_id'],
             "source": "crustdata",
             "external_job_id": str(raw_job.get("id")),
-            "job_title": raw_job.get("title", "Unknown Title"),
+            "job_title": title,
             "company_name": raw_job.get("company", {}).get("name", "Unknown Company"),
             "company_logo_url": raw_job.get("company", {}).get("logo_url"),
             "location": raw_job.get("location"),
             "remote_type": self._parse_remote_type(raw_job),
             "salary_range": self._parse_salary(raw_job),
             "job_url": raw_job.get("apply_url", ""),
-            "job_description": raw_job.get("description", ""),
+            "job_description": description,
             "status": "PENDING_REVIEW",
-            "match_score": 0.8, # Placeholder for AI semantic scoring until we run semantic_matcher task
-            "match_reasoning": "Keyword match based on Campaign preferences."
+            "match_score": match_score,
+            "match_reasoning": match_reasoning,
         }
     
     def _parse_remote_type(self, job: Dict) -> Optional[str]:
