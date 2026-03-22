@@ -338,11 +338,10 @@ export function JobsView() {
                     </div>
 
                     {/* Description — rendered as Markdown */}
-                    <div className="flex-1 overflow-hidden mb-3 prose prose-sm prose-invert max-w-none
+                    <div className="h-48 overflow-y-auto mb-3 pr-1 prose prose-sm prose-invert max-w-none
                       [&>p]:text-[#BBC9CD] [&>p]:text-sm [&>p]:leading-relaxed [&>p]:mb-2
                       [&>ul]:text-[#BBC9CD] [&>ul]:text-sm [&>ul]:pl-4 [&>ul]:mb-2
-                      [&>li]:mb-0.5 [&>h3]:text-white [&>h3]:text-sm [&>h3]:font-semibold [&>h3]:mb-1
-                      line-clamp-[8]">
+                      [&>li]:mb-0.5 [&>h3]:text-white [&>h3]:text-sm [&>h3]:font-semibold [&>h3]:mb-1">
                       <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
                         {descMarkdown || "No description available."}
                       </ReactMarkdown>
@@ -713,11 +712,11 @@ export function JobsView() {
                   </div>
 
                   {/* Description */}
-                  <div className="flex-1 overflow-hidden mb-3 prose prose-sm prose-invert max-w-none
+                  <div className="h-48 overflow-y-auto mb-3 pr-1 prose prose-sm prose-invert max-w-none
                     [&>p]:text-[#BBC9CD] [&>p]:text-sm [&>p]:leading-relaxed [&>p]:mb-2
                     [&>ul]:text-[#BBC9CD] [&>ul]:text-sm [&>ul]:pl-4 [&>ul]:mb-2
                     [&>li]:mb-0.5 [&>h3]:text-white [&>h3]:text-sm [&>h3]:font-semibold [&>h3]:mb-1
-                    [&>strong]:text-white line-clamp-[8]">
+                    [&>strong]:text-white">
                     <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
                       {htmlToMarkdown(job.job_description || "") || "No description available."}
                     </ReactMarkdown>
