@@ -1,5 +1,7 @@
+// Modified: VOS-102 — Markdown description rendering + source badges
 import { Award, Briefcase, Building2, Check, ChevronRight, Clock, DollarSign, ExternalLink, Inbox, MapPin, Plus, Search, Send, Sparkles, X, Zap } from 'lucide-react-native';
 import React, { useState, useEffect } from 'react';
+import Markdown from 'react-native-markdown-display';
 import {
   View, TouchableOpacity, TextInput,
   ActivityIndicator, RefreshControl, ScrollView,
@@ -14,6 +16,35 @@ import { MobileHeader } from '../components/MobileHeader';
 import { MobileCard } from '../components/MobileCard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+
+const SOURCE_META = {
+  weworkremotely: { label: 'We Work Remotely', color: '#4ade80', bg: 'rgba(74,222,128,0.12)', border: 'rgba(74,222,128,0.3)' },
+  'serper-linkedin': { label: 'LinkedIn', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)', border: 'rgba(96,165,250,0.3)' },
+  proxycurl: { label: 'LinkedIn', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)', border: 'rgba(96,165,250,0.3)' },
+  crustdata: { label: 'Crustdata', color: '#c084fc', bg: 'rgba(192,132,252,0.12)', border: 'rgba(192,132,252,0.3)' },
+};
+
+function getSourceMeta(source) {
+  if (!source) return { label: 'Unknown', color: '#BBC9CD', bg: 'rgba(187,201,205,0.1)', border: 'rgba(187,201,205,0.2)' };
+  return SOURCE_META[source.toLowerCase()] ?? { label: source, color: '#BBC9CD', bg: 'rgba(187,201,205,0.1)', border: 'rgba(187,201,205,0.2)' };
+}
+
+function htmlToMarkdown(raw) {
+  if (!raw) return '';
+  if (!/<[a-z][\s\S]*>/i.test(raw)) return raw;
+  return raw
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n').replace(/<p[^>]*>/gi, '')
+    .replace(/<\/li>/gi, '\n').replace(/<li[^>]*>/gi, '- ')
+    .replace(/<\/(ul|ol)>/gi, '\n').replace(/<(ul|ol)[^>]*>/gi, '\n')
+    .replace(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi, '### $1\n')
+    .replace(/<strong[^>]*>([\s\S]*?)<\/strong>/gi, '**$1**')
+    .replace(/<b[^>]*>([\s\S]*?)<\/b>/gi, '**$1**')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, '\n\n').trim();
+}
 
 export default function JobsScreen() {
   const [campaigns, setCampaigns] = useState([]);
@@ -108,71 +139,77 @@ export default function JobsScreen() {
 
   const renderJobItem = (item) => {
     const matchScore = item.match_score ? Math.round(item.match_score * 100) : 0;
+    const src = getSourceMeta(item.source);
+    const descMarkdown = htmlToMarkdown(item.job_description || '');
     return (
       <MobileCard key={item.id} style={styles.jobCard}>
-        <View style={styles.jobHeader}>
-          <View style={styles.jobIconContainer}>
-            <Building2 size={24} color={palette.accentPrimary}  />
+        {/* Source badge + match score row */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <View style={[styles.sourceBadge, { backgroundColor: src.bg, borderColor: src.border }]}>
+            <Text style={[styles.sourceBadgeText, { color: src.color }]}>{src.label}</Text>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.jobTitle}>{item.job_title}</Text>
-            <Text style={styles.jobSubtitle}>{item.company_name} • {item.remote_type || item.source}</Text>
-            <View style={styles.matchBadge}>
-              <Sparkles size={12} color="#4ade80"  />
-              <Text style={styles.matchText}>{matchScore}% Match</Text>
-            </View>
+          <View style={styles.matchBadge}>
+            <Sparkles size={12} color="#4ade80" />
+            <Text style={styles.matchText}>{matchScore}% Match</Text>
           </View>
         </View>
 
-        <Text numberOfLines={3} style={styles.jobDescription}>
-          {item.job_description || 'No description available.'}
-        </Text>
+        <View style={styles.jobHeader}>
+          <View style={styles.jobIconContainer}>
+            <Building2 size={24} color={palette.accentPrimary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.jobTitle}>{item.job_title}</Text>
+            <Text style={styles.jobSubtitle}>{item.company_name} • {item.remote_type || 'Remote'}</Text>
+          </View>
+        </View>
+
+        {/* Markdown description */}
+        <Markdown style={markdownStyles}>
+          {descMarkdown || 'No description available.'}
+        </Markdown>
 
         <View style={styles.jobTags}>
           <View style={styles.tag}>
-            <MapPin size={14} color={palette.accentPrimary}  />
+            <MapPin size={14} color={palette.accentPrimary} />
             <Text style={styles.tagText}>{item.location || 'N/A'}</Text>
           </View>
           <View style={styles.tag}>
-            <DollarSign size={14} color={palette.accentPrimary}  />
+            <DollarSign size={14} color={palette.accentPrimary} />
             <Text style={styles.tagText}>{item.salary_range || 'Undisclosed'}</Text>
           </View>
           <View style={styles.tag}>
-            <Clock size={14} color={palette.accentPrimary}  />
+            <Clock size={14} color={palette.accentPrimary} />
             <Text style={styles.tagText}>Recently</Text>
           </View>
         </View>
 
-        {/* Why this matches section */}
-        <View style={styles.matchReasons}>
-           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-              <Zap size={14} color={palette.accentPrimary} style={{ marginRight: 6 }}  />
+        {item.match_reasoning && (
+          <View style={styles.matchReasons}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+              <Zap size={14} color={palette.accentPrimary} style={{ marginRight: 6 }} />
               <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#FFF' }}>Why This Matches</Text>
-           </View>
-           <View style={styles.reasonRow}>
-              <Check size={12} color={palette.accentPrimary}  />
-              <Text style={styles.reasonText}>Skills align with profile</Text>
-           </View>
-           <View style={styles.reasonRow}>
-              <Check size={12} color={palette.accentPrimary}  />
-              <Text style={styles.reasonText}>Salary meets requirements</Text>
-           </View>
-        </View>
+            </View>
+            <View style={styles.reasonRow}>
+              <Check size={12} color={palette.accentPrimary} />
+              <Text style={styles.reasonText}>{item.match_reasoning}</Text>
+            </View>
+          </View>
+        )}
 
         <View style={styles.jobActions}>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => item.job_url && Linking.openURL(item.job_url)}
             style={styles.actionButtonPrimary}
           >
-            <ExternalLink size={16} color={palette.accentPrimary}  />
+            <ExternalLink size={16} color={palette.accentPrimary} />
             <Text style={styles.actionButtonTextPrimary}>View</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => handleInboxAction(item, 'APPROVED')}
             style={styles.actionButtonSecondary}
           >
-            <Send size={16} color="#4ade80"  />
+            <Send size={16} color="#4ade80" />
             <Text style={styles.actionButtonTextSecondary}>Apply</Text>
           </TouchableOpacity>
         </View>
@@ -566,6 +603,17 @@ const styles = StyleSheet.create({
     color: palette.textMuted,
     marginBottom: 6,
   },
+  sourceBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  sourceBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
   matchBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -791,4 +839,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+// Modified: VOS-102 — markdown display styles for job descriptions
+const markdownStyles = {
+  body: { color: palette.textMuted, fontSize: 13, lineHeight: 20 },
+  paragraph: { color: palette.textMuted, fontSize: 13, lineHeight: 20, marginBottom: 8 },
+  bullet_list: { marginBottom: 8 },
+  list_item: { color: palette.textMuted, fontSize: 13, lineHeight: 20 },
+  heading3: { color: '#FFF', fontSize: 13, fontWeight: '700', marginBottom: 4 },
+  strong: { color: '#DAE2FD', fontWeight: '700' },
+  em: { color: palette.textMuted, fontStyle: 'italic' },
+};
 
