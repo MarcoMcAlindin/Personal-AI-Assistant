@@ -843,6 +843,48 @@ function ApplicationDetailModal({
   );
 }
 
+// ---------------------------------------------------------------------------
+// CV keyword extraction — scans parsed CV text for known tech/role terms
+// ---------------------------------------------------------------------------
+const CV_KEYWORD_BANK = [
+  // Roles
+  "fullstack", "full stack", "frontend", "front end", "backend", "back end",
+  "software engineer", "senior engineer", "lead engineer", "staff engineer",
+  "principal engineer", "engineering manager", "tech lead", "solutions architect",
+  "data engineer", "ml engineer", "ai engineer", "devops engineer", "platform engineer",
+  "product manager", "product designer", "ux designer", "data scientist", "data analyst",
+  // Languages
+  "python", "typescript", "javascript", "java", "golang", "go", "rust",
+  "kotlin", "swift", "c#", "c++", "ruby", "php", "scala",
+  // Frameworks / Libraries
+  "react", "next.js", "nextjs", "vue", "angular", "node", "fastapi",
+  "django", "flask", "spring", "rails", "laravel", ".net",
+  "react native", "flutter", "expo",
+  // AI / Data
+  "machine learning", "deep learning", "llm", "nlp", "computer vision",
+  "pytorch", "tensorflow", "hugging face", "langchain", "rag",
+  "data science", "analytics", "spark", "kafka", "airflow",
+  // Cloud / Infra
+  "aws", "gcp", "azure", "cloud", "docker", "kubernetes", "terraform",
+  "ci/cd", "devops", "mlops", "serverless",
+  // Databases
+  "postgresql", "mysql", "mongodb", "redis", "elasticsearch", "supabase",
+  "dynamodb", "bigquery", "snowflake",
+  // Other
+  "graphql", "rest api", "microservices", "agile", "scrum",
+  "contract", "freelance", "remote",
+];
+
+function extractCVKeywords(cvText: string): string[] {
+  const lower = cvText.toLowerCase();
+  const found: string[] = [];
+  for (const term of CV_KEYWORD_BANK) {
+    if (lower.includes(term) && !found.includes(term)) found.push(term);
+    if (found.length >= 14) break;
+  }
+  return found;
+}
+
 export function JobsView() {
   const { isMobile } = useOutletContext<{ isMobile: boolean }>();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -884,6 +926,7 @@ export function JobsView() {
     name: "", keywords: "", location: "", salary: "",
     posted_within_days: "7", job_type: "", work_arrangement: ""
   });
+  const [cvKeywordSuggestions, setCvKeywordSuggestions] = useState<string[]>([]);
 
   const handleCVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -967,6 +1010,7 @@ export function JobsView() {
       setNewCampaign({ name: "", keywords: "", location: "", salary: "",
         posted_within_days: "7", job_type: "", work_arrangement: "" });
       setUploadedCV(null);
+      setCvKeywordSuggestions([]);
       setShowNewCampaign(false);
 
       // 3. Kick off scraping in background
@@ -1540,7 +1584,13 @@ export function JobsView() {
               </span>
             </div>
             <button
-              onClick={() => setShowNewCampaign(true)}
+              onClick={async () => {
+                setShowNewCampaign(true);
+                try {
+                  const cv = await campaignService.getPrimaryCV();
+                  if (cv?.parsed_text) setCvKeywordSuggestions(extractCVKeywords(cv.parsed_text));
+                } catch { /* no CV yet - no suggestions */ }
+              }}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#00FFFF]/20 to-[#0099CC]/20 hover:from-[#00FFFF]/30 hover:to-[#0099CC]/30 text-[#00FFFF] font-semibold transition-all border border-[#00FFFF]/40 hover:border-[#00FFFF]/60 shadow-[0_0_20px_rgba(0,255,255,0.2)]"
             >
               <Plus className="w-4 h-4" />
@@ -1582,9 +1632,37 @@ export function JobsView() {
                     type="text"
                     value={newCampaign.keywords}
                     onChange={(e) => setNewCampaign({ ...newCampaign, keywords: e.target.value })}
-                    placeholder="e.g., Director, VP, Chief, Executive"
+                    placeholder="e.g., Python Engineer, Fullstack, React"
                     className="w-full px-4 py-3 rounded-xl bg-[#0A0A0A]/50 border border-[#00FFFF]/20 text-[#DAE2FD] placeholder-[#BBC9CD]/50 focus:border-[#00FFFF]/40 focus:outline-none transition-colors"
                   />
+                  {cvKeywordSuggestions.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-[10px] font-semibold text-[#BBC9CD]/50 uppercase tracking-widest mb-1.5">From your CV</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {cvKeywordSuggestions.map(kw => {
+                          const active = newCampaign.keywords.toLowerCase().includes(kw.toLowerCase());
+                          return (
+                            <button
+                              key={kw}
+                              type="button"
+                              onClick={() => {
+                                if (active) return;
+                                const current = newCampaign.keywords.trim();
+                                setNewCampaign({ ...newCampaign, keywords: current ? `${current}, ${kw}` : kw });
+                              }}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                                active
+                                  ? 'bg-[#00FFFF]/20 border-[#00FFFF]/50 text-[#00FFFF] cursor-default'
+                                  : 'bg-[#00FFFF]/5 border-[#00FFFF]/20 text-[#00FFFF]/70 hover:bg-[#00FFFF]/15 hover:border-[#00FFFF]/40 hover:text-[#00FFFF] cursor-pointer'
+                              }`}
+                            >
+                              {active ? '✓ ' : '+ '}{kw}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
