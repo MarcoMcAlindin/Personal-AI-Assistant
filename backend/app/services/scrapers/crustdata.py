@@ -4,6 +4,11 @@ import logging
 from typing import Dict, Optional, List
 from datetime import datetime
 
+# Modified: 2026-03-22
+# What: Added try/except around inbox_items insert to handle duplicate external_job_id gracefully.
+# Why: Without it, a duplicate row violation aborts the insertion loop entirely, causing all
+#      subsequent jobs in the batch to be silently dropped.
+
 class CrustdataScraper:
     def __init__(self, supabase_client):
         self.supabase = supabase_client
@@ -50,9 +55,12 @@ class CrustdataScraper:
                 
                 for raw_job in jobs:
                     normalized = self._normalize_job(raw_job, campaign)
-                    # Insert into inbox items
-                    self.supabase.table("inbox_items").insert(normalized).execute()
-                    scraped_count += 1
+                    try:
+                        self.supabase.table("inbox_items").insert(normalized).execute()
+                        scraped_count += 1
+                    except Exception:
+                        # Likely a duplicate external_job_id — skip silently.
+                        continue
                 
                 return {"scraped_count": scraped_count, "status": "success"}
 

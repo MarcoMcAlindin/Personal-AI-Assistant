@@ -19,15 +19,6 @@ The architecture strictly decouples the web and mobile clients for layout flexib
 * **Database & Auth:** Supabase (PostgreSQL). Handles real-time syncing, Row Level Security (RLS) zero-trust authentication, and server-side automation (pg_cron).
 * **Private AI:** unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF (via Google Cloud Run). Deployed in a customized llama.cpp / vLLM container with GPU allocation for private, highly capable inference.
 * **Cloud Automation:** GitHub Actions. Executes strict time-based workflows (like the 8:00 AM daily health analysis) entirely independent of the user's hardware.
-
-# Agent Performance Log
-Created: 2026-03-15
-<!--
-Modified: 2026-03-22
-What: Logged VOS-100 (Cyan UI) and VOS-101 (Scraper Audit). Added PRD-AUDIT pass.
-Why: Closing out integration phase and starting reality sync.
--->
-
 ## 3. Core Features & Functional Requirements
 
 ### 3.1. UI/UX & Theming
