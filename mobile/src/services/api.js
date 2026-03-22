@@ -104,6 +104,55 @@ export async function updateTask(id, updates) {
   return res.json();
 }
 
+export async function fetchCampaigns() {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE_URL}/campaigns`, { headers });
+  if (!res.ok) throw new Error(`campaigns failed: ${res.status}`);
+  return res.json();
+}
+
+export async function createCampaign(data) {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE_URL}/campaigns`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`campaigns create failed: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchInboxItems(campaignId = null) {
+  const headers = await getAuthHeaders();
+  const url = campaignId 
+    ? `${API_BASE_URL}/inbox?campaign_id=${campaignId}`
+    : `${API_BASE_URL}/inbox`;
+  const res = await fetch(url, { headers });
+  if (!res.ok) throw new Error(`inbox failed: ${res.status}`);
+  return res.json();
+}
+
+export async function updateInboxStatus(itemId, status) {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE_URL}/inbox/${itemId}/status`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error(`inbox status update failed: ${res.status}`);
+  return res.json();
+}
+
+export async function triggerScrape(campaignId) {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE_URL}/scrapers/run/${campaignId}`, {
+    method: 'POST',
+    headers,
+  });
+  if (!res.ok) throw new Error(`scrape trigger failed: ${res.status}`);
+  return res.json();
+}
+
 export async function fetchHealth() {
   const headers = await getAuthHeaders();
   const res = await fetch(`${API_BASE_URL}/health/metrics`, { headers });

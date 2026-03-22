@@ -1,10 +1,14 @@
+import { Cloud, Code, Cpu, Database, Info, Smartphone } from 'lucide-react-native';
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { Text, Card } from '../components/Themed';
+
+import { Text } from '../components/Themed';
 import { palette, spacing } from '../theme';
 import { API_BASE_URL, fetchVllmStatus } from '../services/api';
+import { MobileHeader } from '../components/MobileHeader';
+import { MobileCard } from '../components/MobileCard';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const VLLM_STATUS_COLORS = {
   offline: '#ef4444',
@@ -47,58 +51,226 @@ export default function SettingsScreen() {
   const vllmColor = VLLM_STATUS_COLORS[vllmStatus] || '#ef4444';
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: palette.bgPrimary }} edges={['top']}>
-      <ScrollView contentContainerStyle={{ padding: spacing.md }}>
-        <Text style={{ fontSize: 28, fontWeight: 'bold', marginBottom: spacing.lg }}>Settings</Text>
+    <SafeAreaView style={styles.root} edges={['top']}>
+      <MobileHeader title="Settings" subtitle="System Control Center" />
+      
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionIndicator} />
+          <Text style={styles.sectionTitle}>System Connectivity</Text>
+        </View>
 
-        <Card style={{ marginBottom: spacing.md }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
-            <Ionicons name="wifi" size={16} color={palette.accentPrimary} style={{ marginRight: 8 }} />
-            <Text style={{ color: palette.accentPrimary, fontWeight: '600' }}>Connections</Text>
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs }}>
-            <Text style={{ color: palette.textMuted, fontSize: 13 }}>Gateway</Text>
-            <Text style={{ color: '#4ade80', fontSize: 13 }}>Active</Text>
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs }}>
-            <Text style={{ color: palette.textMuted, fontSize: 13 }}>Supabase</Text>
-            <Text style={{ color: '#4ade80', fontSize: 13 }}>Connected</Text>
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ color: palette.textMuted, fontSize: 13 }}>Qwen3-Coder-30B</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{
-                width: 6, height: 6, borderRadius: 3,
-                backgroundColor: vllmColor, marginRight: 6,
-              }} />
-              <Text style={{ color: vllmColor, fontSize: 13 }}>{VLLM_STATUS_LABELS[vllmStatus]}</Text>
+        <MobileCard style={styles.connCard}>
+          <LinearGradient
+            colors={['rgba(0, 255, 255, 0.1)', 'transparent']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          
+          <View style={styles.connItem}>
+            <View style={[styles.iconBox, { borderColor: '#4ade8050' }]}>
+              <Cloud size={20} color="#4ade80"  />
             </View>
+            <View style={{ flex: 1, marginLeft: 16 }}>
+              <Text style={styles.connName}>Cloud Gateway</Text>
+              <Text style={styles.connUrl}>{API_BASE_URL.replace('https://', '')}</Text>
+            </View>
+            <Text style={[styles.badge, styles.badgeActive]}>ACTIVE</Text>
           </View>
-        </Card>
 
-        <Card style={{ marginBottom: spacing.md }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
-            <Ionicons name="link" size={16} color={palette.accentPrimary} style={{ marginRight: 8 }} />
-            <Text style={{ color: palette.accentPrimary, fontWeight: '600' }}>Gateway URL</Text>
-          </View>
-          <Text style={{ color: palette.textMuted, fontSize: 13 }}>{API_BASE_URL}</Text>
-        </Card>
+          <View style={styles.connDivider} />
 
-        <Card style={{ marginBottom: spacing.md }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
-            <Ionicons name="information-circle" size={16} color={palette.accentPrimary} style={{ marginRight: 8 }} />
-            <Text style={{ color: palette.accentPrimary, fontWeight: '600' }}>App Info</Text>
+          <View style={styles.connItem}>
+            <View style={[styles.iconBox, { borderColor: vllmColor + '50' }]}>
+              <Cpu size={20} color={vllmColor}  />
+            </View>
+            <View style={{ flex: 1, marginLeft: 16 }}>
+              <Text style={styles.connName}>Qwen3 AI Core</Text>
+              <Text style={styles.connUrl}>vLLM GGUF (30B-A3B)</Text>
+            </View>
+            <Text style={[styles.badge, { color: vllmColor, borderColor: vllmColor }]}>
+              {VLLM_STATUS_LABELS[vllmStatus].toUpperCase()}
+            </Text>
           </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs }}>
-            <Text style={{ color: palette.textMuted, fontSize: 13 }}>Version</Text>
-            <Text style={{ fontSize: 13 }}>0.1.0</Text>
+
+          <View style={styles.connDivider} />
+
+          <View style={styles.connItem}>
+            <View style={[styles.iconBox, { borderColor: '#4ade8050' }]}>
+              <Database size={20} color="#4ade80"  />
+            </View>
+            <View style={{ flex: 1, marginLeft: 16 }}>
+              <Text style={styles.connName}>Supabase DB</Text>
+              <Text style={styles.connUrl}>PostgreSQL + Vector</Text>
+            </View>
+            <Text style={[styles.badge, styles.badgeActive]}>CONNECTED</Text>
           </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ color: palette.textMuted, fontSize: 13 }}>SDK</Text>
-            <Text style={{ fontSize: 13 }}>Expo 54</Text>
+        </MobileCard>
+
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionIndicator} />
+          <Text style={styles.sectionTitle}>Application</Text>
+        </View>
+
+        <MobileCard style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <View style={styles.infoLabelGroup}>
+              <Info size={20} color={palette.textSecondary}  />
+              <Text style={styles.infoLabel}>Version</Text>
+            </View>
+            <Text style={styles.infoValue}>v0.2.1-cyan</Text>
           </View>
-        </Card>
+          <View style={styles.infoDivider} />
+          <View style={styles.infoRow}>
+            <View style={styles.infoLabelGroup}>
+              <Code size={20} color={palette.textSecondary}  />
+              <Text style={styles.infoLabel}>Environment</Text>
+            </View>
+            <Text style={styles.infoValue}>Production</Text>
+          </View>
+          <View style={styles.infoDivider} />
+          <View style={styles.infoRow}>
+            <View style={styles.infoLabelGroup}>
+              <Smartphone size={20} color={palette.textSecondary}  />
+              <Text style={styles.infoLabel}>SDK</Text>
+            </View>
+            <Text style={styles.infoValue}>Expo 54 (SDK)</Text>
+          </View>
+        </MobileCard>
+
+        <TouchableOpacity style={styles.logoutButton}>
+          <Text style={styles.logoutText}>TERMINATE SESSION</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: palette.bgPrimary,
+  },
+  scrollContainer: {
+    padding: spacing.md,
+    paddingBottom: 100,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+    paddingLeft: 4,
+    marginTop: 8,
+  },
+  sectionIndicator: {
+    height: 1,
+    width: 40,
+    backgroundColor: 'rgba(0, 255, 255, 0.4)',
+  },
+  sectionTitle: {
+    color: palette.textSecondary,
+    fontSize: 11,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+  },
+  connCard: {
+    padding: 0,
+    overflow: 'hidden',
+    borderRadius: 24,
+    marginBottom: 32,
+  },
+  connItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+  },
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  connName: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#FFF',
+  },
+  connUrl: {
+    fontSize: 12,
+    color: palette.textSecondary,
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  badge: {
+    fontSize: 9,
+    fontWeight: '900',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    letterSpacing: 0.5,
+  },
+  badgeActive: {
+    color: '#4ade80',
+    borderColor: 'rgba(74, 222, 128, 0.3)',
+    backgroundColor: 'rgba(74, 222, 128, 0.1)',
+  },
+  connDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    marginHorizontal: 20,
+  },
+  infoCard: {
+    padding: 0,
+    overflow: 'hidden',
+    borderRadius: 24,
+    marginBottom: 40,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 18,
+  },
+  infoLabelGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: palette.textSecondary,
+    fontWeight: '700',
+  },
+  infoValue: {
+    fontSize: 14,
+    color: '#FFF',
+    fontWeight: '800',
+  },
+  infoDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    marginHorizontal: 18,
+  },
+  logoutButton: {
+    paddingVertical: 18,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(244, 63, 94, 0.3)',
+    backgroundColor: 'rgba(244, 63, 94, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutText: {
+    color: '#f43f5e',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+});

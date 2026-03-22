@@ -10,6 +10,11 @@ from app.services.feed_service import FeedService
 from app.services.health_service import HealthService
 from app.services.rag_service import RAGService
 from app.services.task_service import TaskService
+from app.services.campaign_service import CampaignService
+from app.models.schemas import (
+    CampaignCreateRequest, CampaignUpdateRequest, 
+    InboxItemStatusUpdate, ApplicationCreateRequest
+)
 from app.services.ai_service import call_ollama, chat_with_tools
 from app.utils.auth import get_current_user
 import httpx
@@ -21,6 +26,7 @@ feed_service = FeedService()
 health_service = HealthService()
 rag_service = RAGService()
 task_service = TaskService()
+campaign_service = CampaignService()
 
 class EmailSendRequest(BaseModel):
     to: str
@@ -412,3 +418,62 @@ async def vllm_warmup():
         pass  # Expected to timeout on cold start -- that's fine
 
     return {"status": "warming", "message": "Warmup request sent -- instance will be ready in 15-30 seconds"}
+
+# -- Job Engine (Campaigns & Applications) --------------------------------
+
+@router.get("/campaigns")
+async def get_campaigns(user_id: str = Depends(get_current_user)):
+    data = await campaign_service.get_campaigns(user_id)
+    return {"campaigns": data}
+
+@router.post("/campaigns")
+async def create_campaign(request: CampaignCreateRequest, user_id: str = Depends(get_current_user)):
+    result = await campaign_service.create_campaign(user_id, request.model_dump())
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+@router.patch("/campaigns/{campaign_id}")
+async def update_campaign(campaign_id: str, request: CampaignUpdateRequest, user_id: str = Depends(get_current_user)):
+    result = await campaign_service.update_campaign(user_id, campaign_id, request.model_dump())
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+@router.get("/inbox")
+async def get_inbox_items(campaign_id: Optional[str] = None, user_id: str = Depends(get_current_user)):
+    data = await campaign_service.get_inbox(user_id, campaign_id)
+    return {"inbox_items": data}
+
+@router.patch("/inbox/{item_id}/status")
+async def update_inbox_item_status(item_id: str, request: InboxItemStatusUpdate, user_id: str = Depends(get_current_user)):
+    result = await campaign_service.update_inbox_item(user_id, item_id, request.status)
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+@router.get("/applications")
+async def get_applications(user_id: str = Depends(get_current_user)):
+    data = await campaign_service.get_applications(user_id)
+    return {"applications": data}
+
+@router.post("/applications")
+async def create_application(request: ApplicationCreateRequest, user_id: str = Depends(get_current_user)):
+    result = await campaign_service.create_application(user_id, request.model_dump())
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+@router.post("/scrapers/run/{campaign_id}")
+async def run_campaign_scraper(campaign_id: str, user_id: str = Depends(get_current_user)):
+    from app.services.scrapers.multi_source_scraper import MultiSourceScraper
+    scraper = MultiSourceScraper(campaign_service.supabase)
+    
+    campaigns = await campaign_service.get_campaigns(user_id)
+    campaign = next((c for c in campaigns if c["id"] == campaign_id), None)
+    if not campaign:
+         raise HTTPException(status_code=404, detail="Campaign not found")
+         
+    result = await scraper.scrape_jobs_for_campaign(campaign)
+    return result
+

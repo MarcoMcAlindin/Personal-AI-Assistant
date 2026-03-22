@@ -51,15 +51,15 @@ def get_current_user(
     Falls back to HS256 with supabase_jwt_secret if configured.
     """
     if credentials is None:
-        if os.environ.get("VIBEOS_DEV_MODE") == "true":
-            return os.environ.get("VIBEOS_DEV_USER_ID", "ceo-dev-user")
+        if settings.vibeos_dev_mode:
+            return settings.vibeos_dev_user_id
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing Authorization header.",
         )
 
-    if os.environ.get("VIBEOS_DEV_MODE") == "true":
-        return os.environ.get("VIBEOS_DEV_USER_ID", "ceo-dev-user")
+    if settings.vibeos_dev_mode:
+        return settings.vibeos_dev_user_id
 
     token = credentials.credentials
 

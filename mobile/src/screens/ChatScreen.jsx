@@ -1,150 +1,48 @@
-// SuperCyan Mobile -- AI Chat Screen
+import { ArrowUp, ChevronRight, MessageSquare, Sparkles, Cpu, Activity, Search, FileText, Code, Image, Mic, Video } from 'lucide-react-native';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TextInput,
+  View, StyleSheet, FlatList, TextInput,
   TouchableOpacity, KeyboardAvoidingView, Platform,
-  SafeAreaView, ActivityIndicator, Image
+  ActivityIndicator, ScrollView, Animated
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import Markdown from 'react-native-markdown-display';
 import { palette, spacing } from '../theme';
 import { sendChat, fetchVllmStatus, triggerVllmWarmup } from '../services/api';
+import { MobileHeader } from '../components/MobileHeader';
+import { MobileCard } from '../components/MobileCard';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import { Text } from '../components/Themed';
 
-const VLLM_CHIP_COLORS = {
-  offline: '#ef4444',
-  warming: '#eab308',
-  online: '#4ade80',
-};
-
-const VLLM_CHIP_LABELS = {
-  offline: 'AI Offline',
-  warming: 'AI Warming Up...',
-  online: 'AI Online',
-};
-
-function VllmStatusChip({ status, onWarmup, warming }) {
-  const color = VLLM_CHIP_COLORS[status] || '#ef4444';
-  const label = VLLM_CHIP_LABELS[status] || 'AI Offline';
-  const tappable = status === 'offline' && !warming;
-
-  return (
-    <TouchableOpacity
-      onPress={tappable ? onWarmup : undefined}
-      disabled={!tappable}
-      activeOpacity={tappable ? 0.7 : 1}
-      style={{
-        flexDirection: 'row', alignItems: 'center',
-        alignSelf: 'center',
-        backgroundColor: `${color}18`,
-        borderRadius: 20, borderWidth: 1,
-        borderColor: `${color}55`,
-        paddingHorizontal: spacing.md, paddingVertical: 5,
-        marginBottom: spacing.sm,
-      }}
-    >
-      {status === 'warming' ? (
-        <ActivityIndicator size="small" color={color} style={{ marginRight: 6 }} />
-      ) : (
-        <View style={{
-          width: 7, height: 7, borderRadius: 4,
-          backgroundColor: color, marginRight: 6,
-        }} />
-      )}
-      <Text style={{ color, fontSize: 12, fontWeight: '600' }}>{label}</Text>
-      {tappable && (
-        <Text style={{ color: `${color}99`, fontSize: 11, marginLeft: 6 }}>Tap to wake</Text>
-      )}
-    </TouchableOpacity>
-  );
-}
-
-function ChatHeader() {
-  return (
-    <View style={{
-      flexDirection: 'row', alignItems: 'center',
-      paddingVertical: spacing.md, paddingHorizontal: spacing.sm,
-    }}>
-      <View style={{
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: palette.accentSecondary, alignItems: 'center', justifyContent: 'center',
-        marginRight: spacing.md,
-      }}>
-        <Text style={{ fontSize: 18 }}>{'\u2728'}</Text>
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Qwen3-Coder-30B</Text>
-        <Text style={{ color: palette.textMuted, fontSize: 12 }}>10-day RAG context {'\u2022'} 3 pinned memories</Text>
-      </View>
-      <View style={{ flexDirection: 'row' }}>
-        <TouchableOpacity style={{
-          backgroundColor: palette.accentPrimary, borderRadius: 8,
-          paddingHorizontal: 10, paddingVertical: 6, marginRight: spacing.xs,
-        }}>
-          <Text style={{ color: '#000', fontSize: 12, fontWeight: '600' }}>{'\uD83D\uDCBE'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={{
-          backgroundColor: palette.bgCard, borderRadius: 8,
-          paddingHorizontal: 10, paddingVertical: 6,
-          borderWidth: 1, borderColor: palette.borderColor,
-        }}>
-          <Text style={{ fontSize: 12 }}>{'\uD83D\uDD17'}</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
-function Timestamp({ time }) {
-  return (
-    <Text style={{ color: palette.textMuted, fontSize: 10, textAlign: 'center', marginVertical: spacing.xs }}>
-      {time}
-    </Text>
-  );
-}
+const AI_TOOLS = [
+  { id: 'chat', name: "AI Chat", Icon: MessageSquare, description: "Conversational AI assistant", color: "#00FFFF" },
+  { id: 'analysis', name: "Analysis", Icon: Activity, description: "Data analysis & insights", color: "#A855F7" },
+  { id: 'search', name: "Search", Icon: Search, description: "Intelligent search", color: "#3B82F6" },
+  { id: 'doc', name: "Document", Icon: FileText, description: "Document processing", color: "#10B981" },
+  { id: 'code', name: "Code", Icon: Code, description: "Code generation", color: "#F59E0B" },
+  { id: 'image', name: "Image", Icon: Image, description: "Image generation", color: "#EC4899" },
+  { id: 'voice', name: "Voice", Icon: Mic, description: "Voice synthesis", color: "#8B5CF6" },
+  { id: 'video', name: "Video", Icon: Video, description: "Video processing", color: "#EF4444" },
+];
 
 const markdownStyles = {
-  body: {
-    color: palette.textPrimary,
-    fontSize: 14,
-    lineHeight: 21,
-  },
-  heading1: { color: palette.accentPrimary, fontSize: 20, fontWeight: '700', marginVertical: 8 },
-  heading2: { color: palette.accentPrimary, fontSize: 18, fontWeight: '700', marginVertical: 6 },
-  code_inline: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    color: palette.accentPrimary,
-    borderRadius: 4,
-    paddingHorizontal: 4,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
-  code_block: {
-    backgroundColor: '#000',
-    borderWidth: 1,
-    borderColor: palette.borderColor,
-    borderRadius: 8,
-    padding: 12,
-    marginVertical: 8,
-  },
-  fence: {
-    backgroundColor: '#000',
-    borderWidth: 1,
-    borderColor: palette.borderColor,
-    borderRadius: 8,
-    padding: 12,
-    marginVertical: 8,
-  },
+  body: { color: '#FFF', fontSize: 14, lineHeight: 22 },
+  code_inline: { backgroundColor: 'rgba(0, 212, 255, 0.1)', color: palette.accentPrimary, borderRadius: 4, paddingHorizontal: 4 },
+  code_block: { backgroundColor: '#000', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: 12, padding: 12, marginVertical: 8 },
+  fence: { backgroundColor: '#000', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: 12, padding: 12, marginVertical: 8 },
   link: { color: palette.accentPrimary, textDecorationLine: 'underline' },
-  bullet_list: { marginVertical: 8 },
-  ordered_list: { marginVertical: 8 },
 };
 
 export default function ChatScreen() {
+  const [view, setView] = useState('hub'); // 'hub' or 'chat'
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const flatListRef = useRef(null);
   const [vllmStatus, setVllmStatus] = useState('offline');
   const [vllmWarming, setVllmWarming] = useState(false);
+  const flatListRef = useRef(null);
 
   const pollVllmStatus = useCallback(async () => {
     try {
@@ -155,18 +53,14 @@ export default function ChatScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    pollVllmStatus();
-  }, [pollVllmStatus]);
+  useEffect(() => { pollVllmStatus(); }, [pollVllmStatus]);
 
   useEffect(() => {
     let interval = null;
     if (vllmStatus === 'warming') {
       interval = setInterval(pollVllmStatus, 5000);
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => { if (interval) clearInterval(interval); };
   }, [pollVllmStatus, vllmStatus]);
 
   const handleWarmup = async () => {
@@ -174,24 +68,16 @@ export default function ChatScreen() {
     try {
       await triggerVllmWarmup();
       setVllmStatus('warming');
-    } catch {
-      // poll will recover
-    } finally {
+    } catch {} finally {
       setVllmWarming(false);
     }
-  };
-
-  const getTimestamp = () => {
-    const d = new Date();
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   const handleSend = async () => {
     const text = input.trim();
     if (!text || loading) return;
 
-    const time = getTimestamp();
-    const userMsg = { id: Date.now().toString(), role: 'user', content: text, time };
+    const userMsg = { id: Date.now().toString(), role: 'user', content: text, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
@@ -202,14 +88,11 @@ export default function ChatScreen() {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: data.response || 'No response received.',
-        time: getTimestamp(),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages(prev => [...prev, aiMsg]);
     } catch (err) {
-      setMessages(prev => [
-        ...prev,
-        { id: (Date.now() + 1).toString(), role: 'assistant', content: `Error: ${err.message}`, time: getTimestamp() },
-      ]);
+      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', content: `Error: ${err.message}` }]);
     } finally {
       setLoading(false);
     }
@@ -218,141 +101,390 @@ export default function ChatScreen() {
   const renderMessage = ({ item }) => {
     const isUser = item.role === 'user';
     return (
-      <View>
-        <View style={{
-          flexDirection: 'row',
-          justifyContent: isUser ? 'flex-end' : 'flex-start',
-          alignItems: 'flex-end',
-          marginVertical: spacing.xs,
-          paddingHorizontal: spacing.xs,
-        }}>
-          {!isUser && (
-            <View style={{
-              width: 28, height: 28, borderRadius: 14,
-              backgroundColor: palette.accentSecondary, alignItems: 'center', justifyContent: 'center',
-              marginRight: spacing.sm,
-            }}>
-              <Ionicons name="sparkles" size={14} color="#FFF" />
-            </View>
+      <View style={[styles.messageRow, isUser ? styles.messageUser : styles.messageAI]}>
+        {!isUser && (
+          <LinearGradient
+            colors={['#00FFFF', '#0099CC']}
+            style={styles.aiAvatar}
+          >
+            <Sparkles size={12} color="#0A0A0A"  />
+          </LinearGradient>
+        )}
+        <View style={[
+          styles.bubble, 
+          isUser ? styles.bubbleUser : styles.bubbleAI
+        ]}>
+          {isUser ? (
+            <Text style={styles.bubbleTextUser}>{item.content}</Text>
+          ) : (
+            <Markdown style={markdownStyles}>{item.content}</Markdown>
           )}
-          <View style={{
-            backgroundColor: isUser ? palette.accentPrimary : palette.bgCard,
-            borderRadius: 16,
-            borderBottomRightRadius: isUser ? 4 : 16,
-            borderBottomLeftRadius: isUser ? 16 : 4,
-            padding: isUser ? spacing.md : spacing.sm,
-            maxWidth: '75%',
-            borderWidth: isUser ? 0 : 1,
-            borderColor: palette.borderColor,
-          }}>
-            {isUser ? (
-              <Text style={{ color: '#000', fontSize: 14, lineHeight: 21 }}>
-                {item.content}
-              </Text>
-            ) : (
-              <Markdown style={markdownStyles}>
-                {item.content}
-              </Markdown>
-            )}
-          </View>
-          {isUser && (
-            <View style={{
-              width: 28, height: 28, borderRadius: 14,
-              backgroundColor: palette.accentPrimary, alignItems: 'center', justifyContent: 'center',
-              marginLeft: spacing.sm,
-            }}>
-              <Text style={{ color: '#000', fontSize: 12, fontWeight: 'bold' }}>M</Text>
-            </View>
-          )}
-        </View>
-        <View style={{ flexDirection: 'row', justifyContent: isUser ? 'flex-end' : 'flex-start', alignItems: 'center', paddingHorizontal: spacing.xs }}>
-          <Timestamp time={item.time} />
-          {!isUser && (
-            <View style={{ flexDirection: 'row', marginLeft: spacing.sm }}>
-              <TouchableOpacity style={{ marginRight: spacing.sm }}>
-                <Ionicons name={item.isSaved ? "bookmark" : "bookmark-outline"} size={16} color={item.isSaved ? "#FFD700" : palette.textMuted} />
-              </TouchableOpacity>
-              <TouchableOpacity>
-                <Ionicons name="lock-closed-outline" size={16} color={palette.textMuted} />
-              </TouchableOpacity>
-            </View>
-          )}
+          <Text style={[styles.messageTime, isUser && { color: 'rgba(0,0,0,0.5)' }]}>
+            {item.time}
+          </Text>
         </View>
       </View>
     );
   };
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: palette.bgPrimary }} edges={['top']}>
-      <ChatHeader />
-      <VllmStatusChip status={vllmStatus} onWarmup={handleWarmup} warming={vllmWarming} />
-
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={item => item.id}
-        contentContainerStyle={{
-          paddingHorizontal: spacing.md,
-          paddingBottom: spacing.md,
-          flexGrow: 1,
-          justifyContent: messages.length ? 'flex-end' : 'center',
-        }}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        ListEmptyComponent={
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ color: palette.textMuted, fontSize: 16 }}>Ask Qwen anything...</Text>
-          </View>
-        }
-      />
-
-      {loading && (
-        <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm, flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{
-            width: 28, height: 28, borderRadius: 14,
-            backgroundColor: palette.accentSecondary, alignItems: 'center', justifyContent: 'center',
-            marginRight: spacing.sm,
-          }}>
-            <Text style={{ fontSize: 12 }}>{'\u2728'}</Text>
-          </View>
-          <ActivityIndicator color={palette.accentPrimary} size="small" />
-        </View>
-      )}
-
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{
-          flexDirection: 'row', alignItems: 'center',
-          backgroundColor: palette.bgCard, borderRadius: 24,
-          borderWidth: 1, borderColor: palette.borderColor,
-          paddingHorizontal: spacing.md,
-          marginHorizontal: spacing.md, marginBottom: Platform.OS === 'android' ? spacing.md : spacing.sm,
-        }}>
-          <TextInput
-            style={{
-              flex: 1, color: palette.textPrimary,
-              fontSize: 14, paddingVertical: 14,
-            }}
-            placeholder="Ask Qwen anything..."
-            placeholderTextColor={palette.textMuted}
-            value={input}
-            onChangeText={setInput}
-            onSubmitEditing={handleSend}
-            returnKeyType="send"
-            editable={!loading}
+  if (view === 'chat') {
+    return (
+      <SafeAreaView style={styles.root} edges={['top']}>
+        <MobileHeader title="AI Chat" subtitle="Qwen3-Coder-30B" showBack onBack={() => setView('hub')} />
+        
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.chatScroll}
+            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+            ListEmptyComponent={
+              <View style={styles.emptyChat}>
+                 <MessageSquare size={48} color="rgba(255, 255, 255, 0.05)"  />
+                 <Text style={styles.emptyText}>Start a conversation with Qwen</Text>
+              </View>
+            }
           />
-          <TouchableOpacity
-            onPress={handleSend}
-            disabled={loading || !input.trim()}
-            style={{
-              width: 32, height: 32, borderRadius: 16,
-              backgroundColor: input.trim() ? palette.accentPrimary : palette.bgSecondary,
-              alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <Text style={{ color: input.trim() ? '#000' : palette.textMuted, fontSize: 16 }}>{'\u2191'}</Text>
-          </TouchableOpacity>
+
+          {loading && (
+            <View style={styles.typingContainer}>
+              <ActivityIndicator size="small" color={palette.accentPrimary} />
+              <Text style={styles.typingText}>AI is thinking...</Text>
+            </View>
+          )}
+
+          <BlurView intensity={30} tint="dark" style={styles.inputWrapper}>
+             <TextInput
+               style={styles.input}
+               placeholder="Message Qwen..."
+               placeholderTextColor={palette.textMuted}
+               value={input}
+               onChangeText={setInput}
+               multiline
+             />
+             <TouchableOpacity 
+               onPress={handleSend}
+               disabled={!input.trim() || loading}
+               style={[styles.sendButton, !input.trim() && { opacity: 0.5 }]}
+             >
+                <LinearGradient
+                  colors={['rgba(0, 212, 255, 0.4)', 'rgba(0, 153, 204, 0.4)']}
+                  style={styles.sendButtonGradient}
+                >
+                  <ArrowUp size={20} color={palette.accentPrimary}  />
+                </LinearGradient>
+             </TouchableOpacity>
+          </BlurView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.root} edges={['top']}>
+      <MobileHeader title="AI Tools" subtitle="AI Orchestration Hub" />
+      
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* AI Assistant Status Card */}
+        <TouchableOpacity 
+          onPress={() => setView('chat')}
+          activeOpacity={0.9}
+        >
+          <MobileCard style={styles.cpuCard}>
+             <LinearGradient
+               colors={['rgba(0, 255, 255, 0.15)', 'rgba(0, 153, 204, 0.05)']}
+               start={{ x: 0, y: 0 }}
+               end={{ x: 1, y: 1 }}
+               style={StyleSheet.absoluteFill}
+             />
+             <View style={styles.cpuHeader}>
+                <LinearGradient
+                  colors={vllmStatus === 'online' ? ['#00FFFF', '#0099CC'] : ['#333', '#222']}
+                  style={styles.cpuIcon}
+                >
+                   {vllmWarming ? (
+                     <ActivityIndicator size="small" color="#0A0A0A" />
+                   ) : (
+                                         <Cpu 
+                                           size={28} 
+                                           color={vllmStatus === 'online' ? '#0A0A0A' : '#71717A'} 
+                                         />                   )}
+                </LinearGradient>
+                <View style={{ flex: 1, marginLeft: 16 }}>
+                   <Text style={styles.cpuTitle}>AI Core System</Text>
+                   <View style={styles.statusRow}>
+                      <View style={[styles.statusDot, { backgroundColor: vllmStatus === 'online' ? '#00FFFF' : '#ff4444' }]} />
+                      <Text style={[styles.statusText, { color: vllmStatus === 'online' ? '#00FFFF' : '#ff4444' }]}>
+                         {vllmStatus.toUpperCase()}
+                      </Text>
+                   </View>
+                </View>
+                {vllmStatus === 'offline' && !vllmWarming && (
+                  <TouchableOpacity onPress={handleWarmup} style={styles.warmupButton}>
+                     <Text style={styles.warmupText}>ACTIVATE</Text>
+                  </TouchableOpacity>
+                )}
+             </View>
+          </MobileCard>
+        </TouchableOpacity>
+
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionIndicator} />
+          <Text style={styles.sectionTitle}>Available Tools</Text>
         </View>
-      </KeyboardAvoidingView>
+
+        <View style={styles.toolsGrid}>
+           {AI_TOOLS.map((tool) => (
+             <MobileCard 
+               key={tool.id} 
+               onClick={() => tool.id === 'chat' ? setView('chat') : null}
+               style={styles.toolCard}
+             >
+                <View style={styles.toolContent}>
+                   <View style={[styles.toolIcon, { backgroundColor: `${tool.color}20`, borderColor: `${tool.color}40` }]}>
+                      <tool.Icon size={24} color={tool.color}  />
+                   </View>
+                   <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={styles.toolName}>{tool.name}</Text>
+                      <Text style={styles.toolDesc}>{tool.description}</Text>
+                   </View>
+                   <ChevronRight size={20} color={palette.accentPrimary}  />
+                </View>
+             </MobileCard>
+           ))}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: palette.bgPrimary,
+  },
+  scrollContainer: {
+    padding: spacing.md,
+    paddingBottom: 100,
+  },
+  cpuCard: {
+    padding: 0,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 255, 0.3)',
+    marginBottom: spacing.lg,
+    borderRadius: 24,
+  },
+  cpuHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  cpuIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#00FFFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+  },
+  cpuTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFF',
+    letterSpacing: 0.5,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+  },
+  warmupButton: {
+    backgroundColor: 'rgba(0, 255, 255, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 255, 0.3)',
+  },
+  warmupText: {
+    color: palette.accentPrimary,
+    fontWeight: '900',
+    fontSize: 11,
+    letterSpacing: 1,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+    paddingLeft: 4,
+  },
+  sectionIndicator: {
+    height: 1,
+    width: 40,
+    backgroundColor: 'rgba(0, 255, 255, 0.4)',
+  },
+  sectionTitle: {
+    color: palette.textSecondary,
+    fontSize: 11,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+  },
+  toolsGrid: {
+    gap: 12,
+  },
+  toolCard: {
+    marginBottom: 0,
+    borderRadius: 20,
+  },
+  toolContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 4,
+  },
+  toolIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolName: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#FFF',
+  },
+  toolDesc: {
+    fontSize: 13,
+    color: palette.textSecondary,
+    marginTop: 2,
+  },
+  // Chat Styles
+  chatScroll: {
+    padding: spacing.md,
+    paddingBottom: 40,
+  },
+  messageRow: {
+    marginBottom: 24,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  messageUser: {
+    justifyContent: 'flex-end',
+  },
+  messageAI: {
+    justifyContent: 'flex-start',
+  },
+  aiAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  bubble: {
+    maxWidth: '85%',
+    padding: 16,
+    borderRadius: 22,
+  },
+  bubbleUser: {
+    backgroundColor: palette.accentPrimary,
+    borderBottomRightRadius: 4,
+  },
+  bubbleAI: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 255, 0.2)',
+  },
+  bubbleTextUser: {
+    color: '#000',
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '700',
+  },
+  messageTime: {
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.3)',
+    marginTop: 8,
+    textAlign: 'right',
+  },
+  emptyChat: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 100,
+  },
+  emptyText: {
+    color: palette.textSecondary,
+    fontSize: 15,
+    marginTop: 16,
+    fontWeight: '600',
+  },
+  typingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 10,
+    gap: 10,
+  },
+  typingText: {
+    fontSize: 12,
+    color: palette.textSecondary,
+    fontStyle: 'italic',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(10, 10, 10, 0.8)',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    margin: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 255, 0.2)',
+  },
+  input: {
+    flex: 1,
+    color: '#FFF',
+    fontSize: 15,
+    maxHeight: 120,
+    paddingTop: 0,
+  },
+  sendButton: {
+    marginLeft: 12,
+  },
+  sendButtonGradient: {
+    width: 44,
+    height: 44,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 255, 0.3)',
+  },
+});
+

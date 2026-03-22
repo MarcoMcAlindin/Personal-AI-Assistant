@@ -5,13 +5,15 @@ interface GlassCardProps {
   className?: string;
   glowColor?: string;
   noPadding?: boolean;
+  onClick?: () => void;
 }
 
 export function GlassCard({ 
   children, 
   className = "", 
   glowColor = "cyan",
-  noPadding = false 
+  noPadding = false,
+  onClick
 }: GlassCardProps) {
   const glowClass = glowColor === "cyan" 
     ? "shadow-[0_0_20px_rgba(0,255,255,0.15)]" 
@@ -21,6 +23,7 @@ export function GlassCard({
 
   return (
     <div 
+      onClick={onClick}
       className={`
         relative rounded-2xl
         bg-[#1A1A1A]/80 
@@ -29,6 +32,7 @@ export function GlassCard({
         ${glowClass}
         ${noPadding ? '' : 'p-6'}
         ${className}
+        ${onClick ? 'cursor-pointer hover:border-[#00FFFF]/40 transition-all' : ''}
       `}
       style={{
         boxShadow: `

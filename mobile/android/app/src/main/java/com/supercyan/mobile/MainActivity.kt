@@ -1,4 +1,4 @@
-package com.vibeos.mobile
+package com.supercyan.mobile
 
 import android.os.Build
 import android.os.Bundle

@@ -211,4 +211,68 @@ async def chat_with_tools(
                     "content": tool_result
                 })
 
-    return "Error: Maximum tool sequence length reached. Please try simplifying your request."
+async def generate_campaign_analysis(campaign_data: dict, cv_text: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Generates a 'cold-start' analysis for a new job campaign.
+    Returns structured JSON with overall_performance and match_factors.
+    """
+    qwen_url = os.environ.get("QWEN_ENDPOINT_URL")
+    if not qwen_url:
+        return {
+            "overall_performance": "AI analysis is currently offline. Please check your configuration.",
+            "match_factors": []
+        }
+
+    prompt = f"""
+    Analyze the following job search campaign and provide a premium, encouraging strategic analysis.
+    
+    Campaign Name: {campaign_data.get('name')}
+    Keywords: {campaign_data.get('job_preferences', {}).get('keywords')}
+    Location: {campaign_data.get('job_preferences', {}).get('location')}
+    Min Salary: {campaign_data.get('job_preferences', {}).get('salary')}
+    
+    User CV Context: {cv_text[:2000] if cv_text else "No CV provided yet."}
+    
+    Return ONLY a valid JSON object with this structure:
+    {{
+        "overall_performance": "A 2-3 sentence strategic overview of the campaign's potential and how it aligns with the user's profile.",
+        "match_factors": [
+            {{ "title": "Factor Title (e.g. Technical Depth)", "description": "Short explanation of why this is a match" }},
+            ... (exactly 3 factors)
+        ]
+    }}
+    """
+
+    messages = [
+        {"role": "system", "content": "You are a professional career strategist and executive recruiter AI. Return JSON only."},
+        {"role": "user", "content": prompt}
+    ]
+
+    headers = {"Content-Type": "application/json"}
+    try:
+        import google.auth.transport.requests
+        import google.oauth2.id_token
+        auth_req = google.auth.transport.requests.Request()
+        qwen_base = qwen_url.rstrip("/v1").rstrip("/")
+        identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
+        headers["Authorization"] = f"Bearer {identity_token}"
+    except Exception:
+        pass
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        resp = await client.post(
+            f"{qwen_url.rstrip('/')}/chat/completions",
+            headers=headers,
+            json={
+                "model": os.environ.get("QWEN_MODEL_NAME", "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"),
+                "messages": messages,
+                "temperature": 0.3,
+                "response_format": { "type": "json_object" }
+            }
+        )
+        resp.raise_for_status()
+        content = resp.json()["choices"][0]["message"]["content"]
+        # Strip potential markdown code blocks
+        content = re.sub(r'```json\n?|\n?```', '', content).strip()
+        return json.loads(content)
+

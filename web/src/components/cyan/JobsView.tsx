@@ -1,139 +1,348 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router";
 import { 
-  Menu, 
-  Briefcase, 
-  Search, 
-  MapPin, 
-  DollarSign, 
-  Building2,
-  Clock,
-  ExternalLink,
-  Sparkles,
-  Plus,
-  X,
-  Send,
-  Inbox
+  Menu, Briefcase, Search, MapPin, DollarSign, Building2,
+  Clock, ExternalLink, Sparkles, Plus, X, Send, Inbox, Check, XCircle,
+  ArrowLeft, Upload, FileText, Target, TrendingUp, Award, Zap
 } from "lucide-react";
 import { GlassCard } from "./GlassCard";
 import { BurgerMenu } from "./BurgerMenu";
 import { Sidebar } from "./Sidebar";
+import { campaignService } from "../../services/campaignService";
+import { supabase } from "../../services/supabase";
 
-interface JobListing {
-  id: number;
-  title: string;
-  company: string;
-  location: string;
-  salary: string;
-  postedTime: string;
-  type: string;
-  description: string;
-  matchScore: number;
-}
-
-const mockJobListings: JobListing[] = [
-  {
-    id: 1,
-    title: "Senior Product Manager",
-    company: "TechCorp Industries",
-    location: "San Francisco, CA",
-    salary: "$140k - $180k",
-    postedTime: "2 hours ago",
-    type: "Full-time",
-    description: "Lead product strategy and development for enterprise software solutions.",
-    matchScore: 95
-  },
-  {
-    id: 2,
-    title: "Engineering Manager",
-    company: "Innovation Labs",
-    location: "Remote",
-    salary: "$160k - $200k",
-    postedTime: "5 hours ago",
-    type: "Full-time",
-    description: "Manage team of 8-12 engineers building cloud infrastructure.",
-    matchScore: 88
-  },
-  {
-    id: 3,
-    title: "Director of Engineering",
-    company: "Future Systems",
-    location: "New York, NY",
-    salary: "$180k - $220k",
-    postedTime: "1 day ago",
-    type: "Full-time",
-    description: "Strategic technical leadership role for growing startup.",
-    matchScore: 82
-  },
-  {
-    id: 4,
-    title: "VP of Product",
-    company: "Growth Dynamics",
-    location: "Austin, TX",
-    salary: "$200k - $250k",
-    postedTime: "2 days ago",
-    type: "Full-time",
-    description: "Shape product vision and strategy for B2B SaaS platform.",
-    matchScore: 78
-  },
-];
-
-interface Campaign {
-  id: number;
-  name: string;
-  keywords: string;
-  location: string;
-  salary: string;
-  status: "active" | "paused";
-  results: number;
-}
-
-const mockCampaigns: Campaign[] = [
-  {
-    id: 1,
-    name: "Senior PM Roles",
-    keywords: "Product Manager, Director",
-    location: "Remote, CA",
-    salary: "$140k+",
-    status: "active",
-    results: 12
-  },
-];
+import { Database } from "../../types/supabase";
+type Campaign = Database['public']['Tables']['campaigns']['Row'];
+type InboxItem = Database['public']['Tables']['inbox_items']['Row'];
 
 export function JobsView() {
   const { isMobile } = useOutletContext<{ isMobile: boolean }>();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showNewCampaign, setShowNewCampaign] = useState(false);
-  const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
-  const [jobListings] = useState<JobListing[]>(mockJobListings);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [inboxItems, setInboxItems] = useState<InboxItem[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [uploadedCV, setUploadedCV] = useState<File | null>(null);
   
   // New campaign form state
   const [newCampaign, setNewCampaign] = useState({
-    name: "",
-    keywords: "",
-    location: "",
-    salary: ""
+    name: "", keywords: "", location: "", salary: ""
   });
 
-  const handleCreateCampaign = () => {
-    if (newCampaign.name && newCampaign.keywords) {
-      const campaign: Campaign = {
-        id: campaigns.length + 1,
-        name: newCampaign.name,
-        keywords: newCampaign.keywords,
-        location: newCampaign.location || "Any",
-        salary: newCampaign.salary || "Any",
-        status: "active",
-        results: 0
-      };
-      setCampaigns([...campaigns, campaign]);
-      setNewCampaign({ name: "", keywords: "", location: "", salary: "" });
-      setShowNewCampaign(false);
+  const handleCVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadedCV(file);
     }
   };
 
-  const activeCampaigns = campaigns.filter(c => c.status === "active").length;
-  const totalResults = jobListings.length;
+  const handleRemoveCV = () => {
+    setUploadedCV(null);
+  };
+
+  const loadData = async () => {
+    try {
+      const dbCampaigns = await campaignService.getCampaigns();
+      setCampaigns(dbCampaigns);
+      const dbInbox = await campaignService.getInboxItems();
+      setInboxItems(dbInbox);
+    } catch (e) {
+      console.error("Failed to load jobs data", e);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+
+    // Supabase Realtime Hook for aggressive background scraping
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'inbox_items' },
+        (payload) => {
+          setInboxItems((prev) => [payload.new as InboxItem, ...prev]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'campaigns' },
+        (payload) => {
+          setCampaigns((prev) => prev.map(c => c.id === payload.new.id ? (payload.new as Campaign) : c));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const handleCreateCampaign = async () => {
+    if (newCampaign.name && newCampaign.keywords) {
+      try {
+        const created = await campaignService.createCampaign({
+          name: newCampaign.name,
+          job_preferences: {
+            keywords: newCampaign.keywords,
+            location: newCampaign.location,
+            salary: newCampaign.salary
+          }
+        });
+        setCampaigns([created, ...campaigns]);
+        setNewCampaign({ name: "", keywords: "", location: "", salary: "" });
+        setShowNewCampaign(false);
+        
+        // Trigger background proxy scrape logic
+        await campaignService.triggerScrapeRun(created.id);
+      } catch (e) {
+        console.error("Failed creating campaign", e);
+      }
+    }
+  };
+
+  const handleInboxAction = async (itemId: string, action: 'APPROVED' | 'REJECTED') => {
+    try {
+      await campaignService.updateInboxStatus(itemId, action);
+      setInboxItems(prev => prev.filter(i => i.id !== itemId));
+    } catch (e) {
+      console.error("Action failed", e);
+    }
+  };
+
+  const activeCampaigns = campaigns.filter(c => c.status === "RUNNING" || c.status === "DRAFT").length;
+  const pendingInbox = inboxItems.filter(i => i.status === "PENDING_REVIEW");
+
+  // If a campaign is selected, show detailed view
+  if (selectedCampaign) {
+    const campaignItems = inboxItems.filter(i => i.campaign_id === selectedCampaign.id);
+    const prefs = selectedCampaign.job_preferences as any;
+
+    return (
+      <div className={`${isMobile ? 'pt-16 pb-8' : 'pl-64'} min-h-screen`}>
+        {!isMobile && <Sidebar />}
+        <BurgerMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
+
+        <div className={`${isMobile ? 'p-4' : 'p-8'}`}>
+          {/* Back Button and Header */}
+          <div className="mb-8">
+            <button
+              onClick={() => setSelectedCampaign(null)}
+              className="flex items-center gap-2 text-[#00FFFF] hover:text-[#00FFFF]/80 transition-colors mb-4"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-semibold">Back to Campaigns</span>
+            </button>
+
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-3xl md:text-4xl font-bold text-[#DAE2FD] tracking-tight">
+                    {selectedCampaign.name}
+                  </h1>
+                  {(selectedCampaign.status === "RUNNING" || selectedCampaign.status === "DRAFT") && (
+                    <div className="flex items-center gap-1 px-3 py-1 rounded-lg bg-green-500/20 border border-green-500/30">
+                      <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></div>
+                      <span className="text-sm text-green-400 font-semibold">{selectedCampaign.status}</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-[#BBC9CD]">AI-powered matches based on your profile</p>
+              </div>
+
+              {isMobile && (
+                <button
+                  onClick={() => setMenuOpen(true)}
+                  className="p-3 rounded-xl bg-[#1A1A1A]/50 hover:bg-[#1A1A1A] text-[#BBC9CD] hover:text-[#00FFFF] transition-colors border border-[#00FFFF]/20"
+                >
+                  <Menu className="w-6 h-6" />
+                </button>
+              )}
+            </div>
+
+            {/* Campaign Details */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <GlassCard className="!p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Search className="w-4 h-4 text-[#00FFFF]" />
+                  <span className="text-sm text-[#BBC9CD]">Keywords</span>
+                </div>
+                <div className="font-semibold text-white">{prefs?.keywords || "Any"}</div>
+              </GlassCard>
+
+              <GlassCard className="!p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <MapPin className="w-4 h-4 text-[#00FFFF]" />
+                  <span className="text-sm text-[#BBC9CD]">Location</span>
+                </div>
+                <div className="font-semibold text-white">{prefs?.location || "Any"}</div>
+              </GlassCard>
+
+              <GlassCard className="!p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="w-4 h-4 text-[#00FFFF]" />
+                  <span className="text-sm text-[#BBC9CD]">Min Salary</span>
+                </div>
+                <div className="font-semibold text-white">{prefs?.salary || "Any"}</div>
+              </GlassCard>
+
+              <GlassCard className="!p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Inbox className="w-4 h-4 text-[#00FFFF]" />
+                  <span className="text-sm text-[#BBC9CD]">Results</span>
+                </div>
+                <div className="font-semibold text-white">{selectedCampaign.total_jobs_found || 0} jobs</div>
+              </GlassCard>
+            </div>
+          </div>
+
+          {/* AI Match Analysis */}
+          <GlassCard className="!p-8 mb-8 border-[#00FFFF]/30">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-lg bg-[#00FFFF]/10">
+                <Sparkles className="w-6 h-6 text-[#00FFFF]" />
+              </div>
+              <h2 className="text-2xl font-semibold text-white">AI Campaign Analysis</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-[#0A0A0A]/50 rounded-lg p-4 border border-[#00FFFF]/10">
+                <h3 className="text-white font-semibold mb-2">Overall Performance</h3>
+                <p className="text-[#BBC9CD] text-sm leading-relaxed">
+                  {(selectedCampaign.ai_analysis as any)?.overall_performance || "AI agent is currently analyzing your campaign requirements and profile..."}
+                </p>
+              </div>
+
+              <div className="bg-[#0A0A0A]/50 rounded-lg p-4 border border-[#00FFFF]/10">
+                <h3 className="text-white font-semibold mb-3">Top Match Factors</h3>
+                <div className="grid md:grid-cols-3 gap-3">
+                  {((selectedCampaign.ai_analysis as any)?.match_factors || [
+                    { title: "Keywords", description: "Aligning search terms..." },
+                    { title: "Location", description: "Filtering by region..." },
+                    { title: "Salary", description: "Matching expectations..." }
+                  ]).map((factor: any, idx: number) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      {idx === 0 ? <Target className="w-5 h-5 text-[#00FFFF] mt-0.5 flex-shrink-0" /> : 
+                       idx === 1 ? <Award className="w-5 h-5 text-[#00FFFF] mt-0.5 flex-shrink-0" /> : 
+                       <TrendingUp className="w-5 h-5 text-[#00FFFF] mt-0.5 flex-shrink-0" />}
+                      <div>
+                        <div className="text-sm font-semibold text-white">{factor.title}</div>
+                        <div className="text-xs text-[#BBC9CD]">{factor.description}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+
+          {/* Matched Jobs */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-1 w-12 bg-gradient-to-r from-[#00FFFF] to-transparent rounded-full"></div>
+              <span className="text-xs font-semibold text-[#BBC9CD] uppercase tracking-widest">
+                Matched Opportunities
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              {campaignItems.length === 0 && (
+                <div className="text-[#BBC9CD] py-4">No matched jobs found for this campaign yet.</div>
+              )}
+              {campaignItems.map((job) => (
+                <GlassCard key={job.id} className="!p-6 hover:border-[#00FFFF]/40 transition-all">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {/* Company Icon */}
+                    <div className="flex-shrink-0">
+                      <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-[#00FFFF]/20 to-[#0099CC]/20 border border-[#00FFFF]/30 flex items-center justify-center">
+                        <Building2 className="w-10 h-10 text-[#00FFFF]" />
+                      </div>
+                    </div>
+
+                    {/* Job Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-[#DAE2FD] text-xl mb-1">{job.job_title}</h3>
+                          <div className="flex items-center gap-2 text-[#BBC9CD] mb-3">
+                            <span className="font-semibold">{job.company_name}</span>
+                            <span>•</span>
+                            <span>{job.remote_type}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-green-500/20 border border-green-500/30">
+                          <Sparkles className="w-5 h-5 text-green-400" />
+                          <span className="text-base font-bold text-green-400">
+                            {job.match_score ? Math.round(job.match_score * 100) : 0}% Match
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="text-[#BBC9CD] mb-4">{job.job_description}</p>
+
+                      <div className="flex flex-wrap items-center gap-4 mb-4">
+                        <div className="flex items-center gap-2 text-sm">
+                          <MapPin className="w-4 h-4 text-[#00FFFF]" />
+                          <span className="text-[#BBC9CD]">{job.location || "N/A"}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <DollarSign className="w-4 h-4 text-[#00FFFF]" />
+                          <span className="text-[#BBC9CD]">{job.salary_range || "Undisclosed"}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Clock className="w-4 h-4 text-[#00FFFF]" />
+                          <span className="text-[#BBC9CD]">Recently</span>
+                        </div>
+                      </div>
+
+                      {/* AI Match Reasons */}
+                      <div className="bg-[#0A0A0A]/50 rounded-lg p-4 border border-[#00FFFF]/10 mb-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="w-4 h-4 text-[#00FFFF]" />
+                          <h4 className="font-semibold text-white text-sm">Why This Matches Your Profile</h4>
+                        </div>
+                        <ul className="space-y-2 text-sm text-[#BBC9CD]">
+                          <li className="flex items-start gap-2">
+                            <Check className="w-4 h-4 text-[#00FFFF] mt-0.5 flex-shrink-0" />
+                            <span>Aligned with your campaign keywords: {prefs?.keywords}</span>
+                          </li>
+                          {job.match_reasoning && (
+                             <li className="flex items-start gap-2">
+                              <Check className="w-4 h-4 text-[#00FFFF] mt-0.5 flex-shrink-0" />
+                              <span>{job.match_reasoning}</span>
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3">
+                        <button 
+                          onClick={() => window.open(job.job_url || '', '_blank')}
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#00FFFF]/20 to-[#0099CC]/20 hover:from-[#00FFFF]/30 hover:to-[#0099CC]/30 text-[#00FFFF] font-semibold transition-all border border-[#00FFFF]/40"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          View Full Details
+                        </button>
+                        <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/20 hover:bg-green-500/30 text-green-400 font-semibold transition-colors border border-green-500/30">
+                          <Send className="w-4 h-4" />
+                          Quick Apply
+                        </button>
+                        <button className="px-4 py-2 rounded-xl bg-[#1A1A1A]/50 hover:bg-[#1A1A1A] text-[#BBC9CD] hover:text-[#00FFFF] font-semibold transition-colors border border-[#00FFFF]/20">
+                          Save for Later
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </GlassCard>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
 
   return (
     <div className={`${isMobile ? 'pt-16 pb-8' : 'pl-64'} min-h-screen`}>
@@ -181,15 +390,15 @@ export function JobsView() {
             <div className="p-2 rounded-lg bg-green-500/10 inline-flex mb-3">
               <Inbox className="w-5 h-5 text-green-400" />
             </div>
-            <div className="text-2xl font-bold text-green-400 mb-1">{totalResults}</div>
-            <div className="text-sm text-[#BBC9CD]">New Results</div>
+            <div className="text-2xl font-bold text-green-400 mb-1">{pendingInbox.length}</div>
+            <div className="text-sm text-[#BBC9CD]">Pending Review</div>
           </GlassCard>
 
           <GlassCard className="!p-4">
             <div className="p-2 rounded-lg bg-yellow-500/10 inline-flex mb-3">
               <Send className="w-5 h-5 text-yellow-400" />
             </div>
-            <div className="text-2xl font-bold text-yellow-400 mb-1">24</div>
+            <div className="text-2xl font-bold text-yellow-400 mb-1">0</div>
             <div className="text-sm text-[#BBC9CD]">Applications</div>
           </GlassCard>
 
@@ -197,7 +406,7 @@ export function JobsView() {
             <div className="p-2 rounded-lg bg-purple-500/10 inline-flex mb-3">
               <Sparkles className="w-5 h-5 text-purple-400" />
             </div>
-            <div className="text-2xl font-bold text-purple-400 mb-1">87%</div>
+            <div className="text-2xl font-bold text-purple-400 mb-1">0%</div>
             <div className="text-sm text-[#BBC9CD]">Match Score</div>
           </GlassCard>
         </div>
@@ -283,6 +492,47 @@ export function JobsView() {
                   </div>
                 </div>
 
+                {/* CV Upload Section */}
+                <div>
+                  <label className="block text-sm font-semibold text-[#BBC9CD] mb-2">Upload CV/Resume</label>
+                  
+                  {!uploadedCV ? (
+                    <label
+                      htmlFor="cv-upload"
+                      className="flex flex-col items-center justify-center p-6 rounded-xl bg-[#0A0A0A]/50 border-2 border-dashed border-[#00FFFF]/20 hover:border-[#00FFFF]/40 transition-all cursor-pointer group"
+                    >
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        onChange={handleCVUpload}
+                        className="hidden"
+                        id="cv-upload"
+                      />
+                      <Upload className="w-8 h-8 text-[#00FFFF] mb-2 group-hover:scale-110 transition-transform" />
+                      <span className="text-sm text-[#BBC9CD] mb-1">Click to upload your CV</span>
+                      <span className="text-xs text-[#BBC9CD]/60">PDF, DOC, or DOCX (Max 10MB)</span>
+                    </label>
+                  ) : (
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-[#0A0A0A]/50 border border-[#00FFFF]/30">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-[#00FFFF]/10">
+                          <FileText className="w-5 h-5 text-[#00FFFF]" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-[#DAE2FD]">{uploadedCV.name}</div>
+                          <div className="text-xs text-[#BBC9CD]">{(uploadedCV.size / 1024).toFixed(2)} KB</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleRemoveCV}
+                        className="p-2 rounded-lg hover:bg-[#1A1A1A] text-[#BBC9CD] hover:text-red-400 transition-colors"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <button
                   onClick={handleCreateCampaign}
                   className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#00FFFF]/20 to-[#0099CC]/20 hover:from-[#00FFFF]/30 hover:to-[#0099CC]/30 text-[#00FFFF] font-semibold transition-all border border-[#00FFFF]/40 hover:border-[#00FFFF]/60 shadow-[0_0_20px_rgba(0,255,255,0.2)]"
@@ -290,51 +540,65 @@ export function JobsView() {
                   <Sparkles className="w-5 h-5" />
                   Start AI Agent
                 </button>
+
               </div>
             </GlassCard>
           )}
 
           {/* Campaign List */}
           <div className="space-y-3">
-            {campaigns.map((campaign) => (
-              <GlassCard key={campaign.id} className="!p-4 hover:border-[#00FFFF]/40 transition-all">
+            {campaigns.length === 0 && (
+              <div className="text-center py-6 text-[#BBC9CD]">No active campaigns.</div>
+            )}
+            {campaigns.map((campaign) => {
+              const prefs = campaign.job_preferences as Record<string, any>;
+              return (
+              <GlassCard 
+                key={campaign.id} 
+                className="!p-4 hover:border-[#00FFFF]/40 transition-all cursor-pointer"
+                onClick={() => setSelectedCampaign(campaign)}
+              >
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-bold text-[#DAE2FD] text-lg">{campaign.name}</h3>
-                      {campaign.status === "active" && (
+                      {(campaign.status === "RUNNING" || campaign.status === "DRAFT") && (
                         <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/20 border border-green-500/30">
                           <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse"></div>
-                          <span className="text-xs text-green-400 font-semibold">Active</span>
+                          <span className="text-xs text-green-400 font-semibold">{campaign.status}</span>
                         </div>
                       )}
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div className="flex items-center gap-2 text-[#BBC9CD]">
                         <Search className="w-4 h-4 text-[#00FFFF]" />
-                        {campaign.keywords}
+                        {prefs?.keywords || "Any"}
                       </div>
                       <div className="flex items-center gap-2 text-[#BBC9CD]">
                         <MapPin className="w-4 h-4 text-[#00FFFF]" />
-                        {campaign.location}
+                        {prefs?.location || "Any"}
                       </div>
                       <div className="flex items-center gap-2 text-[#BBC9CD]">
                         <DollarSign className="w-4 h-4 text-[#00FFFF]" />
-                        {campaign.salary}
+                        {prefs?.salary || "Any"}
                       </div>
                       <div className="flex items-center gap-2 text-[#BBC9CD]">
                         <Inbox className="w-4 h-4 text-[#00FFFF]" />
-                        {campaign.results} results
+                        {campaign.total_jobs_found || 0} results
                       </div>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2 text-[#00FFFF]">
+                    <span className="text-sm font-semibold">View Results</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </div>
                 </div>
               </GlassCard>
-            ))}
+            )})}
           </div>
         </div>
 
-        {/* Job Results Inbox */}
+        {/* Job Results Inbox (HITL) */}
         <div>
           <div className="flex items-center gap-2 mb-4">
             <div className="h-1 w-12 bg-gradient-to-r from-[#00FFFF] to-transparent rounded-full"></div>
@@ -344,7 +608,10 @@ export function JobsView() {
           </div>
 
           <div className="space-y-3">
-            {jobListings.map((job) => (
+             {pendingInbox.length === 0 && (
+              <div className="text-center py-6 text-[#BBC9CD]">No new search results.</div>
+            )}
+            {pendingInbox.map((job) => (
               <GlassCard key={job.id} className="!p-6 hover:border-[#00FFFF]/40 transition-all group">
                 <div className="flex flex-col md:flex-row gap-4">
                   {/* Company Icon */}
@@ -358,43 +625,57 @@ export function JobsView() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex-1">
-                        <h3 className="font-bold text-[#DAE2FD] text-lg mb-1">{job.title}</h3>
+                        <h3 className="font-bold text-[#DAE2FD] text-lg mb-1">{job.job_title}</h3>
                         <div className="flex items-center gap-2 text-[#BBC9CD] mb-2">
-                          <span className="font-semibold">{job.company}</span>
+                          <span className="font-semibold">{job.company_name}</span>
                           <span>•</span>
-                          <span>{job.type}</span>
+                          <span>{job.remote_type || job.source}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-green-500/20 border border-green-500/30">
                         <Sparkles className="w-4 h-4 text-green-400" />
-                        <span className="text-sm font-bold text-green-400">{job.matchScore}% Match</span>
+                        <span className="text-sm font-bold text-green-400">
+                          {job.match_score ? Math.round(job.match_score * 100) : 0}% Match
+                        </span>
                       </div>
                     </div>
 
-                    <p className="text-sm text-[#BBC9CD] mb-4">{job.description}</p>
+                    <p className="text-sm text-[#BBC9CD] mb-4 line-clamp-3 overflow-hidden">{job.job_description}</p>
 
                     <div className="flex flex-wrap items-center gap-4 mb-4">
                       <div className="flex items-center gap-2 text-sm">
                         <MapPin className="w-4 h-4 text-[#00FFFF]" />
-                        <span className="text-[#BBC9CD]">{job.location}</span>
+                        <span className="text-[#BBC9CD]">{job.location || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <DollarSign className="w-4 h-4 text-[#00FFFF]" />
-                        <span className="text-[#BBC9CD]">{job.salary}</span>
+                        <span className="text-[#BBC9CD]">{job.salary_range || 'Undisclosed'}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Clock className="w-4 h-4 text-[#00FFFF]" />
-                        <span className="text-[#BBC9CD]">{job.postedTime}</span>
+                        <span className="text-[#BBC9CD]">Recently</span>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap gap-3">
-                      <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#00FFFF]/20 to-[#0099CC]/20 hover:from-[#00FFFF]/30 hover:to-[#0099CC]/30 text-[#00FFFF] font-semibold transition-all border border-[#00FFFF]/40">
+                      <button 
+                        onClick={() => window.open(job.job_url, '_blank')}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#00FFFF]/20 to-[#0099CC]/20 hover:from-[#00FFFF]/30 hover:to-[#0099CC]/30 text-[#00FFFF] font-semibold transition-all border border-[#00FFFF]/40"
+                      >
                         <ExternalLink className="w-4 h-4" />
                         View Job
                       </button>
-                      <button className="px-4 py-2 rounded-xl bg-[#1A1A1A]/50 hover:bg-[#1A1A1A] text-[#BBC9CD] hover:text-[#00FFFF] font-semibold transition-colors border border-[#00FFFF]/20">
+                      <button 
+                        onClick={() => handleInboxAction(job.id, 'APPROVED')}
+                        className="px-4 py-2 rounded-xl bg-[#1A1A1A]/50 hover:bg-[#1A1A1A] text-[#BBC9CD] hover:text-[#00FFFF] font-semibold transition-colors border border-[#00FFFF]/20"
+                      >
                         Save for Later
+                      </button>
+                      <button 
+                        onClick={() => handleInboxAction(job.id, 'REJECTED')}
+                        className="px-4 py-2 rounded-xl bg-[#1A1A1A]/50 hover:bg-red-500/20 text-[#BBC9CD] hover:text-red-400 border border-[#00FFFF]/20 hover:border-red-500/40 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
                       </button>
                     </div>
                   </div>

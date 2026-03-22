@@ -5,8 +5,12 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import TabNavigator from './navigation/TabNavigator';
+import { AIFloatingBubble } from './components/AIFloatingBubble';
 import { palette } from './theme';
 import { supabase } from './services/supabase';
+import * as NavigationBar from 'expo-navigation-bar';
+import { Platform } from 'react-native';
+
 
 const navTheme = {
   dark: true,
@@ -31,8 +35,15 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
+      // Hide navigation bar on Android for immersive experience
+      if (Platform.OS === 'android') {
+        await NavigationBar.setVisibilityAsync('hidden');
+        await NavigationBar.setBehaviorAsync('inset-touch');
+      }
+
       // Check for existing session first
       const { data: { session } } = await supabase.auth.getSession();
+
       if (session) {
         setReady(true);
         return;
@@ -60,11 +71,7 @@ export default function App() {
         <StatusBar style="light" />
         <View style={{ flex: 1, backgroundColor: palette.bgPrimary }}>
           <TabNavigator />
-          <View style={{ alignItems: 'center', paddingBottom: 6, backgroundColor: '#000000' }}>
-            <RNText style={{ color: palette.textMuted, fontSize: 10 }}>
-              SuperCyan Mobile — React Native (Expo)
-            </RNText>
-          </View>
+          <AIFloatingBubble />
         </View>
       </NavigationContainer>
     </SafeAreaProvider>
