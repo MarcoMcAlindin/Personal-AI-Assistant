@@ -6,6 +6,8 @@ from .weworkremotely import WeWorkRemotelyScraper
 from .serper import SerperScraper
 from .crustdata import CrustdataScraper
 from .proxycurl import ProxycurlScraper
+from .remoteok import RemoteOKScraper
+from .remotive import RemotiveScraper
 
 # Modified: 2026-03-22
 # What: Added _write_scrape_log() to persist execution evidence to the scrape_logs table after
@@ -24,7 +26,9 @@ class MultiSourceScraper:
             WeWorkRemotelyScraper(supabase_client),
             SerperScraper(supabase_client),
             CrustdataScraper(supabase_client),
-            ProxycurlScraper(supabase_client)
+            ProxycurlScraper(supabase_client),
+            RemoteOKScraper(supabase_client),
+            RemotiveScraper(supabase_client),
         ]
 
     async def scrape_jobs_for_campaign(self, campaign: dict) -> Dict:
