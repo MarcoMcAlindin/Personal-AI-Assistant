@@ -126,6 +126,29 @@ export const emailService = {
     if (!response.ok) throw new Error('Remove from whitelist failed');
   },
 
+  fetchEmailBody: async (emailId: string): Promise<{ body: string; html: string | null; attachments: Array<{ filename: string; mimeType: string; data: string }> }> => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BACKEND_URL}/email/${emailId}`, { headers });
+      if (!response.ok) return { body: '', html: null, attachments: [] };
+      return response.json();
+    } catch {
+      return { body: '', html: null, attachments: [] };
+    }
+  },
+
+  rewriteEmail: async (body: string, tone: string): Promise<string> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${BACKEND_URL}/email/rewrite`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ body, tone }),
+    });
+    if (!response.ok) throw new Error('Email rewrite failed');
+    const data = await response.json();
+    return data.rewritten ?? body;
+  },
+
   registerPushToken: async (token: string): Promise<void> => {
     const headers = await getAuthHeaders();
     const response = await fetch(`${BACKEND_URL}/users/push-token`, {
