@@ -153,8 +153,14 @@ class EmailService:
             whitelist = await self.get_whitelisted_emails(user_id)
             company_names = await self._get_applied_company_names(user_id)
 
-            # Fetch messages (limited to 20 for proxy)
-            results = service.users().messages().list(userId='me', q="in:inbox", maxResults=20).execute()
+            # Build Gmail query targeting whitelisted senders directly
+            if whitelist:
+                from_parts = " OR ".join([f"from:{email}" for email in whitelist])
+                gmail_query = f"in:inbox ({from_parts})"
+            else:
+                gmail_query = "in:inbox"
+
+            results = service.users().messages().list(userId='me', q=gmail_query, maxResults=50).execute()
             messages = results.get('messages', [])
 
             filtered_emails = []
@@ -170,8 +176,8 @@ class EmailService:
                     if header['name'] == 'Subject':
                         subject = header['value']
 
-                # Extract clean email from sender string "Name <email@addr.com>"
-                clean_sender = sender.split("<")[-1].split(">")[0].strip()
+                # Extract clean email - lowercase for case-insensitive comparison
+                clean_sender = sender.split("<")[-1].split(">")[0].strip().lower()
 
                 if clean_sender in whitelist:
                     filtered_emails.append({
@@ -227,27 +233,47 @@ class EmailService:
         ][:10]
 
     async def _refresh_contacts_cache(self, user_id: str, settings: dict) -> dict:
-        """Fetch all Google contacts via People API and write them to users.settings.contacts_cache."""
+        """Fetch Google contacts (saved + other contacts) via People API."""
         try:
             creds = await self.get_user_gmail_credentials(user_id)
             service = build("people", "v1", credentials=creds)
-            results = service.people().connections().list(
-                resourceName="people/me",
-                pageSize=1000,
-                personFields="names,emailAddresses",
-            ).execute()
 
             items = []
-            for person in results.get("connections", []):
-                names = person.get("names", [])
-                emails = person.get("emailAddresses", [])
-                if emails:
-                    name = names[0].get("displayName", "") if names else ""
-                    for e in emails:
-                        items.append({
-                            "name": name,
-                            "email": e.get("value", ""),
-                        })
+
+            # Saved contacts
+            try:
+                results = service.people().connections().list(
+                    resourceName="people/me",
+                    pageSize=1000,
+                    personFields="names,emailAddresses",
+                ).execute()
+                for person in results.get("connections", []):
+                    names = person.get("names", [])
+                    emails = person.get("emailAddresses", [])
+                    if emails:
+                        name = names[0].get("displayName", "") if names else ""
+                        for e in emails:
+                            items.append({"name": name, "email": e.get("value", "")})
+            except Exception:
+                pass
+
+            # Other contacts (auto-saved from Gmail history)
+            try:
+                other = service.otherContacts().list(
+                    pageSize=1000,
+                    readMask="names,emailAddresses",
+                ).execute()
+                for person in other.get("otherContacts", []):
+                    names = person.get("names", [])
+                    emails = person.get("emailAddresses", [])
+                    if emails:
+                        name = names[0].get("displayName", "") if names else ""
+                        for e in emails:
+                            entry = {"name": name, "email": e.get("value", "")}
+                            if entry not in items:
+                                items.append(entry)
+            except Exception:
+                pass
 
             new_cache = {"items": items, "fetched_at": time.time()}
             self.supabase.table("users") \
