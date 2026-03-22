@@ -695,7 +695,14 @@ export function JobsView() {
                       </div>
                     </div>
 
-                    <p className="text-sm text-[#BBC9CD] mb-4 line-clamp-3 overflow-hidden">{job.job_description}</p>
+                    {/* Description — Modified: VOS-102 apply htmlToMarkdown + ReactMarkdown (was raw HTML string) */}
+                    <div className="text-sm text-[#BBC9CD] mb-4 line-clamp-3 overflow-hidden prose prose-sm prose-invert max-w-none
+                      [&>p]:text-[#BBC9CD] [&>p]:text-sm [&>p]:mb-1 [&>ul]:text-[#BBC9CD] [&>ul]:text-sm [&>ul]:pl-4
+                      [&>li]:mb-0.5 [&>strong]:text-white [&>h3]:text-white [&>h3]:text-sm [&>h3]:font-semibold">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+                        {htmlToMarkdown(job.job_description || "") || "No description available."}
+                      </ReactMarkdown>
+                    </div>
 
                     <div className="flex flex-wrap items-center gap-4 mb-4">
                       <div className="flex items-center gap-2 text-sm">
