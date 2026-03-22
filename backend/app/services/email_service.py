@@ -1,4 +1,5 @@
 import os
+import time
 from typing import List, Dict, Optional
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -130,7 +131,7 @@ class EmailService:
         }).eq("id", user_id).execute()
 
     async def fetch_inbox(self, user_id: str) -> List[Dict]:
-        """Fetch emails from Gmail but strictly filter via Supabase whitelist."""
+        """Fetch emails from Gmail but strictly filter via Supabase whitelist and applied company names."""
         if os.environ.get("MOCK_GMAIL") == "true":
             return [
                 {
@@ -139,26 +140,28 @@ class EmailService:
                     "from": "approved@example.com",
                     "subject": "Mock Hello",
                     "snippet": "This is a mock email for testing.",
-                    "date": "1710435600000"
+                    "date": "1710435600000",
+                    "source": "whitelist",
                 }
             ]
-        
+
         try:
             creds = await self.get_user_gmail_credentials(user_id)
             service = build('gmail', 'v1', credentials=creds)
-            
-            # Fetch whitelist
+
+            # Fetch whitelist and applied company names
             whitelist = await self.get_whitelisted_emails(user_id)
-            
+            company_names = await self._get_applied_company_names(user_id)
+
             # Fetch messages (limited to 20 for proxy)
             results = service.users().messages().list(userId='me', q="in:inbox", maxResults=20).execute()
             messages = results.get('messages', [])
-            
+
             filtered_emails = []
             for msg in messages:
                 full_msg = service.users().messages().get(userId='me', id=msg['id']).execute()
                 headers = full_msg['payload']['headers']
-                
+
                 sender = ""
                 subject = ""
                 for header in headers:
@@ -166,10 +169,10 @@ class EmailService:
                         sender = header['value']
                     if header['name'] == 'Subject':
                         subject = header['value']
-                
+
                 # Extract clean email from sender string "Name <email@addr.com>"
                 clean_sender = sender.split("<")[-1].split(">")[0].strip()
-                
+
                 if clean_sender in whitelist:
                     filtered_emails.append({
                         "id": full_msg['id'],
@@ -177,14 +180,110 @@ class EmailService:
                         "from": sender,
                         "subject": subject,
                         "snippet": full_msg['snippet'],
-                        "date": full_msg.get('internalDate')
+                        "date": full_msg.get('internalDate'),
+                        "source": "whitelist",
                     })
-            
+                elif self._matches_company(clean_sender, company_names):
+                    filtered_emails.append({
+                        "id": full_msg['id'],
+                        "thread_id": full_msg['threadId'],
+                        "from": sender,
+                        "subject": subject,
+                        "snippet": full_msg['snippet'],
+                        "date": full_msg.get('internalDate'),
+                        "source": "job_filter",
+                    })
+
             return filtered_emails
         except Exception as e:
             # Rule 11: Error Handling for external APIs
             print(f"Error fetching Gmail: {e}")
             return []
+
+    async def get_contacts(self, user_id: str, query: str) -> List[Dict]:
+        """Return Google contacts matching query, using a 24-hour cache in users.settings."""
+        if not self.supabase:
+            return []
+
+        row = self.supabase.table("users") \
+            .select("settings") \
+            .eq("id", user_id).single().execute()
+        settings = row.data.get("settings") or {}
+        cache = settings.get("contacts_cache", {})
+        cached_at = cache.get("fetched_at", 0)
+
+        if not cache.get("items") or (time.time() - cached_at) > 86400:
+            cache = await self._refresh_contacts_cache(user_id, settings)
+
+        contacts = cache.get("items", [])
+        if not query:
+            return contacts[:20]
+
+        q_lower = query.lower()
+        return [
+            c for c in contacts
+            if q_lower in c.get("name", "").lower()
+            or q_lower in c.get("email", "").lower()
+        ][:10]
+
+    async def _refresh_contacts_cache(self, user_id: str, settings: dict) -> dict:
+        """Fetch all Google contacts via People API and write them to users.settings.contacts_cache."""
+        try:
+            creds = await self.get_user_gmail_credentials(user_id)
+            service = build("people", "v1", credentials=creds)
+            results = service.people().connections().list(
+                resourceName="people/me",
+                pageSize=1000,
+                personFields="names,emailAddresses",
+            ).execute()
+
+            items = []
+            for person in results.get("connections", []):
+                names = person.get("names", [])
+                emails = person.get("emailAddresses", [])
+                if emails:
+                    name = names[0].get("displayName", "") if names else ""
+                    for e in emails:
+                        items.append({
+                            "name": name,
+                            "email": e.get("value", ""),
+                        })
+
+            new_cache = {"items": items, "fetched_at": time.time()}
+            self.supabase.table("users") \
+                .update({"settings": {**settings, "contacts_cache": new_cache}}) \
+                .eq("id", user_id).execute()
+            return new_cache
+        except Exception as e:
+            print(f"[ContactsCache] Refresh failed: {e}")
+            return {"items": [], "fetched_at": 0}
+
+    async def _get_applied_company_names(self, user_id: str) -> List[str]:
+        """Return deduplicated lowercase company names for all of the user's applications."""
+        if not self.supabase:
+            return []
+        try:
+            result = self.supabase.table("applications") \
+                .select("inbox_items(company_name)") \
+                .eq("user_id", user_id) \
+                .execute()
+            names = set()
+            for row in result.data or []:
+                item = row.get("inbox_items") or {}
+                name = item.get("company_name")
+                if name:
+                    names.add(name.lower())
+            return list(names)
+        except Exception as e:
+            print(f"[JobFilter] Failed to fetch applied company names: {e}")
+            return []
+
+    def _matches_company(self, sender_email: str, company_names: List[str]) -> bool:
+        """Return True if any applied company name is a substring of the sender's domain."""
+        if not company_names:
+            return False
+        domain = sender_email.split("@")[-1].lower()
+        return any(company in domain for company in company_names)
 
     async def send_email(self, user_id: str, to: str, subject: str, body: str, thread_id: Optional[str] = None) -> bool:
         """Proxy email sending to Gmail API."""

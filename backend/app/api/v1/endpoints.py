@@ -142,6 +142,18 @@ async def remove_from_whitelist(
     return result
 
 
+# -- Email Contacts --------------------------------------------------------
+
+@router.get("/email/contacts")
+async def search_contacts(
+    q: str = Query(default=""),
+    user_id: str = Depends(get_current_user),
+):
+    """Search Google contacts for autocomplete."""
+    contacts = await email_service.get_contacts(user_id, q)
+    return {"contacts": contacts}
+
+
 # -- Email AI Rewrite ------------------------------------------------------
 
 @router.post("/email/rewrite")
