@@ -460,16 +460,24 @@ async def get_applications(user_id: str = Depends(get_current_user)):
 @router.post("/applications/cover-letter")
 async def generate_cover_letter_endpoint(request: CoverLetterRequest, user_id: str = Depends(get_current_user)):
     # Modified: 2026-03-22 — New endpoint: fetches inbox item + campaign, calls Qwen to generate cover letter.
+    # Uses .limit(1) instead of .single() to avoid APIError when row not found.
     if not campaign_service.supabase:
         raise HTTPException(status_code=503, detail="Supabase not initialised")
-    item_res = campaign_service.supabase.table("inbox_items").select("*").eq("id", request.inbox_item_id).eq("user_id", user_id).single().execute()
-    if not item_res.data:
-        raise HTTPException(status_code=404, detail="Inbox item not found")
-    job = item_res.data
-    campaign_res = campaign_service.supabase.table("campaigns").select("*").eq("id", job["campaign_id"]).single().execute()
-    campaign = campaign_res.data or {}
-    cover_letter = await generate_cover_letter(job, campaign)
-    return {"cover_letter_text": cover_letter}
+    try:
+        item_res = campaign_service.supabase.table("inbox_items").select("*") \
+            .eq("id", request.inbox_item_id).eq("user_id", user_id).limit(1).execute()
+        if not item_res.data:
+            raise HTTPException(status_code=404, detail="Inbox item not found")
+        job = item_res.data[0]
+        campaign_res = campaign_service.supabase.table("campaigns").select("*") \
+            .eq("id", job["campaign_id"]).limit(1).execute()
+        campaign = campaign_res.data[0] if campaign_res.data else {}
+        cover_letter = await generate_cover_letter(job, campaign)
+        return {"cover_letter_text": cover_letter}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cover letter generation failed: {str(e)}")
 
 @router.post("/applications")
 async def create_application(request: ApplicationCreateRequest, user_id: str = Depends(get_current_user)):

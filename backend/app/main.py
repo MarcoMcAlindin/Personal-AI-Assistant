@@ -1,9 +1,10 @@
 import os
 from dotenv import load_dotenv
 load_dotenv()  # Inject .env into os.environ so all services can read API keys via os.environ.get()
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse
 from app.api.v1.endpoints import router as api_v1_router
 
 app = FastAPI(title="SuperCyan API Gateway")
@@ -26,6 +27,21 @@ app.add_middleware(
 )
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Global handler: ensures CORS headers are present even on unhandled 500s.
+# CORSMiddleware only wraps normal responses; raw exceptions bypass it.
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    origin = request.headers.get("origin", "")
+    cors_origin = origin if origin in origins else (origins[0] if origins else "*")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+        headers={
+            "Access-Control-Allow-Origin": cors_origin,
+            "Access-Control-Allow-Credentials": "true",
+        },
+    )
 
 @app.get("/")
 async def root():

@@ -52,26 +52,93 @@ import { campaignService } from "../../services/campaignService";
 import { supabase } from "../../services/supabase";
 
 import { Database } from "../../types/supabase";
+import { fetchVllmStatus, triggerVllmWarmup } from "../../services/vllmService";
 type Campaign = Database['public']['Tables']['campaigns']['Row'];
 type InboxItem = Database['public']['Tables']['inbox_items']['Row'];
 
 // ---------------------------------------------------------------------------
-// ApplyModal — generates cover letter via Qwen, lets user edit, then submits
+// ApplyModal — warmup-aware cover letter generation + review + submit
+// Phases: checking → warming (polls) → generating → review → submitting
 // ---------------------------------------------------------------------------
+type ModalPhase = 'checking' | 'warming' | 'generating' | 'review' | 'submitting';
+
 function ApplyModal({ job, campaign, onConfirm, onClose }: {
   job: InboxItem;
   campaign: Campaign | undefined;
   onConfirm: (coverLetter: string) => Promise<void>;
   onClose: () => void;
 }) {
-  const [phase, setPhase] = useState<'loading' | 'review' | 'submitting' | 'error'>('loading');
+  const [phase, setPhase] = useState<ModalPhase>('checking');
   const [coverLetter, setCoverLetter] = useState('');
   const [error, setError] = useState('');
+  const [warmupDots, setWarmupDots] = useState(0);
+  const pollRef = useEffect(() => {}, []); // placeholder — real poll via useEffect below
 
+  // Animated dots for warmup label
   useEffect(() => {
-    campaignService.generateCoverLetter(job.id)
-      .then(text => { setCoverLetter(text); setPhase('review'); })
-      .catch(() => { setError('Failed to generate cover letter. You can write one manually.'); setCoverLetter(''); setPhase('review'); });
+    if (phase !== 'warming') return;
+    const t = setInterval(() => setWarmupDots(d => (d + 1) % 4), 500);
+    return () => clearInterval(t);
+  }, [phase]);
+
+  // Main orchestration: check status → warmup if needed → generate
+  useEffect(() => {
+    let cancelled = false;
+    let pollTimer: ReturnType<typeof setTimeout>;
+
+    const generate = async () => {
+      if (cancelled) return;
+      setPhase('generating');
+      try {
+        const text = await campaignService.generateCoverLetter(job.id);
+        if (!cancelled) { setCoverLetter(text); setPhase('review'); }
+      } catch (e: any) {
+        if (!cancelled) {
+          setError('Generation failed. You can write the cover letter manually below.');
+          setCoverLetter('');
+          setPhase('review');
+        }
+      }
+    };
+
+    const pollUntilOnline = () => {
+      if (cancelled) return;
+      fetchVllmStatus().then(({ status }) => {
+        if (cancelled) return;
+        if (status === 'online') {
+          generate();
+        } else {
+          setPhase('warming');
+          pollTimer = setTimeout(pollUntilOnline, 5000);
+        }
+      }).catch(() => {
+        if (!cancelled) {
+          setPhase('warming');
+          pollTimer = setTimeout(pollUntilOnline, 5000);
+        }
+      });
+    };
+
+    // Step 1: check current status
+    fetchVllmStatus().then(({ status }) => {
+      if (cancelled) return;
+      if (status === 'online') {
+        generate();
+      } else {
+        // Trigger warmup ping then start polling
+        triggerVllmWarmup().catch(() => {});
+        setPhase('warming');
+        pollTimer = setTimeout(pollUntilOnline, 5000);
+      }
+    }).catch(() => {
+      if (!cancelled) {
+        triggerVllmWarmup().catch(() => {});
+        setPhase('warming');
+        pollTimer = setTimeout(pollUntilOnline, 5000);
+      }
+    });
+
+    return () => { cancelled = true; clearTimeout(pollTimer); };
   }, [job.id]);
 
   const handleConfirm = async () => {
@@ -83,6 +150,8 @@ function ApplyModal({ job, campaign, onConfirm, onClose }: {
       setPhase('review');
     }
   };
+
+  const dots = '.'.repeat(warmupDots).padEnd(3, '\u00a0');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
@@ -101,16 +170,50 @@ function ApplyModal({ job, campaign, onConfirm, onClose }: {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6">
-          {phase === 'loading' && (
+
+          {/* Checking status */}
+          {phase === 'checking' && (
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <Loader2 className="w-10 h-10 text-[#00FFFF] animate-spin" />
+              <p className="text-[#BBC9CD] text-sm">Checking AI server status…</p>
+            </div>
+          )}
+
+          {/* Cold-start warmup */}
+          {phase === 'warming' && (
+            <div className="flex flex-col items-center justify-center py-12 gap-6">
+              <div className="relative flex items-center justify-center w-20 h-20">
+                <div className="absolute inset-0 rounded-full border-2 border-[#00FFFF]/20 animate-ping" />
+                <div className="absolute inset-2 rounded-full border-2 border-[#00FFFF]/40 animate-pulse" />
+                <Sparkles className="w-8 h-8 text-[#00FFFF]" />
+              </div>
+              <div className="text-center">
+                <p className="text-white font-semibold mb-1">GPU Server Warming Up{dots}</p>
+                <p className="text-[#BBC9CD] text-sm max-w-xs">The AI instance is starting from cold. This usually takes 30–60 seconds. You can leave this open.</p>
+              </div>
+              <div className="w-full max-w-xs bg-[#1A1A1A] rounded-full h-1.5 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-[#00FFFF]/50 to-[#00FFFF] rounded-full animate-[warmup_2s_ease-in-out_infinite]"
+                  style={{ width: '60%', animation: 'pulse 2s ease-in-out infinite' }} />
+              </div>
+              <p className="text-xs text-[#BBC9CD]/60">Polling every 5 seconds…</p>
+            </div>
+          )}
+
+          {/* Generating */}
+          {phase === 'generating' && (
             <div className="flex flex-col items-center justify-center py-16 gap-4">
               <div className="relative">
                 <Loader2 className="w-12 h-12 text-[#00FFFF] animate-spin" />
                 <Sparkles className="w-5 h-5 text-[#00FFFF] absolute -top-1 -right-1 animate-pulse" />
               </div>
-              <p className="text-[#BBC9CD] text-sm">Qwen is writing your cover letter…</p>
+              <div className="text-center">
+                <p className="text-white font-semibold mb-1">Writing Your Cover Letter</p>
+                <p className="text-[#BBC9CD] text-sm">Qwen is tailoring it to this role…</p>
+              </div>
             </div>
           )}
 
+          {/* Review */}
           {(phase === 'review' || phase === 'submitting') && (
             <div className="flex flex-col gap-4">
               {error && (
@@ -135,7 +238,7 @@ function ApplyModal({ job, campaign, onConfirm, onClose }: {
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer — only shown when there's something to act on */}
         {(phase === 'review' || phase === 'submitting') && (
           <div className="flex gap-3 p-6 border-t border-[#1A1A1A]">
             <button
@@ -152,6 +255,13 @@ function ApplyModal({ job, campaign, onConfirm, onClose }: {
             >
               {phase === 'submitting' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               {phase === 'submitting' ? 'Submitting…' : 'Confirm & Apply'}
+            </button>
+          </div>
+        )}
+        {(phase === 'checking' || phase === 'warming' || phase === 'generating') && (
+          <div className="p-6 border-t border-[#1A1A1A]">
+            <button onClick={onClose} className="w-full py-3 rounded-xl bg-[#1A1A1A] hover:bg-[#222] text-[#BBC9CD] font-semibold border border-[#00FFFF]/20 transition-colors">
+              Cancel
             </button>
           </div>
         )}
