@@ -218,7 +218,8 @@ class EmailService:
         cache = settings.get("contacts_cache", {})
         cached_at = cache.get("fetched_at", 0)
 
-        if not cache.get("items") or (time.time() - cached_at) > 86400:
+        # Refresh if: empty, older than 24h, or suspiciously small (cached when API was broken)
+        if not cache.get("items") or (time.time() - cached_at) > 86400 or len(cache.get("items", [])) < 10:
             cache = await self._refresh_contacts_cache(user_id, settings)
 
         contacts = cache.get("items", [])
@@ -310,6 +311,74 @@ class EmailService:
             return False
         domain = sender_email.split("@")[-1].lower()
         return any(company in domain for company in company_names)
+
+    async def fetch_email_body(self, user_id: str, message_id: str) -> Dict:
+        """Fetch full email body (HTML preferred) with inline images as base64 data URIs."""
+        try:
+            creds = await self.get_user_gmail_credentials(user_id)
+            service = build('gmail', 'v1', credentials=creds)
+            msg = service.users().messages().get(userId='me', id=message_id, format='full').execute()
+
+            html_body = None
+            plain_body = None
+            attachments = []
+
+            def extract_parts(payload):
+                nonlocal html_body, plain_body
+                mime = payload.get('mimeType', '')
+                body_data = payload.get('body', {})
+                parts = payload.get('parts', [])
+
+                if mime == 'text/html' and body_data.get('data'):
+                    html_body = base64.urlsafe_b64decode(body_data['data'] + '==').decode('utf-8', errors='replace')
+                elif mime == 'text/plain' and body_data.get('data'):
+                    plain_body = base64.urlsafe_b64decode(body_data['data'] + '==').decode('utf-8', errors='replace')
+                elif mime.startswith('image/') and body_data.get('attachmentId'):
+                    # Inline image - fetch and convert to data URI
+                    try:
+                        att = service.users().messages().attachments().get(
+                            userId='me', messageId=message_id, id=body_data['attachmentId']
+                        ).execute()
+                        img_data = att.get('data', '')
+                        headers = {h['name']: h['value'] for h in payload.get('headers', [])}
+                        content_id = headers.get('Content-ID', '').strip('<>')
+                        attachments.append({
+                            'content_id': content_id,
+                            'mime_type': mime,
+                            'data': img_data,
+                            'filename': headers.get('Content-Disposition', '').split('filename=')[-1].strip('"') or f'image.{mime.split("/")[-1]}',
+                        })
+                    except Exception:
+                        pass
+                elif mime not in ('text/html', 'text/plain', 'multipart/alternative', 'multipart/mixed', 'multipart/related') and body_data.get('attachmentId'):
+                    headers = {h['name']: h['value'] for h in payload.get('headers', [])}
+                    attachments.append({
+                        'content_id': None,
+                        'mime_type': mime,
+                        'data': None,
+                        'filename': headers.get('Content-Disposition', '').split('filename=')[-1].strip('"') or 'attachment',
+                    })
+
+                for part in parts:
+                    extract_parts(part)
+
+            extract_parts(msg['payload'])
+
+            # Replace cid: references in HTML with inline base64 data URIs
+            if html_body:
+                for att in attachments:
+                    if att.get('content_id') and att.get('data'):
+                        data_uri = f"data:{att['mime_type']};base64,{att['data']}"
+                        html_body = html_body.replace(f"cid:{att['content_id']}", data_uri)
+
+            return {
+                'body': plain_body or '',
+                'html': html_body,
+                'attachments': [a for a in attachments if not a.get('content_id')],
+            }
+        except Exception as e:
+            print(f"[EmailBody] Failed to fetch body for {message_id}: {e}")
+            return {'body': '', 'html': None, 'attachments': []}
 
     async def send_email(self, user_id: str, to: str, subject: str, body: str, thread_id: Optional[str] = None) -> bool:
         """Proxy email sending to Gmail API."""

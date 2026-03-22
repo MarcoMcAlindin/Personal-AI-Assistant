@@ -158,6 +158,12 @@ async def search_contacts(
     contacts = await email_service.get_contacts(user_id, q)
     return {"contacts": contacts}
 
+@router.get("/email/{message_id}")
+async def get_email_body(message_id: str, user_id: str = Depends(get_current_user)):
+    """Fetch full email body with HTML and inline images as base64 data URIs."""
+    result = await email_service.fetch_email_body(user_id, message_id)
+    return result
+
 
 # -- Email AI Rewrite ------------------------------------------------------
 
