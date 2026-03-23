@@ -20,7 +20,7 @@ class TaskService:
 
         target_date = task_date or date.today().isoformat()
         query = self.supabase.table("tasks") \
-            .select("id, date, title, description, duration, time, status, is_archived") \
+            .select("id, date, title, description, duration, time, urgency, status, is_archived") \
             .eq("user_id", user_id) \
             .eq("date", target_date)
 
