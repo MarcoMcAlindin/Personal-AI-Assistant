@@ -15,6 +15,7 @@ export default function VoiceTaskInput({ onExtracted }: VoiceTaskInputProps) {
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [transcript, setTranscript] = useState<string>('');
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const latestTranscriptRef = useRef<string>('');
 
   const startRecording = () => {
     const SpeechRecognition =
@@ -37,12 +38,13 @@ export default function VoiceTaskInput({ onExtracted }: VoiceTaskInputProps) {
       for (let i = 0; i < event.results.length; i++) {
         full += event.results[i][0].transcript;
       }
+      latestTranscriptRef.current = full;
       setTranscript(full);
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       if (event.error === 'not-allowed') {
-        setErrorMsg('Microphone access denied.');
+        setErrorMsg('Microphone access denied');
       } else {
         setErrorMsg('Recording error — please try again.');
       }
@@ -59,18 +61,21 @@ export default function VoiceTaskInput({ onExtracted }: VoiceTaskInputProps) {
     recognitionRef.current?.stop();
     recognitionRef.current = null;
 
-    if (!transcript.trim()) {
-      setErrorMsg('Nothing captured, try again.');
+    const captured = latestTranscriptRef.current;
+    latestTranscriptRef.current = '';
+
+    if (!captured.trim()) {
+      setErrorMsg('Nothing captured, try again');
       setState('error');
       return;
     }
 
     setState('processing');
     try {
-      const fields = await taskService.parseVoiceTranscript(transcript);
+      const fields = await taskService.parseVoiceTranscript(captured);
 
       if (!fields.title) {
-        setErrorMsg("Couldn't parse your task — please fill in manually.");
+        setErrorMsg("Couldn't parse your task — please fill in manually");
         setState('error');
         return;
       }
@@ -84,10 +89,14 @@ export default function VoiceTaskInput({ onExtracted }: VoiceTaskInputProps) {
       setState('done');
       setTranscript('');
     } catch (err: any) {
-      const msg =
-        err?.message === 'warming'
-          ? 'AI is warming up, try again in 30s.'
-          : 'Voice parsing failed — please fill in manually.';
+      let msg: string;
+      if (err?.message === 'warming') {
+        msg = 'AI is warming up, try again in 30s';
+      } else if (err instanceof SyntaxError || err?.name === 'SyntaxError') {
+        msg = "Couldn't parse your task — please fill in manually";
+      } else {
+        msg = "Couldn't parse your task — please fill in manually";
+      }
       setErrorMsg(msg);
       setState('error');
     }
@@ -114,7 +123,6 @@ export default function VoiceTaskInput({ onExtracted }: VoiceTaskInputProps) {
             gap: '6px',
             padding: '6px 14px',
             borderRadius: '8px',
-            border: 'none',
             cursor: isProcessing ? 'not-allowed' : 'pointer',
             fontWeight: 700,
             fontSize: '12px',
