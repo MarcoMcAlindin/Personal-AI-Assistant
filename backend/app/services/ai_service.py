@@ -19,19 +19,19 @@ def _sanitize_output(text: str) -> str:
 
 def _gcp_auth_headers(audience_url: str) -> dict:
     """
-    Fetch a GCP identity token for IAM-protected Cloud Run endpoints.
-    Returns empty dict if token fetch fails — the downstream call will surface
-    the real auth error (403) rather than crashing the handler with RuntimeError.
+    Fetch a GCP identity token via the Cloud Run metadata server.
+    More reliable than google-auth ADC which requires GOOGLE_APPLICATION_CREDENTIALS.
+    Returns empty dict if unavailable (e.g. local dev).
     """
     try:
-        import google.auth.transport.requests
-        import google.oauth2.id_token
-        auth_req = google.auth.transport.requests.Request()
-        base = audience_url.rstrip("/v1").rstrip("/")
-        token = google.oauth2.id_token.fetch_id_token(auth_req, base)
+        import urllib.request as _req
+        audience = audience_url.split("/v1")[0].rstrip("/")
+        meta_url = f"http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience={audience}"
+        r = _req.Request(meta_url, headers={"Metadata-Flavor": "Google"})
+        token = _req.urlopen(r, timeout=3).read().decode()
         return {"Authorization": f"Bearer {token}"}
     except Exception as e:
-        print(f"[GCPHeaders] fetch_id_token failed for {audience_url}: {e}")
+        print(f"[GCPHeaders] metadata token fetch failed for {audience_url}: {e}")
         return {}
 
 async def call_ollama(message: str, rag_context: str, ollama_url: str) -> str:

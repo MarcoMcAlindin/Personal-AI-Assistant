@@ -529,17 +529,19 @@ async def google_disconnect(user_id: str = Depends(get_current_user)):
 # -- vLLM Status & Warmup --------------------------------------------------
 
 def _get_gcp_headers(qwen_url: str) -> dict:
-    """Get GCP identity token headers for IAM-protected vLLM service."""
+    """Get GCP identity token headers for IAM-protected vLLM service.
+    Uses the GCP metadata server directly — more reliable than google-auth ADC in Cloud Run.
+    """
     headers = {}
     try:
-        import google.auth.transport.requests
-        import google.oauth2.id_token
-        auth_req = google.auth.transport.requests.Request()
-        qwen_base = qwen_url.rstrip("/v1").rstrip("/")
-        identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
-        headers["Authorization"] = f"Bearer {identity_token}"
+        import urllib.request as _req
+        audience = qwen_url.split("/v1")[0].rstrip("/")
+        meta_url = f"http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience={audience}"
+        r = _req.Request(meta_url, headers={"Metadata-Flavor": "Google"})
+        token = _req.urlopen(r, timeout=3).read().decode()
+        headers["Authorization"] = f"Bearer {token}"
     except Exception as e:
-        print(f"[GCPHeaders] fetch_id_token failed for {qwen_url}: {e}")
+        print(f"[GCPHeaders] metadata token fetch failed for {qwen_url}: {e}")
     return headers
 
 @router.get("/vllm/status")
