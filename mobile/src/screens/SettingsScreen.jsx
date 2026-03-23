@@ -1,11 +1,12 @@
-import { Cloud, Code, Cpu, Database, Info, Smartphone } from 'lucide-react-native';
+import { Cloud, Code, Cpu, Database, Info, Mail, Smartphone } from 'lucide-react-native';
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as WebBrowser from 'expo-web-browser';
 
 import { Text } from '../components/Themed';
 import { palette, spacing } from '../theme';
-import { API_BASE_URL, fetchVllmStatus } from '../services/api';
+import { API_BASE_URL, fetchVllmStatus, getGoogleAuthUrl, getGoogleStatus, disconnectGoogle } from '../services/api';
 import { MobileHeader } from '../components/MobileHeader';
 import { MobileCard } from '../components/MobileCard';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,6 +26,10 @@ const VLLM_STATUS_LABELS = {
 export default function SettingsScreen() {
   const [vllmStatus, setVllmStatus] = useState('offline');
 
+  const [gmailConnected, setGmailConnected] = useState(false);
+  const [gmailEmail, setGmailEmail] = useState(null);
+  const [gmailLoading, setGmailLoading] = useState(false);
+
   const pollVllmStatus = useCallback(async () => {
     try {
       const { status } = await fetchVllmStatus();
@@ -34,9 +39,21 @@ export default function SettingsScreen() {
     }
   }, []);
 
+  const refreshGmailStatus = useCallback(async () => {
+    try {
+      const status = await getGoogleStatus();
+      setGmailConnected(status.connected);
+      setGmailEmail(status.email);
+    } catch {
+      setGmailConnected(false);
+      setGmailEmail(null);
+    }
+  }, []);
+
   useEffect(() => {
     pollVllmStatus();
-  }, [pollVllmStatus]);
+    refreshGmailStatus();
+  }, [pollVllmStatus, refreshGmailStatus]);
 
   useEffect(() => {
     let interval = null;
@@ -47,6 +64,32 @@ export default function SettingsScreen() {
       if (interval) clearInterval(interval);
     };
   }, [pollVllmStatus, vllmStatus]);
+
+  const handleGmailConnect = async () => {
+    try {
+      setGmailLoading(true);
+      const url = await getGoogleAuthUrl();
+      await WebBrowser.openBrowserAsync(url);
+      await refreshGmailStatus();
+    } catch (err) {
+      console.error('[SettingsScreen] Gmail connect error:', err);
+    } finally {
+      setGmailLoading(false);
+    }
+  };
+
+  const handleGmailDisconnect = async () => {
+    try {
+      setGmailLoading(true);
+      await disconnectGoogle();
+      setGmailConnected(false);
+      setGmailEmail(null);
+    } catch (err) {
+      console.error('[SettingsScreen] Gmail disconnect error:', err);
+    } finally {
+      setGmailLoading(false);
+    }
+  };
 
   const vllmColor = VLLM_STATUS_COLORS[vllmStatus] || '#ef4444';
 
@@ -136,6 +179,48 @@ export default function SettingsScreen() {
               <Text style={styles.infoLabel}>SDK</Text>
             </View>
             <Text style={styles.infoValue}>Expo 54 (SDK)</Text>
+          </View>
+        </MobileCard>
+
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionIndicator} />
+          <Text style={styles.sectionTitle}>Integrations</Text>
+        </View>
+
+        <MobileCard style={styles.connCard}>
+          <View style={styles.connItem}>
+            <View style={[styles.iconBox, { borderColor: gmailConnected ? 'rgba(0,255,255,0.3)' : 'rgba(255,255,255,0.1)' }]}>
+              <Mail size={20} color={gmailConnected ? '#00FFFF' : palette.textMuted} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 16 }}>
+              <Text style={styles.connName}>Gmail</Text>
+              {gmailConnected && gmailEmail ? (
+                <Text style={[styles.connUrl, { color: '#00FFFF' }]}>{gmailEmail}</Text>
+              ) : (
+                <Text style={styles.connUrl}>Not connected</Text>
+              )}
+            </View>
+            {gmailConnected ? (
+              <TouchableOpacity
+                onPress={handleGmailDisconnect}
+                disabled={gmailLoading}
+                style={styles.disconnectBtn}
+              >
+                <Text style={styles.disconnectBtnText}>
+                  {gmailLoading ? 'WAIT...' : 'DISCONNECT'}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={handleGmailConnect}
+                disabled={gmailLoading}
+                style={styles.connectBtn}
+              >
+                <Text style={styles.connectBtnText}>
+                  {gmailLoading ? 'WAIT...' : 'CONNECT'}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </MobileCard>
 
@@ -272,5 +357,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 2,
+  },
+  connectBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 255, 0.4)',
+    backgroundColor: 'rgba(0, 255, 255, 0.1)',
+  },
+  connectBtnText: {
+    color: '#00FFFF',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  disconnectBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(244, 63, 94, 0.3)',
+    backgroundColor: 'rgba(244, 63, 94, 0.08)',
+  },
+  disconnectBtnText: {
+    color: '#f43f5e',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
 });

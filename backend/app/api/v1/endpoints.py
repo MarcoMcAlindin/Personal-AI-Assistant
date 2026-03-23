@@ -3,12 +3,14 @@ import logging
 import time
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, BackgroundTasks, Query
+from fastapi.responses import RedirectResponse
 from typing import Literal, Optional, List
 from pydantic import BaseModel
 from app.services.email_service import EmailService
 from app.services.feed_service import FeedService
 from app.services.health_service import HealthService
+from app.services.notification_service import NotificationService
 from app.services.rag_service import RAGService
 from app.services.task_service import TaskService
 from app.services.campaign_service import CampaignService
@@ -19,13 +21,16 @@ from app.models.schemas import (
 from app.services.ai_service import call_ollama, chat_with_tools, generate_cover_letter, generate_interview_questions_ai
 from app.services import cv_service
 from app.utils.auth import get_current_user
+from app.utils.config import settings
 import httpx
 import os
+import secrets
 
 router = APIRouter()
 email_service = EmailService()
 feed_service = FeedService()
 health_service = HealthService()
+notification_service = NotificationService()
 rag_service = RAGService()
 task_service = TaskService()
 campaign_service = CampaignService()
@@ -35,6 +40,9 @@ class EmailSendRequest(BaseModel):
     subject: str
     body: str
     thread_id: Optional[str] = None
+
+class PushTokenRequest(BaseModel):
+    token: str
 
 class ChatRequest(BaseModel):
     message: str
@@ -139,6 +147,24 @@ async def remove_from_whitelist(
     return result
 
 
+# -- Email Contacts --------------------------------------------------------
+
+@router.get("/email/contacts")
+async def search_contacts(
+    q: str = Query(default=""),
+    user_id: str = Depends(get_current_user),
+):
+    """Search Google contacts for autocomplete."""
+    contacts = await email_service.get_contacts(user_id, q)
+    return {"contacts": contacts}
+
+@router.get("/email/{message_id}")
+async def get_email_body(message_id: str, user_id: str = Depends(get_current_user)):
+    """Fetch full email body with HTML and inline images as base64 data URIs."""
+    result = await email_service.fetch_email_body(user_id, message_id)
+    return result
+
+
 # -- Email AI Rewrite ------------------------------------------------------
 
 @router.post("/email/rewrite")
@@ -149,18 +175,9 @@ async def rewrite_email(
     """AI-powered email rewrite using Qwen."""
     qwen_url = os.environ.get("QWEN_ENDPOINT_URL")
     if not qwen_url:
-        return {"rewritten": request.body, "note": "AI unavailable -- returned original"}
+        return {"rewritten": None, "error": "AI unavailable"}
 
-    headers = {"Content-Type": "application/json"}
-    try:
-        import google.auth.transport.requests
-        import google.oauth2.id_token
-        auth_req = google.auth.transport.requests.Request()
-        qwen_base = qwen_url.rstrip("/v1").rstrip("/")
-        identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
-        headers["Authorization"] = f"Bearer {identity_token}"
-    except Exception:
-        pass
+    headers = {"Content-Type": "application/json", **_get_gcp_headers(qwen_url)}
 
     system_prompt = (
         f"You are an email writing assistant. Rewrite the following email draft "
@@ -190,7 +207,7 @@ async def rewrite_email(
             rewritten = data["choices"][0]["message"]["content"].replace("\u2014", " - ").replace("\u2013", " - ")
             return {"rewritten": rewritten}
     except Exception as e:
-        return {"rewritten": request.body, "error": f"AI rewrite failed: {str(e)}"}
+        return {"rewritten": None, "error": f"AI rewrite failed: {str(e)}"}
 
 
 @router.post("/chat")
@@ -232,8 +249,14 @@ async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_
             }
         )
         return {"response": response_content}
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code in (404, 503, 502):
+            raise HTTPException(
+                status_code=503,
+                detail="AI model is warming up - please try again in a moment.",
+            )
+        raise HTTPException(status_code=500, detail=f"AI Service Error: {str(e)}")
     except Exception as e:
-        # Rule 11: Error handling for AI service
         raise HTTPException(status_code=500, detail=f"AI Service Error: {str(e)}")
 
 @router.post("/health/sync")
@@ -338,20 +361,178 @@ async def save_chat_message(message_id: str, user_id: str = Depends(get_current_
         raise HTTPException(status_code=500, detail=f"Failed to save message: {str(e)}")
 
 
+# -- Google OAuth ----------------------------------------------------------
+
+GOOGLE_SCOPES = [
+    "https://www.googleapis.com/auth/gmail.modify",
+    "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/contacts.readonly",
+    "https://www.googleapis.com/auth/contacts.other.readonly",
+]
+
+def _build_google_flow():
+    """Build an OAuth2 Flow from env-based client config."""
+    from google_auth_oauthlib.flow import Flow
+    client_config = {
+        "web": {
+            "client_id": settings.gmail_client_id,
+            "client_secret": settings.gmail_client_secret,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "redirect_uris": [settings.google_redirect_uri],
+        }
+    }
+    flow = Flow.from_client_config(
+        client_config,
+        scopes=GOOGLE_SCOPES,
+        redirect_uri=settings.google_redirect_uri,
+    )
+    return flow
+
+
+@router.get("/auth/google/authorize")
+async def google_authorize(user_id: str = Depends(get_current_user)):
+    """
+    Return a Google OAuth authorization URL for the current user.
+    The frontend should redirect the browser to the returned authorization_url.
+    """
+    if not email_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    flow = _build_google_flow()
+    random_token = secrets.token_urlsafe(32)
+    # Encode user_id into state so callback can identify the user without JWT
+    state_value = f"{user_id}:{random_token}"
+
+    authorization_url, _ = flow.authorization_url(
+        access_type="offline",
+        prompt="consent",
+        include_granted_scopes="true",
+        state=state_value,
+    )
+
+    # Persist the random token portion in users.settings for CSRF validation
+    settings_row = email_service.supabase.table("users") \
+        .select("settings") \
+        .eq("id", user_id).single().execute()
+    current_settings = settings_row.data.get("settings") or {}
+    current_settings["google_oauth_state"] = random_token
+    email_service.supabase.table("users").update({
+        "settings": current_settings
+    }).eq("id", user_id).execute()
+
+    return {"authorization_url": authorization_url, "state": state_value}
+
+
+@router.get("/auth/google/callback")
+async def google_callback(
+    code: str = Query(...),
+    state: str = Query(...),
+):
+    """
+    Google OAuth callback -- no JWT auth, this is a browser redirect from Google.
+    State format: "{user_id}:{random_token}"
+    """
+    if not email_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    # Split state to recover user_id and the stored CSRF token
+    parts = state.split(":", 1)
+    if len(parts) != 2:
+        raise HTTPException(status_code=400, detail="Invalid state parameter")
+    user_id, random_token = parts
+
+    # CSRF check: compare random_token against users.settings.google_oauth_state
+    row = email_service.supabase.table("users") \
+        .select("settings") \
+        .eq("id", user_id).single().execute()
+    stored_state = (row.data.get("settings") or {}).get("google_oauth_state")
+    if not stored_state or stored_state != random_token:
+        raise HTTPException(status_code=400, detail="OAuth state mismatch -- possible CSRF")
+
+    # Exchange authorization code for tokens
+    flow = _build_google_flow()
+    flow.fetch_token(code=code)
+    creds = flow.credentials
+
+    expiry_iso = creds.expiry.isoformat() if creds.expiry else None
+
+    # Store tokens in users.oauth_tokens.google (service role key client)
+    email_service.supabase.table("users").update({
+        "oauth_tokens": {
+            "google": {
+                "access_token": creds.token,
+                "refresh_token": creds.refresh_token,
+                "token_expiry": expiry_iso,
+                "scopes": list(creds.scopes) if creds.scopes else GOOGLE_SCOPES,
+            }
+        }
+    }).eq("id", user_id).execute()
+
+    # Clear the one-time CSRF state from settings
+    current_settings = (row.data.get("settings") or {})
+    current_settings.pop("google_oauth_state", None)
+    email_service.supabase.table("users").update({
+        "settings": current_settings
+    }).eq("id", user_id).execute()
+
+    redirect_target = f"{settings.frontend_url}/integrations?connected=gmail"
+    return RedirectResponse(url=redirect_target)
+
+
+@router.get("/auth/google/status")
+async def google_status(user_id: str = Depends(get_current_user)):
+    """Return Gmail connection status for the current user."""
+    if not email_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    row = email_service.supabase.table("users") \
+        .select("oauth_tokens, email") \
+        .eq("id", user_id).single().execute()
+
+    google_tokens = (row.data.get("oauth_tokens") or {}).get("google", {})
+    connected = bool(google_tokens.get("refresh_token"))
+    user_email = row.data.get("email") if connected else None
+
+    return {"gmail": {"connected": connected, "email": user_email}}
+
+
+@router.delete("/auth/google/disconnect")
+async def google_disconnect(user_id: str = Depends(get_current_user)):
+    """Remove stored Google tokens for the current user."""
+    if not email_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    # Read current oauth_tokens and clear the google key
+    row = email_service.supabase.table("users") \
+        .select("oauth_tokens") \
+        .eq("id", user_id).single().execute()
+    current_tokens = row.data.get("oauth_tokens") or {}
+    current_tokens.pop("google", None)
+
+    email_service.supabase.table("users").update({
+        "oauth_tokens": current_tokens
+    }).eq("id", user_id).execute()
+
+    return {"disconnected": True}
+
+
 # -- vLLM Status & Warmup --------------------------------------------------
 
 def _get_gcp_headers(qwen_url: str) -> dict:
-    """Get GCP identity token headers for IAM-protected vLLM service."""
+    """Get GCP identity token headers for IAM-protected vLLM service.
+    Uses the GCP metadata server directly — more reliable than google-auth ADC in Cloud Run.
+    """
     headers = {}
     try:
-        import google.auth.transport.requests
-        import google.oauth2.id_token
-        auth_req = google.auth.transport.requests.Request()
-        qwen_base = qwen_url.rstrip("/v1").rstrip("/")
-        identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
-        headers["Authorization"] = f"Bearer {identity_token}"
-    except Exception:
-        pass
+        import urllib.request as _req
+        audience = qwen_url.split("/v1")[0].rstrip("/")
+        meta_url = f"http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience={audience}"
+        r = _req.Request(meta_url, headers={"Metadata-Flavor": "Google"})
+        token = _req.urlopen(r, timeout=3).read().decode()
+        headers["Authorization"] = f"Bearer {token}"
+    except Exception as e:
+        print(f"[GCPHeaders] metadata token fetch failed for {qwen_url}: {e}")
     return headers
 
 @router.get("/vllm/status")
@@ -774,12 +955,110 @@ async def delete_cv(cv_id: str, user_id: str = Depends(get_current_user)):
 async def run_campaign_scraper(campaign_id: str, user_id: str = Depends(get_current_user)):
     from app.services.scrapers.multi_source_scraper import MultiSourceScraper
     scraper = MultiSourceScraper(campaign_service.supabase)
-    
+
     campaigns = await campaign_service.get_campaigns(user_id)
     campaign = next((c for c in campaigns if c["id"] == campaign_id), None)
     if not campaign:
          raise HTTPException(status_code=404, detail="Campaign not found")
-         
+
     result = await scraper.scrape_jobs_for_campaign(campaign)
     return result
+
+
+# -- Push Notifications ----------------------------------------------------
+
+@router.post("/users/push-token")
+async def register_push_token(
+    body: PushTokenRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Store an Expo push token for the authenticated user."""
+    if not email_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    row = email_service.supabase.table("users") \
+        .select("push_tokens") \
+        .eq("id", user_id).single().execute()
+
+    tokens: list = row.data.get("push_tokens") or []
+    if body.token not in tokens:
+        tokens.append(body.token)
+        email_service.supabase.table("users") \
+            .update({"push_tokens": tokens}) \
+            .eq("id", user_id).execute()
+
+    return {"registered": True}
+
+
+@router.delete("/users/push-token")
+async def deregister_push_token(
+    body: PushTokenRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Remove a specific Expo push token for the authenticated user."""
+    if not email_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    row = email_service.supabase.table("users") \
+        .select("push_tokens") \
+        .eq("id", user_id).single().execute()
+
+    tokens: list = row.data.get("push_tokens") or []
+    if body.token in tokens:
+        tokens.remove(body.token)
+        email_service.supabase.table("users") \
+            .update({"push_tokens": tokens}) \
+            .eq("id", user_id).execute()
+
+    return {"removed": True}
+
+
+@router.post("/email/poll")
+async def poll_email(user_id: str = Depends(get_current_user)):
+    """Fetch latest emails, compare against last-seen ID, and push-notify on new messages."""
+    if not email_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    # Fetch settings and push tokens for this user
+    row = email_service.supabase.table("users") \
+        .select("settings, push_tokens") \
+        .eq("id", user_id).single().execute()
+
+    user_settings: dict = row.data.get("settings") or {}
+    push_tokens: list = row.data.get("push_tokens") or []
+    last_email_id: str = user_settings.get("last_email_id", "")
+
+    # Fetch inbox (newest-first from Gmail)
+    emails = await email_service.fetch_inbox(user_id)
+
+    if not emails:
+        return {"polled": True, "new_emails": 0}
+
+    # Determine which emails are new (those appearing before last_email_id)
+    ids = [e["id"] for e in emails]
+    if last_email_id and last_email_id in ids:
+        cutoff = ids.index(last_email_id)
+        new_emails = emails[:cutoff]
+    else:
+        # First poll or ID has rotated out -- treat everything as new
+        new_emails = emails
+
+    # Send push notifications for each new email
+    if push_tokens:
+        for email in new_emails:
+            sender = email.get("from", "Unknown sender")
+            await notification_service.send_push_notification(
+                tokens=push_tokens,
+                title="New Email",
+                body=f"From: {sender}",
+                data={"email_id": email["id"]},
+            )
+
+    # Update last_email_id to the newest message seen this poll
+    user_settings["last_email_id"] = emails[0]["id"]
+    email_service.supabase.table("users") \
+        .update({"settings": user_settings}) \
+        .eq("id", user_id).execute()
+
+    return {"polled": True, "new_emails": len(new_emails)}
 

@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 
+import { supabase } from './supabase';
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -10,15 +12,25 @@ export interface Message {
 
 const BACKEND_URL = import.meta.env.VITE_CLOUD_GATEWAY_URL || 'http://localhost:8000/api/v1';
 
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
+
 export const aiService = {
   sendMessage: async (message: string, onToken: (token: string) => void): Promise<Message> => {
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(`${BACKEND_URL}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, user_id: 'ceo_test' })
+        headers,
+        body: JSON.stringify({ message })
       });
 
+      if (response.status === 503) throw new Error('warming');
       if (!response.ok) throw new Error('AI Bridge Failed');
 
       // The backend actually returns a stream (SSE) in the real implementation, 
@@ -36,9 +48,11 @@ export const aiService = {
       }
 
       return { id: crypto.randomUUID(), role: 'assistant', content };
-    } catch (error) {
+    } catch (error: any) {
       console.error('[AIService] Bridge Error:', error);
-      const errorMsg = "I'm having trouble connecting to my neural core. Please ensure the SuperCyan backend is running.";
+      const errorMsg = error?.message === 'warming'
+        ? "The AI model is warming up right now - it scales to zero when idle. Give it 30-60 seconds and try again."
+        : "I'm having trouble connecting to my neural core. Please ensure the SuperCyan backend is running.";
       onToken(errorMsg);
       return { id: crypto.randomUUID(), role: 'assistant', content: errorMsg };
     }
@@ -46,8 +60,10 @@ export const aiService = {
 
   saveMessage: async (messageId: string) => {
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(`${BACKEND_URL}/chat/save/${messageId}`, {
         method: 'PATCH',
+        headers,
       });
       return await response.json();
     } catch (error) {
