@@ -538,8 +538,8 @@ def _get_gcp_headers(qwen_url: str) -> dict:
         qwen_base = qwen_url.rstrip("/v1").rstrip("/")
         identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
         headers["Authorization"] = f"Bearer {identity_token}"
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[GCPHeaders] fetch_id_token failed for {qwen_url}: {e}")
     return headers
 
 @router.get("/vllm/status")

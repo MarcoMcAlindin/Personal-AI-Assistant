@@ -30,7 +30,8 @@ def _gcp_auth_headers(audience_url: str) -> dict:
         base = audience_url.rstrip("/v1").rstrip("/")
         token = google.oauth2.id_token.fetch_id_token(auth_req, base)
         return {"Authorization": f"Bearer {token}"}
-    except Exception:
+    except Exception as e:
+        print(f"[GCPHeaders] fetch_id_token failed for {audience_url}: {e}")
         return {}
 
 async def call_ollama(message: str, rag_context: str, ollama_url: str) -> str:
