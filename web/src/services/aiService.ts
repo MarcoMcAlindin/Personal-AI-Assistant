@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 
+import { supabase } from './supabase';
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -10,13 +12,22 @@ export interface Message {
 
 const BACKEND_URL = import.meta.env.VITE_CLOUD_GATEWAY_URL || 'http://localhost:8000/api/v1';
 
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
+
 export const aiService = {
   sendMessage: async (message: string, onToken: (token: string) => void): Promise<Message> => {
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(`${BACKEND_URL}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, user_id: 'ceo_test' })
+        headers,
+        body: JSON.stringify({ message })
       });
 
       if (!response.ok) throw new Error('AI Bridge Failed');
@@ -46,8 +57,10 @@ export const aiService = {
 
   saveMessage: async (messageId: string) => {
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(`${BACKEND_URL}/chat/save/${messageId}`, {
         method: 'PATCH',
+        headers,
       });
       return await response.json();
     } catch (error) {
