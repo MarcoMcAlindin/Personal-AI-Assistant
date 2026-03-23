@@ -35,3 +35,18 @@ The Job Engine is a high-performance, autonomous pipeline for job searching, mat
 2. **Backend** inserts to Supabase → triggers `RUNNING` status.
 3. **MultiSourceScraper** fetches jobs → AI scores them → results appear in **Inbox**.
 4. **User** reviews (Approve/Reject) → **Approved** items move to **Applications**.
+
+---
+
+## 4. UI Fixes & Improvements
+
+### 4.1. Application Delete Confirmation Modal (2026-03-23)
+**Problem:** The trash icon on application cards used `window.confirm()` — a native browser dialog that doesn't match the app's design system.
+
+**Fix:** Replaced with the same full-screen modal pattern used by campaign delete:
+- State: `deletingApplicationId: string | null` (mirrors `deletingCampaignId`)
+- Trigger: trash icon sets `deletingApplicationId(app.id)` instead of calling `window.confirm()`
+- Modal: red `XCircle` header, info box with job title + company (resolved from `cover_letter_metadata.job_snapshot` with `inbox_items` fallback), Cancel / Delete Application buttons
+- Commit: `bb94b81` on `staging`
+
+**File changed:** `web/src/components/cyan/JobsView.tsx`
