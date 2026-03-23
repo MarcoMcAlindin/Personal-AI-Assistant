@@ -16,7 +16,8 @@ from app.services.task_service import TaskService
 from app.services.campaign_service import CampaignService
 from app.models.schemas import (
     CampaignCreateRequest, CampaignUpdateRequest,
-    InboxItemStatusUpdate, ApplicationCreateRequest, CoverLetterRequest
+    InboxItemStatusUpdate, ApplicationCreateRequest, CoverLetterRequest,
+    VoiceParseRequest, VoiceParseResponse,
 )
 from app.services.ai_service import call_ollama, chat_with_tools, generate_cover_letter, generate_interview_questions_ai
 from app.services import cv_service

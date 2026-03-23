@@ -42,6 +42,7 @@ class TaskService:
             "description": data.get("description"),
             "duration": data.get("duration"),
             "time": data.get("time"),
+            "urgency": data.get("urgency", "medium"),
             "status": "pending",
             "is_archived": False,
         }
