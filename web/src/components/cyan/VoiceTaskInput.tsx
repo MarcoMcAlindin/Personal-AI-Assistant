@@ -46,7 +46,7 @@ export default function VoiceTaskInput({ onExtracted }: VoiceTaskInputProps) {
       if (event.error === 'not-allowed') {
         setErrorMsg('Microphone access denied');
       } else {
-        setErrorMsg('Recording error — please try again.');
+        setErrorMsg('Recording error — please try again');
       }
       setState('error');
     };
