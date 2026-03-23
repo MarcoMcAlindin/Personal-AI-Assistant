@@ -918,6 +918,7 @@ export function JobsView() {
   const [generatingCoverLetterFor, setGeneratingCoverLetterFor] = useState<string | null>(null);
   const [cvs, setCvs] = useState<any[]>([]);
   const [deletingCampaignId, setDeletingCampaignId] = useState<string | null>(null);
+  const [deletingApplicationId, setDeletingApplicationId] = useState<string | null>(null);
   const [viewingCV, setViewingCV] = useState<{ id: string; filename: string; text: string } | null>(null);
   const [loadingCVId, setLoadingCVId] = useState<string | null>(null);
 
@@ -1475,6 +1476,50 @@ export function JobsView() {
       );
     })()}
 
+    {deletingApplicationId && (() => {
+      const app = applications.find(a => a.id === deletingApplicationId);
+      const appSnapshot = (app as any)?.cover_letter_metadata?.job_snapshot || {};
+      const appJobTitle = appSnapshot.job_title || app?.inbox_items?.job_title || 'this application';
+      const appCompany2 = appSnapshot.company_name || app?.inbox_items?.company_name || '';
+      const appCompany = appCompany2;
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-[#0D0D0D] border border-red-500/40 rounded-2xl shadow-[0_0_60px_rgba(239,68,68,0.15)] p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 rounded-xl bg-red-500/15 border border-red-500/30">
+                <XCircle className="w-6 h-6 text-red-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Delete Application</h2>
+                <p className="text-xs text-red-400">This action cannot be undone</p>
+              </div>
+            </div>
+            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 mb-5">
+              <p className="text-sm text-[#BBC9CD]">
+                You are about to permanently delete your application for{' '}
+                <span className="font-bold text-white">"{appJobTitle}"</span>
+                {appCompany && <> at <span className="font-bold text-white">{appCompany}</span></>}.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeletingApplicationId(null)}
+                className="flex-1 py-2.5 rounded-xl bg-[#1A1A1A] hover:bg-[#222] text-[#BBC9CD] font-semibold border border-[#00FFFF]/20 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { handleDeleteApplication(deletingApplicationId); setDeletingApplicationId(null); }}
+                className="flex-1 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 font-semibold border border-red-500/40 transition-colors"
+              >
+                Delete Application
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    })()}
+
     {/* CV viewer modal */}
     {viewingCV && (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
@@ -2024,12 +2069,7 @@ export function JobsView() {
                           </span>
                         )}
                         <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            if (window.confirm(`Delete application for "${jobTitle}" at ${company}? This cannot be undone.`)) {
-                              handleDeleteApplication(app.id);
-                            }
-                          }}
+                          onClick={e => { e.stopPropagation(); setDeletingApplicationId(app.id); }}
                           title="Delete application"
                           className="p-1 rounded-md hover:bg-red-500/20 text-red-400/50 hover:text-red-400 transition-colors"
                         >
