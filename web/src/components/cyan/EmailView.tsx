@@ -8,7 +8,7 @@ import { GlassCard } from "./GlassCard";
 import { BurgerMenu } from "./BurgerMenu";
 import { Sidebar } from "./Sidebar";
 import { emailService } from "../../services/emailService";
-import { fetchVllmStatus, VllmStatus } from "../../services/vllmService";
+import { fetchVllmStatus, triggerVllmWarmup, VllmStatus } from "../../services/vllmService";
 import { Email } from "../../types/email";
 
 // ─── Internal types ────────────────────────────────────────────────────────────
@@ -126,6 +126,7 @@ export function EmailView() {
   const [qwenLoading, setQwenLoading] = useState(false);
   const [qwenError, setQwenError] = useState<string | null>(null);
   const [vllmStatus, setVllmStatus] = useState<VllmStatus>('offline');
+  const [warmingUp, setWarmingUp] = useState(false);
 
   // Whitelist drawer
   const [showWhitelist, setShowWhitelist] = useState(false);
@@ -338,6 +339,25 @@ export function EmailView() {
         : (err?.message || 'Qwen failed to generate. The model may be offline.'));
     } finally {
       setQwenLoading(false);
+    }
+  };
+
+  const handleWarmupVllm = async () => {
+    setWarmingUp(true);
+    setQwenError(null);
+    try {
+      await triggerVllmWarmup();
+      // Poll status for up to 60s
+      for (let i = 0; i < 12; i++) {
+        await new Promise(r => setTimeout(r, 5000));
+        const { status } = await fetchVllmStatus();
+        setVllmStatus(status);
+        if (status === 'online') break;
+      }
+    } catch {
+      setQwenError('Failed to wake up model. Please try again.');
+    } finally {
+      setWarmingUp(false);
     }
   };
 
@@ -702,7 +722,7 @@ export function EmailView() {
       {showCompose && (
         <div
           className="fixed bottom-0 right-6 z-[9999] flex flex-col bg-[#0A0A0A] border border-[#00FFFF]/25 rounded-t-2xl shadow-2xl shadow-[#00FFFF]/10"
-          style={{ width: 580, maxHeight: '82vh' }}
+          style={{ width: 680, maxHeight: '86vh' }}
         >
           {/* Title bar */}
           <div className="flex items-center justify-between px-4 py-3 bg-[#1A1A1A]/80 rounded-t-2xl border-b border-[#00FFFF]/10 flex-shrink-0">
@@ -767,7 +787,7 @@ export function EmailView() {
                 placeholder="Write your message..."
                 value={compose.body}
                 onChange={e => setCompose(c => ({ ...c, body: e.target.value }))}
-                className="flex-1 w-full px-4 py-3 bg-transparent text-[#DAE2FD] text-sm focus:outline-none resize-none min-h-[220px]"
+                className="flex-1 w-full px-4 py-3 bg-transparent text-[#DAE2FD] text-sm focus:outline-none resize-none min-h-[280px]"
               />
             </div>
 
@@ -806,7 +826,7 @@ export function EmailView() {
                     {qwenError}
                   </div>
                 )}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs text-[#BBC9CD] flex-shrink-0">Tone:</span>
                   {(['professional', 'casual', 'formal'] as const).map(t => (
                     <button
@@ -822,15 +842,28 @@ export function EmailView() {
                       {t}
                     </button>
                   ))}
-                  <button
-                    type="button"
-                    onClick={handleQwenWrite}
-                    disabled={qwenLoading || vllmStatus === 'offline' || (!qwenPrompt.trim() && !compose.body.trim())}
-                    className="ml-auto flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#00FFFF] to-[#0099CC] text-[#0A0A0A] font-semibold text-xs disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_0_12px_rgba(0,255,255,0.3)] transition-all"
-                  >
-                    {qwenLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                    {qwenLoading ? 'Writing...' : 'Generate'}
-                  </button>
+                  <div className="ml-auto flex items-center gap-2">
+                    {vllmStatus !== 'online' && (
+                      <button
+                        type="button"
+                        onClick={handleWarmupVllm}
+                        disabled={warmingUp}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/40 text-amber-400 text-xs font-semibold hover:bg-amber-500/10 transition-all disabled:opacity-50"
+                      >
+                        {warmingUp ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                        {warmingUp ? 'Waking up...' : 'Wake up model'}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleQwenWrite}
+                      disabled={qwenLoading || vllmStatus !== 'online' || (!qwenPrompt.trim() && !compose.body.trim())}
+                      className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#00FFFF] to-[#0099CC] text-[#0A0A0A] font-semibold text-xs disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_0_12px_rgba(0,255,255,0.3)] transition-all"
+                    >
+                      {qwenLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                      {qwenLoading ? 'Writing...' : 'Generate'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
