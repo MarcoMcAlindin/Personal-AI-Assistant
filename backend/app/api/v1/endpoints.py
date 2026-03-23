@@ -76,6 +76,7 @@ class TaskCreateRequest(BaseModel):
     duration: Optional[int] = None
     time: Optional[str] = None
     date: Optional[str] = None
+    urgency: Optional[str] = None
 
 class TaskUpdateRequest(BaseModel):
     title: Optional[str] = None
@@ -84,6 +85,7 @@ class TaskUpdateRequest(BaseModel):
     time: Optional[str] = None
     status: Optional[str] = None
     is_archived: Optional[bool] = None
+    urgency: Optional[str] = None
 
 @router.get("/feeds/tech")
 async def get_tech_feeds():
