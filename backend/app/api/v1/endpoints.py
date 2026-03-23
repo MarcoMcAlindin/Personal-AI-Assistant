@@ -258,8 +258,14 @@ async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_
             }
         )
         return {"response": response_content}
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code in (404, 503, 502):
+            raise HTTPException(
+                status_code=503,
+                detail="AI model is warming up - please try again in a moment.",
+            )
+        raise HTTPException(status_code=500, detail=f"AI Service Error: {str(e)}")
     except Exception as e:
-        # Rule 11: Error handling for AI service
         raise HTTPException(status_code=500, detail=f"AI Service Error: {str(e)}")
 
 @router.post("/health/sync")

@@ -30,6 +30,7 @@ export const aiService = {
         body: JSON.stringify({ message })
       });
 
+      if (response.status === 503) throw new Error('warming');
       if (!response.ok) throw new Error('AI Bridge Failed');
 
       // The backend actually returns a stream (SSE) in the real implementation, 
@@ -47,9 +48,11 @@ export const aiService = {
       }
 
       return { id: crypto.randomUUID(), role: 'assistant', content };
-    } catch (error) {
+    } catch (error: any) {
       console.error('[AIService] Bridge Error:', error);
-      const errorMsg = "I'm having trouble connecting to my neural core. Please ensure the SuperCyan backend is running.";
+      const errorMsg = error?.message === 'warming'
+        ? "The AI model is warming up right now - it scales to zero when idle. Give it 30-60 seconds and try again."
+        : "I'm having trouble connecting to my neural core. Please ensure the SuperCyan backend is running.";
       onToken(errorMsg);
       return { id: crypto.randomUUID(), role: 'assistant', content: errorMsg };
     }
