@@ -16,33 +16,16 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 export const emailService = {
   fetchInbox: async (): Promise<Email[]> => {
     try {
-      const response = await fetch(`${BACKEND_URL}/email/inbox`);
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BACKEND_URL}/email/inbox`, { headers });
       if (!response.ok) throw new Error('Fetch Inbox Failed');
       const data = await response.json();
-      return data.emails;
+      const emails: Email[] = data.emails ?? [];
+      // Sort latest first by internalDate
+      return emails.sort((a, b) => Number(b.date ?? 0) - Number(a.date ?? 0));
     } catch (error) {
       console.error('[EmailService] Fetch Error:', error);
-      // Fallback for demo
-      return [
-        {
-          id: '1',
-          from: "system@supercyan.com",
-          subject: "Welcome to your Intelligence Dashboard",
-          body: "Your personal health sync is now active...",
-          timestamp: new Date().toISOString(),
-          is_read: false,
-          status: 'whitelisted'
-        },
-        {
-          id: '2',
-          from: "unknown@spam.com",
-          subject: "Limited Offer!",
-          body: "Buy this now...",
-          timestamp: new Date().toISOString(),
-          is_read: false,
-          status: 'pending'
-        }
-      ];
+      return [];
     }
   },
 
@@ -146,7 +129,8 @@ export const emailService = {
     });
     if (!response.ok) throw new Error('Email rewrite failed');
     const data = await response.json();
-    return data.rewritten ?? body;
+    if (!data.rewritten) throw new Error(data.error || 'Qwen returned empty response');
+    return data.rewritten;
   },
 
   registerPushToken: async (token: string): Promise<void> => {

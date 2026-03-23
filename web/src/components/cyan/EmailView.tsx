@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { useOutletContext } from "react-router";
 import {
   Menu, Mail, Send, Edit, ArrowLeft, CornerUpLeft, CornerUpRight,
-  Shield, X, Plus, Search, Paperclip, Loader2, Sparkles
+  Shield, X, Plus, Search, Paperclip, Loader2, Sparkles, AlertCircle
 } from "lucide-react";
 import { GlassCard } from "./GlassCard";
 import { BurgerMenu } from "./BurgerMenu";
 import { Sidebar } from "./Sidebar";
 import { emailService } from "../../services/emailService";
+import { fetchVllmStatus, VllmStatus } from "../../services/vllmService";
 import { Email } from "../../types/email";
 
 // ─── Internal types ────────────────────────────────────────────────────────────
@@ -40,7 +41,7 @@ const EMPTY_COMPOSE: ComposeState = { to: '', subject: '', body: '' };
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function getInitials(from: string): string {
-  const name = from.replace(/<.*>/, '').trim();
+  const name = from.replace(/<.*>/, '').trim().replace(/^["']|["']$/g, '');
   const parts = name.split(/\s+/).filter(Boolean);
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
@@ -85,8 +86,8 @@ function formatFullDate(ts: string | undefined): string {
 
 function parseSenderName(from: string): string {
   const match = from.match(/^([^<]+)</);
-  if (match) return match[1].trim();
-  return from;
+  if (match) return match[1].trim().replace(/^["']|["']$/g, '');
+  return from.replace(/^["']|["']$/g, '');
 }
 
 function parseSenderEmail(from: string): string {
@@ -123,6 +124,8 @@ export function EmailView() {
   const [qwenPrompt, setQwenPrompt] = useState('');
   const [qwenTone, setQwenTone] = useState<'professional' | 'casual' | 'formal'>('professional');
   const [qwenLoading, setQwenLoading] = useState(false);
+  const [qwenError, setQwenError] = useState<string | null>(null);
+  const [vllmStatus, setVllmStatus] = useState<VllmStatus>('offline');
 
   // Whitelist drawer
   const [showWhitelist, setShowWhitelist] = useState(false);
@@ -137,6 +140,12 @@ export function EmailView() {
   const [addError, setAddError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Compose contact autocomplete
+  const [composeSuggestions, setComposeSuggestions] = useState<ContactSuggestion[]>([]);
+  const [showComposeSuggestions, setShowComposeSuggestions] = useState(false);
+  const composeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const composeDropdownRef = useRef<HTMLDivElement>(null);
 
   // ── Data fetching ────────────────────────────────────────────────────────────
 
@@ -213,10 +222,41 @@ export function EmailView() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // Debounced compose "To" contact search
+  useEffect(() => {
+    if (composeDebounceRef.current) clearTimeout(composeDebounceRef.current);
+    const q = compose.to;
+    if (q.length < 2) { setComposeSuggestions([]); setShowComposeSuggestions(false); return; }
+    composeDebounceRef.current = setTimeout(async () => {
+      try {
+        const results = await emailService.searchContacts(q);
+        setComposeSuggestions(results);
+        setShowComposeSuggestions(results.length > 0);
+      } catch {
+        setComposeSuggestions([]); setShowComposeSuggestions(false);
+      }
+    }, 300);
+    return () => { if (composeDebounceRef.current) clearTimeout(composeDebounceRef.current); };
+  }, [compose.to]);
+
+  // Dismiss compose contact dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (composeDropdownRef.current && !composeDropdownRef.current.contains(e.target as Node)) {
+        setShowComposeSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
   const handleSelectEmail = (email: Email) => {
     setSelectedEmail(email);
+    if (!email.is_read) {
+      setEmails(prev => prev.map(e => e.id === email.id ? { ...e, is_read: true } : e));
+    }
     if (isMobile) setMobileShowContent(true);
   };
 
@@ -233,8 +273,9 @@ export function EmailView() {
     setAddError(null);
     try {
       await emailService.addToWhitelist(addEmail.trim(), addName.trim());
-      const [entries] = await Promise.all([emailService.getWhitelist(), fetchEmails()]);
+      const entries = await emailService.getWhitelist();
       setWhitelist(entries);
+      await fetchEmails();
       setAddEmail(''); setAddName(''); setSearchQuery(''); setSuggestions([]);
     } catch {
       setAddError('Failed to add entry. Please try again.');
@@ -275,17 +316,26 @@ export function EmailView() {
     }
   };
 
+  // Check vLLM status when compose opens
+  useEffect(() => {
+    if (!showCompose) return;
+    fetchVllmStatus().then(({ status }) => setVllmStatus(status)).catch(() => setVllmStatus('offline'));
+  }, [showCompose]);
+
   const handleQwenWrite = async () => {
     if (!qwenPrompt.trim() && !compose.body.trim()) return;
     setQwenLoading(true);
+    setQwenError(null);
     try {
       const draft = qwenPrompt.trim() || compose.body;
       const rewritten = await emailService.rewriteEmail(draft, qwenTone);
       setCompose(c => ({ ...c, body: rewritten }));
       setShowQwenAssist(false);
       setQwenPrompt('');
-    } catch {
-      // Leave compose body untouched on error
+    } catch (err: any) {
+      setQwenError(err?.message?.includes('cold') || err?.message?.includes('timeout')
+        ? 'Qwen is warming up - try again in 30 seconds.'
+        : (err?.message || 'Qwen failed to generate. The model may be offline.'));
     } finally {
       setQwenLoading(false);
     }
@@ -390,12 +440,14 @@ export function EmailView() {
                   <button
                     key={email.id}
                     onClick={() => handleSelectEmail(email)}
-                    className={`w-full text-left px-4 py-3 border-b border-[#00FFFF]/5 transition-all flex items-start gap-3 relative ${
+                    className={`w-full text-left pl-3 pr-4 py-3 border-b border-[#00FFFF]/5 transition-all flex items-center gap-3 relative ${
                       isSelected
                         ? 'bg-[#00FFFF]/5 border-l-2 border-l-[#00FFFF]/60'
                         : 'hover:bg-[#1A1A1A]/60 border-l-2 border-l-transparent'
                     }`}
                   >
+                    {/* Unread dot */}
+                    <div className={`flex-shrink-0 w-1.5 h-1.5 rounded-full ${isUnread ? 'bg-[#00FFFF]' : 'bg-transparent'}`} />
                     {/* Avatar */}
                     <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${avatarCls}`}>
                       {initials}
@@ -425,11 +477,6 @@ export function EmailView() {
                         )}
                       </div>
                     </div>
-
-                    {/* Unread dot */}
-                    {isUnread && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#00FFFF] flex-shrink-0" />
-                    )}
                   </button>
                 );
               })
@@ -540,7 +587,7 @@ export function EmailView() {
                         >
                           <Paperclip className="w-3.5 h-3.5 text-[#BBC9CD]" />
                           <span className="max-w-[160px] truncate">{att.filename}</span>
-                          <span className="text-[#BBC9CD]/50 text-xs">{att.mimeType.split('/')[1]}</span>
+                          <span className="text-[#BBC9CD]/50 text-xs">{att.mimeType?.split('/')[1] ?? ''}</span>
                         </div>
                       ))}
                     </div>
@@ -651,109 +698,173 @@ export function EmailView() {
         </div>
       </div>
 
-      {/* ── Compose Modal ─────────────────────────────────────────────────────── */}
+      {/* ── Compose Overlay Window (Gmail-style, fixed bottom-right) ─────────── */}
       {showCompose && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-2xl bg-[#0A0A0A] border border-[#00FFFF]/20 rounded-2xl shadow-2xl shadow-[#00FFFF]/10 overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-[#00FFFF]/10 flex items-center justify-between bg-[#1A1A1A]/50">
-              <h3 className="font-bold text-[#DAE2FD]">New Message</h3>
-              <button onClick={() => setShowCompose(false)} className="text-[#BBC9CD] hover:text-white transition-colors">
-                <X className="w-4 h-4" />
-              </button>
+        <div
+          className="fixed bottom-0 right-6 z-[9999] flex flex-col bg-[#0A0A0A] border border-[#00FFFF]/25 rounded-t-2xl shadow-2xl shadow-[#00FFFF]/10"
+          style={{ width: 580, maxHeight: '82vh' }}
+        >
+          {/* Title bar */}
+          <div className="flex items-center justify-between px-4 py-3 bg-[#1A1A1A]/80 rounded-t-2xl border-b border-[#00FFFF]/10 flex-shrink-0">
+            <span className="text-sm font-semibold text-[#DAE2FD]">New Message</span>
+            <button onClick={() => setShowCompose(false)} className="text-[#BBC9CD] hover:text-white transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form className="flex flex-col overflow-y-auto flex-1" onSubmit={handleSendEmail}>
+            {/* To field with autocomplete */}
+            <div className="relative border-b border-[#00FFFF]/10" ref={composeDropdownRef}>
+              <div className="flex items-center gap-2 px-4">
+                <span className="text-xs text-[#BBC9CD]/60 flex-shrink-0 w-12">To</span>
+                <input
+                  type="text"
+                  placeholder="Recipients"
+                  value={compose.to}
+                  onChange={e => setCompose(c => ({ ...c, to: e.target.value }))}
+                  onFocus={() => compose.to.length >= 2 && setShowComposeSuggestions(composeSuggestions.length > 0)}
+                  required
+                  className="flex-1 py-2 bg-transparent text-[#DAE2FD] text-sm focus:outline-none placeholder:text-[#BBC9CD]/40"
+                />
+              </div>
+              {showComposeSuggestions && composeSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 bg-[#1A1A1A] border border-[#00FFFF]/20 rounded-b-xl shadow-lg z-50 max-h-40 overflow-y-auto">
+                  {composeSuggestions.map((contact, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className="w-full text-left px-4 py-2 hover:bg-[#00FFFF]/10 transition-colors"
+                      onMouseDown={e => {
+                        e.preventDefault();
+                        setCompose(c => ({ ...c, to: contact.email }));
+                        setShowComposeSuggestions(false);
+                      }}
+                    >
+                      <span className="text-sm font-semibold text-[#DAE2FD]">{contact.name || contact.email}</span>
+                      {contact.name && <span className="text-xs text-[#BBC9CD] ml-2">{contact.email}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <form className="p-6 flex flex-col gap-4" onSubmit={handleSendEmail}>
-              <input
-                type="email"
-                placeholder="To"
-                value={compose.to}
-                onChange={e => setCompose(c => ({ ...c, to: e.target.value }))}
-                required
-                className="w-full px-4 py-3 rounded-xl bg-[#1A1A1A]/50 border border-[#00FFFF]/20 text-[#DAE2FD] focus:outline-none focus:border-[#00FFFF]/40"
-              />
+
+            {/* Subject field */}
+            <div className="flex items-center gap-2 px-4 border-b border-[#00FFFF]/10">
+              <span className="text-xs text-[#BBC9CD]/60 flex-shrink-0 w-12">Subject</span>
               <input
                 type="text"
                 placeholder="Subject"
                 value={compose.subject}
                 onChange={e => setCompose(c => ({ ...c, subject: e.target.value }))}
                 required
-                className="w-full px-4 py-3 rounded-xl bg-[#1A1A1A]/50 border border-[#00FFFF]/20 text-[#DAE2FD] focus:outline-none focus:border-[#00FFFF]/40"
+                className="flex-1 py-2 bg-transparent text-[#DAE2FD] text-sm focus:outline-none placeholder:text-[#BBC9CD]/40"
               />
+            </div>
 
-              {/* Textarea + Qwen assist button row */}
-              <div className="relative">
+            {/* Body */}
+            <div className="relative flex-1 flex flex-col min-h-[220px]">
+              <textarea
+                placeholder="Write your message..."
+                value={compose.body}
+                onChange={e => setCompose(c => ({ ...c, body: e.target.value }))}
+                className="flex-1 w-full px-4 py-3 bg-transparent text-[#DAE2FD] text-sm focus:outline-none resize-none min-h-[220px]"
+              />
+            </div>
+
+            {/* Qwen assist panel */}
+            {showQwenAssist && (
+              <div className="border-t border-[#00FFFF]/10 bg-[#0D0D12] px-4 py-3 flex flex-col gap-3 flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-[#BBC9CD] uppercase tracking-widest">Qwen Compose Assist</p>
+                  <div className="flex items-center gap-1.5">
+                    <div className={`w-1.5 h-1.5 rounded-full ${
+                      vllmStatus === 'online' ? 'bg-green-400' :
+                      vllmStatus === 'warming' ? 'bg-amber-400 animate-pulse' :
+                      'bg-red-400'
+                    }`} />
+                    <span className={`text-xs ${
+                      vllmStatus === 'online' ? 'text-green-400' :
+                      vllmStatus === 'warming' ? 'text-amber-400' :
+                      'text-red-400'
+                    }`}>
+                      {vllmStatus === 'online' ? 'Model online' :
+                       vllmStatus === 'warming' ? 'Model warming up' :
+                       'Model offline'}
+                    </span>
+                  </div>
+                </div>
                 <textarea
-                  placeholder="Write your message..."
-                  value={compose.body}
-                  onChange={e => setCompose(c => ({ ...c, body: e.target.value }))}
-                  rows={7}
-                  className="w-full px-4 py-3 rounded-xl bg-[#1A1A1A]/50 border border-[#00FFFF]/20 text-[#DAE2FD] focus:outline-none focus:border-[#00FFFF]/40 resize-none"
+                  placeholder="What do you want to say?"
+                  value={qwenPrompt}
+                  onChange={e => setQwenPrompt(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-lg bg-[#1A1A1A] border border-[#00FFFF]/20 text-[#DAE2FD] text-sm focus:outline-none focus:border-[#00FFFF]/40 resize-none placeholder:text-[#BBC9CD]/50"
                 />
+                {qwenError && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                    {qwenError}
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#BBC9CD] flex-shrink-0">Tone:</span>
+                  {(['professional', 'casual', 'formal'] as const).map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setQwenTone(t)}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all capitalize ${
+                        qwenTone === t
+                          ? 'bg-[#00FFFF]/15 border-[#00FFFF]/50 text-[#00FFFF]'
+                          : 'border-[#00FFFF]/20 text-[#BBC9CD] hover:border-[#00FFFF]/40 hover:text-[#DAE2FD]'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={handleQwenWrite}
+                    disabled={qwenLoading || vllmStatus === 'offline' || (!qwenPrompt.trim() && !compose.body.trim())}
+                    className="ml-auto flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#00FFFF] to-[#0099CC] text-[#0A0A0A] font-semibold text-xs disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_0_12px_rgba(0,255,255,0.3)] transition-all"
+                  >
+                    {qwenLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                    {qwenLoading ? 'Writing...' : 'Generate'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Footer toolbar */}
+            <div className="flex items-center justify-between px-4 py-3 border-t border-[#00FFFF]/10 bg-[#111]/60 flex-shrink-0">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowQwenAssist(v => !v)}
-                  className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00FFFF]/10 border border-[#00FFFF]/30 text-[#00FFFF] text-xs font-semibold hover:bg-[#00FFFF]/20 transition-all"
+                  onClick={() => { setShowQwenAssist(v => !v); setQwenError(null); }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                    showQwenAssist
+                      ? 'bg-[#00FFFF]/10 border-[#00FFFF]/50 text-[#00FFFF]'
+                      : 'border-[#00FFFF]/20 text-[#BBC9CD] hover:text-[#00FFFF] hover:bg-[#00FFFF]/5'
+                  }`}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   Write with Qwen
                 </button>
+                {sendError && (
+                  <span className="text-red-400 text-xs flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> {sendError}
+                  </span>
+                )}
               </div>
-
-              {/* Qwen assist panel */}
-              {showQwenAssist && (
-                <div className="rounded-xl bg-[#0D0D12] border border-[#00FFFF]/20 p-4 flex flex-col gap-3">
-                  <p className="text-xs font-semibold text-[#BBC9CD] uppercase tracking-widest">Qwen Compose Assist</p>
-                  <textarea
-                    placeholder="What do you want to say?"
-                    value={qwenPrompt}
-                    onChange={e => setQwenPrompt(e.target.value)}
-                    rows={3}
-                    className="w-full px-3 py-2 rounded-lg bg-[#1A1A1A] border border-[#00FFFF]/20 text-[#DAE2FD] text-sm focus:outline-none focus:border-[#00FFFF]/40 resize-none placeholder:text-[#BBC9CD]/50"
-                  />
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-[#BBC9CD] flex-shrink-0">Tone:</span>
-                    {(['professional', 'casual', 'formal'] as const).map(t => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setQwenTone(t)}
-                        className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all capitalize ${
-                          qwenTone === t
-                            ? 'bg-[#00FFFF]/15 border-[#00FFFF]/50 text-[#00FFFF]'
-                            : 'border-[#00FFFF]/20 text-[#BBC9CD] hover:border-[#00FFFF]/40 hover:text-[#DAE2FD]'
-                        }`}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={handleQwenWrite}
-                      disabled={qwenLoading || (!qwenPrompt.trim() && !compose.body.trim())}
-                      className="ml-auto flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#00FFFF] to-[#0099CC] text-[#0A0A0A] font-semibold text-xs disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_0_12px_rgba(0,255,255,0.3)] transition-all"
-                    >
-                      {qwenLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                      {qwenLoading ? 'Writing...' : 'Generate'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {sendError && <p className="text-red-400 text-sm">{sendError}</p>}
-
-              <div className="flex justify-end gap-3">
-                <button type="button" onClick={() => setShowCompose(false)} className="px-6 py-2 rounded-xl text-[#BBC9CD] hover:text-white transition-colors">
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={sending}
-                  className="px-8 py-2 rounded-xl bg-gradient-to-r from-[#00FFFF] to-[#0099CC] text-[#0A0A0A] font-bold hover:shadow-[0_0_20px_rgba(0,255,255,0.4)] transition-all flex items-center gap-2"
-                >
-                  <Send className="w-4 h-4" /> {sending ? 'Sending...' : 'Send'}
-                </button>
-              </div>
-            </form>
-          </div>
+              <button
+                type="submit"
+                disabled={sending}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-[#00FFFF] to-[#0099CC] text-[#0A0A0A] font-bold text-sm hover:shadow-[0_0_20px_rgba(0,255,255,0.4)] transition-all disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" /> {sending ? 'Sending...' : 'Send'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>

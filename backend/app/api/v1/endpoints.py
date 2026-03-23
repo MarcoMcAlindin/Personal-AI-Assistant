@@ -175,7 +175,7 @@ async def rewrite_email(
     """AI-powered email rewrite using Qwen."""
     qwen_url = os.environ.get("QWEN_ENDPOINT_URL")
     if not qwen_url:
-        return {"rewritten": request.body, "note": "AI unavailable -- returned original"}
+        return {"rewritten": None, "error": "AI unavailable"}
 
     headers = {"Content-Type": "application/json"}
     try:
@@ -216,7 +216,7 @@ async def rewrite_email(
             rewritten = data["choices"][0]["message"]["content"].replace("\u2014", " - ").replace("\u2013", " - ")
             return {"rewritten": rewritten}
     except Exception as e:
-        return {"rewritten": request.body, "error": f"AI rewrite failed: {str(e)}"}
+        return {"rewritten": None, "error": f"AI rewrite failed: {str(e)}"}
 
 
 @router.post("/chat")
