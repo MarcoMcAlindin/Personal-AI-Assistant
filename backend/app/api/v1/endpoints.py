@@ -177,16 +177,7 @@ async def rewrite_email(
     if not qwen_url:
         return {"rewritten": None, "error": "AI unavailable"}
 
-    headers = {"Content-Type": "application/json"}
-    try:
-        import google.auth.transport.requests
-        import google.oauth2.id_token
-        auth_req = google.auth.transport.requests.Request()
-        qwen_base = qwen_url.rstrip("/v1").rstrip("/")
-        identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
-        headers["Authorization"] = f"Bearer {identity_token}"
-    except Exception:
-        pass
+    headers = {"Content-Type": "application/json", **_get_gcp_headers(qwen_url)}
 
     system_prompt = (
         f"You are an email writing assistant. Rewrite the following email draft "
