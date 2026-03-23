@@ -377,9 +377,9 @@ export function TaskDashboard() {
               <div style={{ display: 'flex', gap: '6px' }}>
                 {(['high', 'medium', 'low'] as const).map(level => {
                   const colors = {
-                    high:   { active: 'rgba(255,68,68,0.25)',   border: 'rgba(255,68,68,0.6)',   text: '#FF4444', inactiveBg: 'rgba(255,68,68,0.08)',   inactiveBorder: 'rgba(255,68,68,0.25)' },
-                    medium: { active: 'rgba(217,119,6,0.25)',   border: 'rgba(217,119,6,0.6)',   text: '#D97706', inactiveBg: 'rgba(217,119,6,0.08)',   inactiveBorder: 'rgba(217,119,6,0.25)' },
-                    low:    { active: 'rgba(68,153,221,0.25)',  border: 'rgba(68,153,221,0.6)',  text: '#4499DD', inactiveBg: 'rgba(68,153,221,0.08)',  inactiveBorder: 'rgba(68,153,221,0.25)' },
+                    high:   { active: 'rgba(255,68,68,0.25)',   border: 'rgba(255,68,68,0.6)',   text: '#FF4444', inactiveBg: 'transparent', inactiveBorder: 'rgba(255,68,68,0.25)' },
+                    medium: { active: 'rgba(217,119,6,0.25)',   border: 'rgba(217,119,6,0.6)',   text: '#D97706', inactiveBg: 'transparent', inactiveBorder: 'rgba(217,119,6,0.25)' },
+                    low:    { active: 'rgba(68,153,221,0.25)',  border: 'rgba(68,153,221,0.6)',  text: '#4499DD', inactiveBg: 'transparent', inactiveBorder: 'rgba(68,153,221,0.25)' },
                   }[level];
                   const isActive = urgency === level;
                   return (
