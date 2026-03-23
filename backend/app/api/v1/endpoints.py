@@ -24,6 +24,7 @@ from app.services import cv_service
 from app.utils.auth import get_current_user
 from app.utils.config import settings
 import httpx
+import json
 import os
 import secrets
 
@@ -364,8 +365,7 @@ Return only valid JSON with exactly these four keys. No explanation."""
             if raw.startswith("json"):
                 raw = raw[4:]
 
-        import json as _json
-        parsed = _json.loads(raw)
+        parsed = json.loads(raw)
 
         return VoiceParseResponse(
             title=parsed.get("title"),

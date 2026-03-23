@@ -38,14 +38,16 @@ def test_parse_voice_requires_auth(monkeypatch):
 def test_parse_voice_returns_structured_fields(monkeypatch):
     monkeypatch.setattr(settings, "supabase_jwt_secret", TEST_SECRET)
 
-    mock_http_response = MagicMock()
-    mock_http_response.status_code = 200
-    mock_http_response.json.return_value = {
-        "choices": [{"message": {"content": '{"title":"Call the accountant","description":null,"urgency":"high","time":null}'}}]
-    }
-    mock_http_response.raise_for_status = MagicMock()
-
-    with patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=mock_http_response):
+    with patch("httpx.AsyncClient") as mock_cls:
+        mock_instance = AsyncMock()
+        mock_cls.return_value.__aenter__.return_value = mock_instance
+        mock_http_response = MagicMock()
+        mock_http_response.status_code = 200
+        mock_http_response.json.return_value = {
+            "choices": [{"message": {"content": '{"title":"Call the accountant","description":null,"urgency":"high","time":null}'}}]
+        }
+        mock_http_response.raise_for_status = MagicMock()
+        mock_instance.post = AsyncMock(return_value=mock_http_response)
         response = client.post(
             "/api/v1/tasks/parse-voice",
             headers=_auth_header(),
