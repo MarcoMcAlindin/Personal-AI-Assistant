@@ -12,6 +12,7 @@ import rehypeSanitize from "rehype-sanitize";
 import { GlassCard } from "./GlassCard";
 import { BurgerMenu } from "./BurgerMenu";
 import { Sidebar } from "./Sidebar";
+import { relativeDate } from '../../utils/relativeDate';
 
 const SOURCE_META: Record<string, { label: string; color: string; bg: string; border: string }> = {
   "weworkremotely":  { label: "We Work Remotely", color: "#4ade80",  bg: "rgba(74,222,128,0.12)",  border: "rgba(74,222,128,0.3)" },
@@ -61,16 +62,6 @@ function htmlToMarkdown(raw: string): string {
     .replace(/&nbsp;/g, " ").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
-}
-function relativeDate(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 30) return `${days}d ago`;
-  return `${Math.floor(days / 30)}mo ago`;
 }
 
 // ---------------------------------------------------------------------------

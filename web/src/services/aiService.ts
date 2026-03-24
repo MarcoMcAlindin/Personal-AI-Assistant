@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import { supabase } from './supabase';
+import { getAuthHeaders } from './auth';
 
 export interface Message {
   id: string;
@@ -11,14 +11,6 @@ export interface Message {
 }
 
 const BACKEND_URL = import.meta.env.VITE_CLOUD_GATEWAY_URL || 'http://localhost:8000/api/v1';
-
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  const { data } = await supabase.auth.getSession();
-  const token = data?.session?.access_token;
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return headers;
-}
 
 export const aiService = {
   sendMessage: async (message: string, onToken: (token: string) => void): Promise<Message> => {

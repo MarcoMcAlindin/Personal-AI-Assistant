@@ -73,6 +73,7 @@ Web / Mobile → REST API → FastAPI (Cloud Run) → Supabase (PostgreSQL)
 | PATCH | `/chat/save/:id` | Pin AI response to permanent RAG memory |
 | GET/POST | `/tasks` | Daily task management |
 | PATCH | `/tasks/:id` | Update/archive task |
+| POST | `/tasks/parse-voice` | Voice transcript → structured task fields (Qwen extraction) |
 | GET | `/health` | Health metrics |
 
 ### Database (Supabase PostgreSQL)
@@ -81,11 +82,14 @@ Web / Mobile → REST API → FastAPI (Cloud Run) → Supabase (PostgreSQL)
 - `chat_history.is_saved = true` — bypasses 10-day auto-cleanup, permanent RAG knowledge
 - `pgvector` IVFFlat index for semantic search (1536-dim embeddings)
 - `pg_cron` auto-archives tasks at midnight
+- `tasks.urgency` — TEXT column: `'high' | 'medium' | 'low'`, DEFAULT `'medium'`
 
 ### Frontend Structure
 - Web (`/web/src`): components by feature (feeds, email, planner, chat, health, common), services (API clients), ThemeContext for OLED dark theme
 - Mobile (`/mobile/src`): 6 tab screens (Chat, Feeds, Email, Health, Planner, Settings), shared components, `theme.ts` for Figma-aligned OLED palette
 - Theme: OLED-optimized dark (deep blacks, slate grays), CSS variables in `web/src/styles/theme.css`
+- `web/src/services/auth.ts` — shared `getAuthHeaders()` helper (Supabase JWT); import this instead of duplicating in each service file
+- `web/src/components/cyan/VoiceTaskInput.tsx` — voice-to-task component (Web Speech API + Qwen extraction)
 
 ### Automation
 - **GitHub Actions `health_analysis.yml`**: daily cron at 8:00 AM GMT — pulls Samsung Watch data → Qwen analysis → stores in Supabase

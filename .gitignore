@@ -53,6 +53,8 @@ htmlcov/
 .coverage
 .coverage.*
 .cursor
+.claude/
+
 
 # ----- Docker -----
 *.log
@@ -68,12 +70,19 @@ htmlcov/
 *.bak
 *.tmp
 
+# ----- Superpowers brainstorm sessions -----
+.superpowers/
+
 # ----- GitHub CLI & Workflow Artifacts -----
 gh_2.45.0_linux_amd64/
 gh_*.tar.gz
 gh-workflow-list.txt
 gh-workflow-list.*
 
+
 # ----- Google Cloud SDK -----
 google-cloud-sdk/
 google-cloud-cli-*.tar.gz
+
+# ----- Documentation -----
+docs/
