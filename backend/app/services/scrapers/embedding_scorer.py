@@ -72,5 +72,54 @@ class EmbeddingScorer:
         cv_embedding: list[float],
         job_ids: list[str],
     ) -> None:
-        # Placeholder — implemented in Task 3
-        pass
+        from app.services.cv_service import embed_text  # avoid circular import at module level
+
+        # Fetch all job descriptions in one query
+        try:
+            res = (
+                supabase.table("inbox_items")
+                .select("id, job_description")
+                .in_("id", job_ids)
+                .execute()
+            )
+        except Exception as e:
+            logger.warning(f"[EmbeddingScorer] Failed to fetch job descriptions: {e}")
+            return
+
+        jobs: list[dict] = res.data or []
+        if not jobs:
+            return
+
+        # Concurrently embed all job descriptions (semaphore cap = 20)
+        sem = asyncio.Semaphore(20)
+
+        async def embed_one(job_id: str, description: str):
+            async with sem:
+                return job_id, await embed_text(description)
+
+        raw_results = await asyncio.gather(
+            *[embed_one(j["id"], j.get("job_description", "")) for j in jobs],
+            return_exceptions=True,
+        )
+
+        # Update each job row with semantic score
+        for item in raw_results:
+            if isinstance(item, Exception):
+                logger.warning(f"[EmbeddingScorer] Embed failed for a job: {item}")
+                continue
+
+            job_id, job_embedding = item
+            if job_embedding is None:
+                continue
+
+            score = self._cosine_similarity(cv_embedding, job_embedding)
+            reasoning = f"Semantic similarity: {score:.2f} — CV embedding match via text-embedding-3-small"
+
+            try:
+                supabase.table("inbox_items").update({
+                    "match_score": round(score, 2),
+                    "match_reasoning": reasoning,
+                    "embedding": job_embedding,
+                }).eq("id", job_id).execute()
+            except Exception as e:
+                logger.warning(f"[EmbeddingScorer] Failed to update job {job_id}: {e}")
