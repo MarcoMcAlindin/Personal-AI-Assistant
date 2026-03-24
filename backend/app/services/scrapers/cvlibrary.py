@@ -64,17 +64,20 @@ class CVLibraryScraper:
 
             jobs = data.get("jobs", data.get("results", []))
             scraped_count = 0
+            job_ids: list[str] = []
 
             for job in jobs[:max_results]:
                 normalized = self._normalize_job(job, campaign)
                 try:
-                    self.supabase.table("inbox_items").insert(normalized).execute()
+                    res = self.supabase.table("inbox_items").insert(normalized).execute()
                     scraped_count += 1
+                    if res.data and res.data[0].get("id"):
+                        job_ids.append(res.data[0]["id"])
                 except Exception:
                     continue  # duplicate
 
             logging.info(f"CV-Library scraped {scraped_count} jobs for campaign {campaign['id']}")
-            return {"scraped_count": scraped_count, "status": "success"}
+            return {"scraped_count": scraped_count, "status": "success", "job_ids": job_ids}
 
         except Exception as e:
             logging.error(f"CV-Library scraping error: {e}")

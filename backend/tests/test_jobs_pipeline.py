@@ -305,13 +305,13 @@ class TestMultiSourceScraper:
         # Patch all child scrapers to return controlled results
         for child in scraper.scrapers:
             child.scrape_jobs_for_campaign = AsyncMock(
-                return_value={"scraped_count": 3, "status": "success"}
+                return_value={"scraped_count": 3, "status": "success", "job_ids": []}
             )
 
         result = await scraper.scrape_jobs_for_campaign(CAMPAIGN)
 
         assert result["status"] == "success"
-        assert result["scraped_count"] == 12  # 4 scrapers × 3 each
+        assert result["scraped_count"] == 36  # 12 scrapers × 3 each
         assert result["errors"] is None
 
     @pytest.mark.asyncio
@@ -346,7 +346,7 @@ class TestMultiSourceScraper:
 
         for child in scraper.scrapers:
             child.scrape_jobs_for_campaign = AsyncMock(
-                return_value={"scraped_count": 2, "status": "success"}
+                return_value={"scraped_count": 2, "status": "success", "job_ids": []}
             )
 
         await scraper.scrape_jobs_for_campaign(CAMPAIGN)
@@ -355,8 +355,8 @@ class TestMultiSourceScraper:
             call for call in supabase.table.call_args_list
             if call.args[0] == "scrape_logs"
         ]
-        # One log entry per scraper (4 scrapers)
-        assert len(scrape_log_calls) == 4
+        # One log entry per scraper (12 scrapers)
+        assert len(scrape_log_calls) == 12
 
     @pytest.mark.asyncio
     async def test_exception_from_scraper_captured(self):
@@ -369,7 +369,7 @@ class TestMultiSourceScraper:
         scraper.scrapers[0].scrape_jobs_for_campaign = AsyncMock(side_effect=RuntimeError("boom"))
         for child in scraper.scrapers[1:]:
             child.scrape_jobs_for_campaign = AsyncMock(
-                return_value={"scraped_count": 1, "status": "success"}
+                return_value={"scraped_count": 1, "status": "success", "job_ids": []}
             )
 
         result = await scraper.scrape_jobs_for_campaign(CAMPAIGN)
@@ -398,7 +398,7 @@ class TestMultiSourceScraper:
 
         for child in scraper.scrapers:
             child.scrape_jobs_for_campaign = AsyncMock(
-                return_value={"scraped_count": 0, "status": "success"}
+                return_value={"scraped_count": 0, "status": "success", "job_ids": []}
             )
 
         # Just validate the normalizer output from each scraper directly
@@ -425,3 +425,52 @@ class TestMultiSourceScraper:
                   "job_url": "https://li.com/2", "job_description": "desc"}
         pc_norm = ProxycurlScraper(supabase)._normalize_job(pc_job, CAMPAIGN)
         assert pc_norm["match_score"] is not None
+
+
+# ---------------------------------------------------------------------------
+# TestScraperReturnsJobIds
+# ---------------------------------------------------------------------------
+
+class TestScraperReturnsJobIds:
+    @pytest.mark.asyncio
+    async def test_weworkremotely_returns_job_ids(self):
+        """Scraper result dict must include job_ids list after successful inserts."""
+        from app.services.scrapers.weworkremotely import WeWorkRemotelyScraper
+
+        mock_feed = MagicMock()
+        mock_feed.entries = [
+            MagicMock(title="Co: Job A", link="https://wwr.com/1", id="wwr-1", description="desc"),
+        ]
+
+        supabase = _mock_supabase()  # already returns data=[{"id": "row-1"}]
+        scraper = WeWorkRemotelyScraper(supabase)
+
+        with patch("asyncio.get_event_loop") as mock_loop:
+            mock_loop.return_value.run_in_executor = AsyncMock(return_value=mock_feed)
+            result = await scraper.scrape_jobs_for_campaign(CAMPAIGN)
+
+        assert "job_ids" in result
+        assert result["job_ids"] == ["row-1"]
+
+    @pytest.mark.asyncio
+    async def test_job_ids_empty_when_all_duplicates(self):
+        """Duplicate inserts must not add IDs to job_ids."""
+        from app.services.scrapers.weworkremotely import WeWorkRemotelyScraper
+
+        mock_feed = MagicMock()
+        mock_feed.entries = [
+            MagicMock(title="Co: Job A", link="https://wwr.com/1", id="wwr-1", description="desc"),
+        ]
+
+        supabase = _mock_supabase()
+        supabase.table.return_value.insert.return_value.execute.side_effect = [
+            Exception("duplicate key value violates unique constraint"),
+        ]
+        scraper = WeWorkRemotelyScraper(supabase)
+
+        with patch("asyncio.get_event_loop") as mock_loop:
+            mock_loop.return_value.run_in_executor = AsyncMock(return_value=mock_feed)
+            result = await scraper.scrape_jobs_for_campaign(CAMPAIGN)
+
+        assert result["job_ids"] == []
+        assert result["scraped_count"] == 0
