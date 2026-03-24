@@ -474,3 +474,78 @@ class TestScraperReturnsJobIds:
 
         assert result["job_ids"] == []
         assert result["scraped_count"] == 0
+
+
+# ---------------------------------------------------------------------------
+# TestMultiSourceScraperEmbedding
+# ---------------------------------------------------------------------------
+
+class TestMultiSourceScraperEmbedding:
+    @pytest.mark.asyncio
+    async def test_embedding_scorer_called_with_collected_job_ids(self):
+        """MultiSourceScraper must call EmbeddingScorer with all job IDs after scrape."""
+        from app.services.scrapers.multi_source_scraper import MultiSourceScraper
+
+        supabase = _mock_supabase()
+        scraper = MultiSourceScraper(supabase)
+
+        for child in scraper.scrapers:
+            child.scrape_jobs_for_campaign = AsyncMock(
+                return_value={"scraped_count": 1, "status": "success", "job_ids": ["job-abc"]}
+            )
+
+        with patch("app.services.scrapers.multi_source_scraper.EmbeddingScorer") as MockScorer:
+            mock_instance = AsyncMock()
+            MockScorer.return_value = mock_instance
+
+            await scraper.scrape_jobs_for_campaign(CAMPAIGN)
+
+        mock_instance.score_new_jobs.assert_called_once()
+        call_args = mock_instance.score_new_jobs.call_args
+        # user_id passed correctly
+        assert call_args.args[1] == CAMPAIGN["user_id"]
+        # all job IDs from all scrapers collected
+        collected_ids = call_args.args[2]
+        assert len(collected_ids) == 12  # 12 scrapers × 1 job each
+        assert "job-abc" in collected_ids
+
+    @pytest.mark.asyncio
+    async def test_embedding_scorer_failure_does_not_fail_scrape(self):
+        """If EmbeddingScorer raises, the scrape result must still succeed."""
+        from app.services.scrapers.multi_source_scraper import MultiSourceScraper
+
+        supabase = _mock_supabase()
+        scraper = MultiSourceScraper(supabase)
+
+        for child in scraper.scrapers:
+            child.scrape_jobs_for_campaign = AsyncMock(
+                return_value={"scraped_count": 1, "status": "success", "job_ids": ["job-abc"]}
+            )
+
+        with patch("app.services.scrapers.multi_source_scraper.EmbeddingScorer") as MockScorer:
+            mock_instance = AsyncMock()
+            mock_instance.score_new_jobs.side_effect = Exception("OpenAI down")
+            MockScorer.return_value = mock_instance
+
+            result = await scraper.scrape_jobs_for_campaign(CAMPAIGN)
+
+        assert result["status"] == "success"
+        assert result["scraped_count"] == 12
+
+    @pytest.mark.asyncio
+    async def test_no_job_ids_skips_embedding_scorer(self):
+        """If no job IDs collected (all duplicates), EmbeddingScorer must not be called."""
+        from app.services.scrapers.multi_source_scraper import MultiSourceScraper
+
+        supabase = _mock_supabase()
+        scraper = MultiSourceScraper(supabase)
+
+        for child in scraper.scrapers:
+            child.scrape_jobs_for_campaign = AsyncMock(
+                return_value={"scraped_count": 0, "status": "success", "job_ids": []}
+            )
+
+        with patch("app.services.scrapers.multi_source_scraper.EmbeddingScorer") as MockScorer:
+            await scraper.scrape_jobs_for_campaign(CAMPAIGN)
+
+        MockScorer.assert_not_called()
