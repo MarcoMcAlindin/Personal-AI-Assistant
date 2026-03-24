@@ -42,7 +42,7 @@ done
 # Override with deployment-specific values (these take precedence over .env)
 # Using sed to replace existing keys or append if missing
 for pair in \
-  "CORS_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:8081" \
+  "CORS_ORIGINS:http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8081" \
   "QWEN_ENDPOINT_URL:https://vibeos-qwen-enffsru5pa-ew.a.run.app/v1" \
   "QWEN_MODEL_NAME:unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF" \
   "GOOGLE_REDIRECT_URI:https://supercyan-backend-enffsru5pa-ew.a.run.app/api/v1/auth/google/callback" \

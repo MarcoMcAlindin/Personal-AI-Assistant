@@ -14,6 +14,7 @@ app = FastAPI(title="SuperCyan API Gateway")
 _default_origins = (
     "http://localhost:5173,http://127.0.0.1:5173,"
     "http://localhost:3000,http://127.0.0.1:3000,"
+    "http://localhost:3001,http://127.0.0.1:3001,"
     "https://supercyan-backend-enffsru5pa-ew.a.run.app"
 )
 origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", _default_origins).split(",") if o.strip()]
