@@ -25,7 +25,7 @@ const navItems = [
   { icon: DollarSign, label: "Money", path: "/money" },
   { icon: Mail, label: "Email", path: "/email" },
   { icon: Calendar, label: "Calendar", path: "/calendar" },
-  { icon: CheckSquare, label: "Todo List", path: "/todolist" },
+  { icon: CheckSquare, label: "Tasks", path: "/tasks" },
   { icon: Wifi, label: "Internet", path: "/internet-speed" },
   { icon: Briefcase, label: "Jobs", path: "/jobs" },
   { icon: LinkIcon, label: "Integrations", path: "/integrations" },

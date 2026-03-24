@@ -210,3 +210,50 @@ export async function disconnectGoogle() {
   });
   if (!res.ok) throw new Error(`auth/google/disconnect failed: ${res.status}`);
 }
+
+export async function searchContacts(q) {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE_URL}/email/contacts?q=${encodeURIComponent(q)}`, { headers });
+  if (!res.ok) throw new Error(`email/contacts failed: ${res.status}`);
+  const data = await res.json();
+  return data.contacts ?? [];
+}
+
+export async function getWhitelist() {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE_URL}/email/whitelist`, { headers });
+  if (!res.ok) throw new Error(`email/whitelist GET failed: ${res.status}`);
+  const data = await res.json();
+  return data.whitelist ?? [];
+}
+
+export async function addToWhitelist(email_address, contact_name) {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE_URL}/email/whitelist`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ email_address, contact_name }),
+  });
+  if (!res.ok) throw new Error(`email/whitelist POST failed: ${res.status}`);
+  return res.json();
+}
+
+export async function removeFromWhitelist(id) {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE_URL}/email/whitelist/${id}`, {
+    method: 'DELETE',
+    headers,
+  });
+  if (!res.ok) throw new Error(`email/whitelist DELETE failed: ${res.status}`);
+}
+
+export async function registerPushToken(token) {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE_URL}/users/push-token`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ token }),
+  });
+  if (!res.ok) throw new Error(`users/push-token failed: ${res.status}`);
+  return res.json();
+}

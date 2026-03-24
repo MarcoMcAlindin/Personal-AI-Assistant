@@ -19,27 +19,20 @@ def _sanitize_output(text: str) -> str:
 
 def _gcp_auth_headers(audience_url: str) -> dict:
     """
-    Fetch a GCP identity token for IAM-protected Cloud Run endpoints.
-    Raises RuntimeError if credentials are unavailable and the URL is a real Cloud Run host
-    (so callers get a clear error instead of a silent 403).
-    Modified: 2026-03-22 — extracted shared helper; previously each caller silently swallowed
-    auth failures, causing 403s from Cloud Run with no feedback.
+    Fetch a GCP identity token via the Cloud Run metadata server.
+    More reliable than google-auth ADC which requires GOOGLE_APPLICATION_CREDENTIALS.
+    Returns empty dict if unavailable (e.g. local dev).
     """
     try:
-        import google.auth.transport.requests
-        import google.oauth2.id_token
-        auth_req = google.auth.transport.requests.Request()
-        base = audience_url.rstrip("/v1").rstrip("/")
-        token = google.oauth2.id_token.fetch_id_token(auth_req, base)
+        import urllib.request as _req
+        audience = audience_url.split("/v1")[0].rstrip("/")
+        meta_url = f"http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience={audience}"
+        r = _req.Request(meta_url, headers={"Metadata-Flavor": "Google"})
+        token = _req.urlopen(r, timeout=3).read().decode()
         return {"Authorization": f"Bearer {token}"}
     except Exception as e:
-        # If the URL is localhost / dev, proceed without auth — it's expected.
-        if "localhost" in audience_url or "127.0.0.1" in audience_url:
-            return {}
-        raise RuntimeError(
-            f"GCP identity token unavailable for {audience_url}. "
-            f"Run 'gcloud auth application-default login' locally. Original error: {e}"
-        )
+        print(f"[GCPHeaders] metadata token fetch failed for {audience_url}: {e}")
+        return {}
 
 async def call_ollama(message: str, rag_context: str, ollama_url: str) -> str:
     """Proxy chat request to a user's Ollama instance with RAG context."""

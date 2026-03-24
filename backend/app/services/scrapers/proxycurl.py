@@ -45,13 +45,19 @@ class ProxycurlScraper:
                 
                 jobs = data.get("job_list", [])
                 scraped_count = 0
-                
+                job_ids: list[str] = []
+
                 for raw_job in jobs:
                     normalized = self._normalize_job(raw_job, campaign)
-                    self.supabase.table("inbox_items").insert(normalized).execute()
-                    scraped_count += 1
-                
-                return {"scraped_count": scraped_count, "status": "success"}
+                    try:
+                        res = self.supabase.table("inbox_items").insert(normalized).execute()
+                        scraped_count += 1
+                        if res.data and res.data[0].get("id"):
+                            job_ids.append(res.data[0]["id"])
+                    except Exception:
+                        continue  # duplicate or constraint violation
+
+                return {"scraped_count": scraped_count, "status": "success", "job_ids": job_ids}
 
         except Exception as e:
             logging.error(f"Proxycurl API error: {e}")

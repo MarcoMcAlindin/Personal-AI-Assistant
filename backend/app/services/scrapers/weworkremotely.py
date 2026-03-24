@@ -78,6 +78,7 @@ class WeWorkRemotelyScraper:
             feed = await loop.run_in_executor(None, feedparser.parse, feed_url)
 
             scraped_count = 0
+            job_ids: list[str] = []
             max_results = campaign.get("max_results_per_run", 50)
 
             for entry in feed.entries:
@@ -90,13 +91,15 @@ class WeWorkRemotelyScraper:
                         continue
                 normalized = self._normalize_job(entry, campaign)
                 try:
-                    self.supabase.table("inbox_items").insert(normalized).execute()
+                    res = self.supabase.table("inbox_items").insert(normalized).execute()
                     scraped_count += 1
+                    if res.data and res.data[0].get("id"):
+                        job_ids.append(res.data[0]["id"])
                 except Exception:
                     # Likely a duplicate external_job_id — skip silently.
                     continue
 
-            return {"scraped_count": scraped_count, "status": "success"}
+            return {"scraped_count": scraped_count, "status": "success", "job_ids": job_ids}
 
         except Exception as e:
             logging.error(f"WeWorkRemotely Scraping error: {e}")

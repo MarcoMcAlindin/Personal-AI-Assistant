@@ -16,33 +16,16 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 export const emailService = {
   fetchInbox: async (): Promise<Email[]> => {
     try {
-      const response = await fetch(`${BACKEND_URL}/email/inbox`);
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BACKEND_URL}/email/inbox`, { headers });
       if (!response.ok) throw new Error('Fetch Inbox Failed');
       const data = await response.json();
-      return data.emails;
+      const emails: Email[] = data.emails ?? [];
+      // Sort latest first by internalDate
+      return emails.sort((a, b) => Number(b.date ?? 0) - Number(a.date ?? 0));
     } catch (error) {
       console.error('[EmailService] Fetch Error:', error);
-      // Fallback for demo
-      return [
-        {
-          id: '1',
-          from: "system@supercyan.com",
-          subject: "Welcome to your Intelligence Dashboard",
-          body: "Your personal health sync is now active...",
-          timestamp: new Date().toISOString(),
-          is_read: false,
-          status: 'whitelisted'
-        },
-        {
-          id: '2',
-          from: "unknown@spam.com",
-          subject: "Limited Offer!",
-          body: "Buy this now...",
-          timestamp: new Date().toISOString(),
-          is_read: false,
-          status: 'pending'
-        }
-      ];
+      return [];
     }
   },
 
@@ -86,5 +69,77 @@ export const emailService = {
       headers,
     });
     if (!response.ok) throw new Error('Google disconnect failed');
+  },
+
+  searchContacts: async (q: string): Promise<Array<{ name: string; email: string }>> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(
+      `${BACKEND_URL}/email/contacts?q=${encodeURIComponent(q)}`,
+      { headers }
+    );
+    if (!response.ok) throw new Error('Contact search failed');
+    const data = await response.json();
+    return data.contacts ?? [];
+  },
+
+  getWhitelist: async (): Promise<Array<{ id: string; email_address: string; contact_name: string }>> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${BACKEND_URL}/email/whitelist`, { headers });
+    if (!response.ok) throw new Error('Get whitelist failed');
+    const data = await response.json();
+    return data.whitelist ?? [];
+  },
+
+  addToWhitelist: async (email_address: string, contact_name: string): Promise<void> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${BACKEND_URL}/email/whitelist`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ email_address, contact_name }),
+    });
+    if (!response.ok) throw new Error('Add to whitelist failed');
+  },
+
+  removeFromWhitelist: async (id: string): Promise<void> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${BACKEND_URL}/email/whitelist/${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+    if (!response.ok) throw new Error('Remove from whitelist failed');
+  },
+
+  fetchEmailBody: async (emailId: string): Promise<{ body: string; html: string | null; attachments: Array<{ filename: string; mimeType: string; data: string }> }> => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BACKEND_URL}/email/${emailId}`, { headers });
+      if (!response.ok) return { body: '', html: null, attachments: [] };
+      return response.json();
+    } catch {
+      return { body: '', html: null, attachments: [] };
+    }
+  },
+
+  rewriteEmail: async (body: string, tone: string): Promise<string> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${BACKEND_URL}/email/rewrite`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ body, tone }),
+    });
+    if (!response.ok) throw new Error('Email rewrite failed');
+    const data = await response.json();
+    if (!data.rewritten) throw new Error(data.error || 'Qwen returned empty response');
+    return data.rewritten;
+  },
+
+  registerPushToken: async (token: string): Promise<void> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${BACKEND_URL}/users/push-token`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ token }),
+    });
+    if (!response.ok) throw new Error('Push token registration failed');
   },
 };

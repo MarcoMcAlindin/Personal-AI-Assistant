@@ -2,10 +2,13 @@ export interface Email {
   id: string;
   from: string;
   subject: string;
-  body: string;
-  timestamp: string;
-  is_read: boolean;
-  status: 'whitelisted' | 'pending';
+  body?: string;
+  snippet?: string;
+  timestamp?: string;
+  date?: string;
+  is_read?: boolean;
+  status?: string;
+  source?: 'whitelist' | 'job_filter';
   thread_id?: string;
 }
 

@@ -24,3 +24,12 @@ class ApplicationCreateRequest(BaseModel):
 
 class CoverLetterRequest(BaseModel):
     inbox_item_id: str
+
+class VoiceParseRequest(BaseModel):
+    transcript: str
+
+class VoiceParseResponse(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    urgency: Optional[str] = None   # "high" | "medium" | "low"
+    time: Optional[str] = None      # HH:MM or null

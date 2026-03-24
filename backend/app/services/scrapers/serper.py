@@ -133,6 +133,7 @@ class SerperScraper:
 
             max_results = campaign.get("max_results_per_run", 50)
             scraped_count = 0
+            job_ids: list[str] = []
 
             # ── Insert Google Jobs first (structured, best quality) ───────────
             for job in google_jobs[:max_results]:
@@ -142,8 +143,10 @@ class SerperScraper:
                 # Add to seen so organic pass doesn't double-insert same URL
                 seen.add(normalized.get("job_url", ""))
                 try:
-                    self.supabase.table("inbox_items").insert(normalized).execute()
+                    res = self.supabase.table("inbox_items").insert(normalized).execute()
                     scraped_count += 1
+                    if res.data and res.data[0].get("id"):
+                        job_ids.append(res.data[0]["id"])
                 except Exception:
                     continue  # duplicate
 
@@ -175,8 +178,10 @@ class SerperScraper:
             for result in validated_results:
                 normalized = self._normalize_result(result, campaign)
                 try:
-                    self.supabase.table("inbox_items").insert(normalized).execute()
+                    res = self.supabase.table("inbox_items").insert(normalized).execute()
                     scraped_count += 1
+                    if res.data and res.data[0].get("id"):
+                        job_ids.append(res.data[0]["id"])
                 except Exception:
                     continue
 
@@ -185,7 +190,7 @@ class SerperScraper:
                 f"→ {len(validated_results)} reachable | "
                 f"{len(google_jobs)} Google Jobs | {scraped_count} total inserted"
             )
-            return {"scraped_count": scraped_count, "status": "success"}
+            return {"scraped_count": scraped_count, "status": "success", "job_ids": job_ids}
 
         except Exception as e:
             logging.error(f"Serper scraping error: {e}")

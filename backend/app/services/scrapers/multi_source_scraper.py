@@ -14,6 +14,7 @@ from .himalayas import HimalayasScraper
 from .reed import ReedScraper
 from .cvlibrary import CVLibraryScraper
 from .totaljobs import TotalJobsScraper
+from .embedding_scorer import EmbeddingScorer
 
 # Modified: 2026-03-22
 # What: Added _write_scrape_log() to persist execution evidence to the scrape_logs table after
@@ -77,6 +78,20 @@ class MultiSourceScraper:
                 self._write_scrape_log(campaign, scraper_name, count, started_at, completed_at, None)
 
         self._update_campaign_total(campaign["id"], total_scraped)
+
+        # Collect all newly inserted job IDs from scraper results
+        new_job_ids: list[str] = []
+        for res in results:
+            if isinstance(res, dict) and res.get("status") != "failed":
+                new_job_ids.extend(res.get("job_ids", []))
+
+        # Post-scrape semantic scoring — replaces keyword scores with CV embedding similarity
+        if new_job_ids:
+            try:
+                scorer = EmbeddingScorer()
+                await scorer.score_new_jobs(self.supabase, campaign["user_id"], new_job_ids)
+            except Exception as e:
+                logging.warning(f"[MultiSourceScraper] EmbeddingScorer failed: {e} — keyword scores retained")
 
         return {
             "scraped_count": total_scraped,

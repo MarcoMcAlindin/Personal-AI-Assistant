@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider } from './context/ThemeContext';
 import { Root } from './components/cyan/Root';
 import { TaskDashboard } from "./components/cyan/TaskDashboard";
+import { DashboardView } from "./components/cyan/DashboardView";
 import { SettingsView } from "./components/cyan/SettingsView";
 import { AIFunctionsView } from "./components/cyan/AIFunctionsView";
 import { AIChatView } from "./components/cyan/AIChatView";
@@ -18,7 +19,6 @@ import { HealthView } from "./components/cyan/HealthView";
 import { MoneyView } from "./components/cyan/MoneyView";
 import { EmailView } from "./components/cyan/EmailView";
 import { CalendarView } from "./components/cyan/CalendarView";
-import { TodoListView } from "./components/cyan/TodoListView";
 import { InternetSpeedView } from "./components/cyan/InternetSpeedView";
 import { JobsView } from "./components/cyan/JobsView";
 import { IntegrationsView } from "./components/cyan/IntegrationsView";
@@ -29,7 +29,8 @@ const App = (): JSX.Element => {
       <Router>
         <Routes>
           <Route path="/" element={<Root />}>
-            <Route index element={<TaskDashboard />} />
+            <Route index element={<DashboardView />} />
+            <Route path="tasks" element={<TaskDashboard />} />
             
             <Route path="settings" element={<SettingsView />} />
             <Route path="ai-functions" element={<AIFunctionsView />} />
@@ -53,7 +54,7 @@ const App = (): JSX.Element => {
             <Route path="calendar" element={<CalendarView />} />
             <Route path="planner" element={<Navigate to="/" replace />} />
             
-            <Route path="todolist" element={<TodoListView />} />
+            <Route path="todolist" element={<Navigate to="/tasks" replace />} />
             <Route path="internet-speed" element={<InternetSpeedView />} />
             <Route path="jobs" element={<JobsView />} />
             <Route path="integrations" element={<IntegrationsView />} />

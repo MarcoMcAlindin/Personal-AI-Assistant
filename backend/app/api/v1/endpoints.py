@@ -16,13 +16,15 @@ from app.services.task_service import TaskService
 from app.services.campaign_service import CampaignService
 from app.models.schemas import (
     CampaignCreateRequest, CampaignUpdateRequest,
-    InboxItemStatusUpdate, ApplicationCreateRequest, CoverLetterRequest
+    InboxItemStatusUpdate, ApplicationCreateRequest, CoverLetterRequest,
+    VoiceParseRequest, VoiceParseResponse,
 )
 from app.services.ai_service import call_ollama, chat_with_tools, generate_cover_letter, generate_interview_questions_ai
 from app.services import cv_service
 from app.utils.auth import get_current_user
 from app.utils.config import settings
 import httpx
+import json
 import os
 import secrets
 
@@ -76,6 +78,7 @@ class TaskCreateRequest(BaseModel):
     duration: Optional[int] = None
     time: Optional[str] = None
     date: Optional[str] = None
+    urgency: Optional[str] = None
 
 class TaskUpdateRequest(BaseModel):
     title: Optional[str] = None
@@ -84,6 +87,7 @@ class TaskUpdateRequest(BaseModel):
     time: Optional[str] = None
     status: Optional[str] = None
     is_archived: Optional[bool] = None
+    urgency: Optional[str] = None
 
 @router.get("/feeds/tech")
 async def get_tech_feeds():
@@ -158,6 +162,12 @@ async def search_contacts(
     contacts = await email_service.get_contacts(user_id, q)
     return {"contacts": contacts}
 
+@router.get("/email/{message_id}")
+async def get_email_body(message_id: str, user_id: str = Depends(get_current_user)):
+    """Fetch full email body with HTML and inline images as base64 data URIs."""
+    result = await email_service.fetch_email_body(user_id, message_id)
+    return result
+
 
 # -- Email AI Rewrite ------------------------------------------------------
 
@@ -169,18 +179,9 @@ async def rewrite_email(
     """AI-powered email rewrite using Qwen."""
     qwen_url = os.environ.get("QWEN_ENDPOINT_URL")
     if not qwen_url:
-        return {"rewritten": request.body, "note": "AI unavailable -- returned original"}
+        return {"rewritten": None, "error": "AI unavailable"}
 
-    headers = {"Content-Type": "application/json"}
-    try:
-        import google.auth.transport.requests
-        import google.oauth2.id_token
-        auth_req = google.auth.transport.requests.Request()
-        qwen_base = qwen_url.rstrip("/v1").rstrip("/")
-        identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
-        headers["Authorization"] = f"Bearer {identity_token}"
-    except Exception:
-        pass
+    headers = {"Content-Type": "application/json", **_get_gcp_headers(qwen_url)}
 
     system_prompt = (
         f"You are an email writing assistant. Rewrite the following email draft "
@@ -210,7 +211,7 @@ async def rewrite_email(
             rewritten = data["choices"][0]["message"]["content"].replace("\u2014", " - ").replace("\u2013", " - ")
             return {"rewritten": rewritten}
     except Exception as e:
-        return {"rewritten": request.body, "error": f"AI rewrite failed: {str(e)}"}
+        return {"rewritten": None, "error": f"AI rewrite failed: {str(e)}"}
 
 
 @router.post("/chat")
@@ -252,8 +253,14 @@ async def chat_with_ai(request: ChatRequest, user_id: str = Depends(get_current_
             }
         )
         return {"response": response_content}
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code in (404, 503, 502):
+            raise HTTPException(
+                status_code=503,
+                detail="AI model is warming up - please try again in a moment.",
+            )
+        raise HTTPException(status_code=500, detail=f"AI Service Error: {str(e)}")
     except Exception as e:
-        # Rule 11: Error handling for AI service
         raise HTTPException(status_code=500, detail=f"AI Service Error: {str(e)}")
 
 @router.post("/health/sync")
@@ -310,6 +317,70 @@ async def create_task(
         raise HTTPException(status_code=500, detail=result["error"])
     return result
 
+@router.post("/tasks/parse-voice", response_model=VoiceParseResponse)
+async def parse_voice_task(
+    request: VoiceParseRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Extract structured task fields from a voice transcript using Qwen."""
+    if not request.transcript.strip():
+        raise HTTPException(status_code=422, detail="Transcript cannot be empty")
+
+    system_prompt = """You are a task extraction assistant. Given a voice transcript, extract the following fields as JSON:
+- title: short imperative task name (required, max 80 chars)
+- description: any extra detail beyond the title (null if none)
+- urgency: "high", "medium", or "low" based on these signals:
+    high — "urgent", "important", "asap", "critical", "can't wait", "must"
+    medium — "soon", "today", "need to", "should", implied time pressure; DEFAULT if unclear
+    low — "whenever", "eventually", "maybe", no urgency signals
+- time: 24-hour HH:MM if a time is mentioned (null otherwise)
+
+Return only valid JSON with exactly these four keys. No explanation."""
+
+    try:
+        qwen_url = settings.qwen_endpoint_url
+        headers = {"Content-Type": "application/json", **_get_gcp_headers(qwen_url)}
+        payload = {
+            "model": settings.qwen_model_name,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": request.transcript},
+            ],
+            "temperature": 0.1,
+            "max_tokens": 200,
+        }
+        async with httpx.AsyncClient(timeout=30) as client_http:
+            resp = await client_http.post(
+                f"{qwen_url}/chat/completions",
+                headers=headers,
+                json=payload,
+            )
+            resp.raise_for_status()
+
+        raw = resp.json()["choices"][0]["message"]["content"].strip()
+
+        # Strip markdown code fences if present
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+
+        parsed = json.loads(raw)
+
+        return VoiceParseResponse(
+            title=parsed.get("title"),
+            description=parsed.get("description"),
+            urgency=parsed.get("urgency"),
+            time=parsed.get("time"),
+        )
+
+    except Exception as e:
+        print(f"[ParseVoice] Error: {e}")
+        return VoiceParseResponse(
+            title=None, description=None, urgency=None, time=None
+        )
+
+
 @router.patch("/tasks/{task_id}")
 async def update_task(
     task_id: str,
@@ -364,6 +435,7 @@ GOOGLE_SCOPES = [
     "https://www.googleapis.com/auth/gmail.modify",
     "https://www.googleapis.com/auth/gmail.send",
     "https://www.googleapis.com/auth/contacts.readonly",
+    "https://www.googleapis.com/auth/contacts.other.readonly",
 ]
 
 def _build_google_flow():
@@ -516,17 +588,19 @@ async def google_disconnect(user_id: str = Depends(get_current_user)):
 # -- vLLM Status & Warmup --------------------------------------------------
 
 def _get_gcp_headers(qwen_url: str) -> dict:
-    """Get GCP identity token headers for IAM-protected vLLM service."""
+    """Get GCP identity token headers for IAM-protected vLLM service.
+    Uses the GCP metadata server directly — more reliable than google-auth ADC in Cloud Run.
+    """
     headers = {}
     try:
-        import google.auth.transport.requests
-        import google.oauth2.id_token
-        auth_req = google.auth.transport.requests.Request()
-        qwen_base = qwen_url.rstrip("/v1").rstrip("/")
-        identity_token = google.oauth2.id_token.fetch_id_token(auth_req, qwen_base)
-        headers["Authorization"] = f"Bearer {identity_token}"
-    except Exception:
-        pass
+        import urllib.request as _req
+        audience = qwen_url.split("/v1")[0].rstrip("/")
+        meta_url = f"http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience={audience}"
+        r = _req.Request(meta_url, headers={"Metadata-Flavor": "Google"})
+        token = _req.urlopen(r, timeout=3).read().decode()
+        headers["Authorization"] = f"Bearer {token}"
+    except Exception as e:
+        print(f"[GCPHeaders] metadata token fetch failed for {qwen_url}: {e}")
     return headers
 
 @router.get("/vllm/status")
