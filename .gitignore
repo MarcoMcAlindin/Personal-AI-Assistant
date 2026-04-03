@@ -53,9 +53,7 @@ htmlcov/
 .coverage
 .coverage.*
 .cursor
-.claude/
-
-
+docs/
 # ----- Docker -----
 *.log
 
@@ -79,10 +77,6 @@ gh_*.tar.gz
 gh-workflow-list.txt
 gh-workflow-list.*
 
-
 # ----- Google Cloud SDK -----
 google-cloud-sdk/
 google-cloud-cli-*.tar.gz
-
-# ----- Documentation -----
-docs/

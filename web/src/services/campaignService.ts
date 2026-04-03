@@ -6,7 +6,7 @@ type CampaignInsert = Database['public']['Tables']['campaigns']['Insert'];
 type InboxItem = Database['public']['Tables']['inbox_items']['Row'];
 type Application = Database['public']['Tables']['applications']['Row'];
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+const API_BASE = import.meta.env.VITE_CLOUD_GATEWAY_URL || 'http://localhost:8000/api/v1';
 
 const getAuthHeaders = async () => {
   const { data: { session } } = await supabase.auth.getSession();

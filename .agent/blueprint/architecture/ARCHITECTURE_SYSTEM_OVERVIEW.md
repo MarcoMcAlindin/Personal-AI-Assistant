@@ -1,0 +1,34 @@
+# [cite_start]SuperCyan: Final Technical Stack & Architecture Document [cite: 73]
+
+## [cite_start]1. The Decoupled Frontend Clients [cite: 74]
+[cite_start]This layer handles all user interactions and UI rendering. [cite: 75] [cite_start]The system delivers optimized, platform-specific user experiences while maintaining a unified OLED-optimized cool dark theme. [cite: 75]
+* [cite_start]**Web Client (React + Vite):** Powers the browser-based dashboard. [cite: 76] [cite_start]Vite provides blazing-fast build times and allows for the creation of complex, multi-pane desktop layouts (e.g., viewing your email inbox, daily planner, and AI chat side-by-side). [cite: 76]
+* [cite_start]**Mobile Client (React Native via Expo):** Powers the iOS/Android application. [cite: 77] [cite_start]It maintains native performance, fluid mobile animations, and a focused, tab-based navigation system. [cite: 78]
+* [cite_start]**Foreground Health Sync (Mobile):** The mobile app strictly handles biometric data via an "On-Open Sync" pattern. [cite: 79] [cite_start]Whenever the React Native app is opened on your phone, a background hook immediately queries the Android react-native-health-connect API and pushes the latest Samsung Watch heart rate and sleep data to Supabase. [cite: 80]
+
+## [cite_start]2. The Cloud-Native Backend (Python Gateway) [cite: 81]
+[cite_start]This layer replaces the local server entirely, acting as the 24/7 secure bridge for both the Vite web app and the React Native mobile app. [cite: 82]
+* [cite_start]**Python:** The core runtime for your backend orchestration. [cite: 83] [cite_start]It handles the heavy lifting of securely proxying the Gmail API, parsing external XML/JSON feeds (like tech news and Scottish metal concerts), and managing the AI embedding logic. [cite: 83]
+* [cite_start]**FastAPI:** Exposes the REST endpoints that both frontends consume. [cite: 84]
+* [cite_start]**Google Cloud Run (Gateway):** The FastAPI Python application is containerized via Docker and deployed to Cloud Run. [cite: 85] [cite_start]This ensures your API keys remain completely hidden from the client, and your phone can fetch the latest emails and feeds even when your PC is turned off. [cite: 86]
+
+## [cite_start]3. Cloud Intelligence & RAG Memory Layer [cite: 87]
+[cite_start]This layer powers the private conversational assistant and handles AI memory management. [cite: 88]
+* [cite_start]**Qwen3.5-9B-Instruct (via vLLM):** Hosted on a separate, GPU-enabled Google Cloud Run container. [cite: 89] [cite_start]It scales to zero when idle and activates instantly for chat inference or health analysis. [cite: 90]
+* [cite_start]**GitHub Actions Automation:** Every day at exactly 8:00 AM GMT, a scheduled workflow executes a Python script that pulls whatever health data was most recently synced to Supabase, sends it to Qwen3.5-9B-Instruct, and writes the personalized analysis back to the database. [cite: 91]
+* [cite_start]**10-Day RAG Window:** To prevent context bloat, the Python backend uses Retrieval-Augmented Generation (RAG). [cite: 92] [cite_start]When you chat with Qwen, the system only pulls embeddings from the last 10 days of chat_history to provide recent context. [cite: 93]
+* [cite_start]**"Saved" AI Answers:** The UI includes a "Save/Pin" button for important AI responses. [cite: 94] [cite_start]Saved messages bypass the 10-day deletion rule and are permanently embedded into the AI's RAG knowledge base, ensuring it never forgets critical insights. [cite: 95]
+
+## [cite_start]4. Data, Auth, & Automated Execution Layer [cite: 96]
+[cite_start]This layer acts as the persistent memory and automated chronometer of your application. [cite: 97]
+* [cite_start]**Supabase (PostgreSQL):** Provides the fully managed database, handles Google OAuth for your secure Gmail integration, and utilizes Row Level Security (RLS) to lock down your private data. [cite: 98]
+* [cite_start]**pgvector Extension:** Enabled within Supabase to store the mathematical embeddings of your chat history, allowing the Python backend to execute lightning-fast semantic searches for the RAG pipeline. [cite: 99]
+* [cite_start]**pg_cron Automated Archiving:** [[Mr. White]] will configure a native PostgreSQL cron job directly inside Supabase. [cite: 100] [cite_start]Every single night at exactly midnight, this job runs an SQL query to flip the is_archived boolean to TRUE for the current day's tasks. [cite: 101] [cite_start]This guarantees your Daily Planner clears itself flawlessly, entirely independent of whether your phone or PC is turned on. [cite: 102]
+
+---
+## Related Documents
+- [[ARCHITECTURE_API_CONTRACT|API Contract]]
+- [[ARCHITECTURE_DATABASE_SCHEMA|Database Schema]]
+- [[ARCHITECTURE_MODEL_VLLM_V1|Model Architecture (VTT)]]
+- [[ARCHITECTURE_JOBS_ENGINE|Jobs Engine Detail]]
+- [[../PRODUCT_REQUIREMENTS_DOCUMENT|Back to PRD]]

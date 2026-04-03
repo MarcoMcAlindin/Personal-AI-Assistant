@@ -1,5 +1,7 @@
 // web/src/components/cyan/DashboardView.tsx
 import React, { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router';
+import { Sidebar } from './Sidebar';
 import { taskService } from '../../services/taskService';
 import { emailService } from '../../services/emailService';
 import { healthService, HealthMetric } from '../../services/healthService';
@@ -376,6 +378,7 @@ function JobsCard({ applications, loading }: { applications: any[]; loading: boo
 
 // ─── ROOT COMPONENT ───────────────────────────────────────────────────────────
 export function DashboardView() {
+  const { isMobile } = useOutletContext<{ isMobile: boolean }>();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [overdue, setOverdue] = useState<Task[]>([]);
   const [emails, setEmails] = useState<Email[]>([]);
@@ -419,20 +422,23 @@ export function DashboardView() {
   }, []);
 
   return (
-    <div style={PAGE}>
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ fontSize: '11px', color: '#BBC9CD', textTransform: 'uppercase', letterSpacing: '2px' }}>Overview</div>
-        <div style={{ fontSize: '24px', fontWeight: 700, color: '#DAE2FD', marginTop: '2px' }}>Dashboard</div>
-        <div style={{ width: '50px', height: '2px', background: 'linear-gradient(to right, #00FFFF, transparent)', marginTop: '6px' }} />
-      </div>
+    <div className={`${isMobile ? 'pt-16 pb-8' : 'pl-64'} min-h-screen`}>
+      {!isMobile && <Sidebar />}
+      <div style={PAGE}>
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ fontSize: '11px', color: '#BBC9CD', textTransform: 'uppercase', letterSpacing: '2px' }}>Overview</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: '#DAE2FD', marginTop: '2px' }}>Dashboard</div>
+          <div style={{ width: '50px', height: '2px', background: 'linear-gradient(to right, #00FFFF, transparent)', marginTop: '6px' }} />
+        </div>
 
-      <div style={GRID}>
-        <TasksCard tasks={tasks} overdue={overdue} loading={loading.tasks} />
-        <EmailCard emails={emails} loading={loading.emails} />
-        <HealthCard metric={health} loading={loading.health} />
-        <NewsCard articles={articles} fetchedAt={newsFetchedAt} loading={loading.news} />
-        <MoneyCard />
-        <JobsCard applications={applications} loading={loading.jobs} />
+        <div style={GRID}>
+          <TasksCard tasks={tasks} overdue={overdue} loading={loading.tasks} />
+          <EmailCard emails={emails} loading={loading.emails} />
+          <HealthCard metric={health} loading={loading.health} />
+          <NewsCard articles={articles} fetchedAt={newsFetchedAt} loading={loading.news} />
+          <MoneyCard />
+          <JobsCard applications={applications} loading={loading.jobs} />
+        </div>
       </div>
     </div>
   );

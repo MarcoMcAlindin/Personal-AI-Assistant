@@ -8,7 +8,7 @@ export const feedService = {
       const response = await fetch(`${BACKEND_URL}/feeds/tech`);
       if (!response.ok) throw new Error('Tech Feed Fetch Failed');
       const data = await response.json();
-      return data;
+      return Array.isArray(data) ? data : data.articles ?? [];
     } catch (error) {
       console.error('[FeedService] Tech Error:', error);
       // Return fallback for demo if needed, or rethrow
