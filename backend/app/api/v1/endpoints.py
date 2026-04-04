@@ -669,7 +669,6 @@ async def spotify_callback(
 
     # Exchange code for tokens
     try:
-        import time as _time
         token_data = await spotify_service.exchange_code(
             code=code,
             redirect_uri=settings.spotify_redirect_uri,
@@ -682,7 +681,7 @@ async def spotify_callback(
     spotify_tokens = {
         "access_token": token_data["access_token"],
         "refresh_token": token_data.get("refresh_token", ""),
-        "expires_at": int(__import__("time").time()) + token_data.get("expires_in", 3600),
+        "expires_at": int(time.time()) + token_data.get("expires_in", 3600),
         "provider": "spotify",
     }
     spotify_service._save_tokens(user_id, spotify_tokens)

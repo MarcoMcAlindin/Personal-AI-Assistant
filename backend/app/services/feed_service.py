@@ -26,7 +26,7 @@ STATIC_METAL_ARTISTS = [
     "foo fighters", "queens of the stone age", "rage against the machine",
     "audioslave", "stone sour", "volbeat", "ghost", "royal blood",
     "rival sons", "black stone cherry", "alter bridge", "shinedown",
-    "breaking benjamin", "halestorm", "evanescence", "within temptation",
+    "breaking benjamin", "halestorm", "evanescence",
 ]
 
 

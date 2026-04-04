@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
 SPOTIFY_API_BASE = "https://api.spotify.com/v1"
-SPOTIFY_SCOPES = ["user-top-read", "user-read-private"]
 
 
 class SpotifyService:
