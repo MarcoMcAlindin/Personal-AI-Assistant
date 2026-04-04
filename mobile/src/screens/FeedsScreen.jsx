@@ -7,7 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '../components/Themed';
-import { palette, spacing } from '../theme';
+import { spacing, theme } from '../theme';
 import { fetchTechFeeds, fetchConcerts } from '../services/api';
 import { MobileHeader } from '../components/MobileHeader';
 import { MobileCard } from '../components/MobileCard';
@@ -57,7 +57,7 @@ export default function FeedsScreen() {
           <Text style={styles.sourceText}>{item.source}</Text>
         </View>
         <TouchableOpacity style={styles.readMore}>
-          <ChevronRight size={16} color={palette.accentPrimary}  />
+          <ChevronRight size={16} color={theme.colors.accentPrimary} />
         </TouchableOpacity>
       </View>
     </MobileCard>
@@ -69,7 +69,7 @@ export default function FeedsScreen() {
         <View style={{ flex: 1 }}>
           <Text style={styles.artistName}>{item.artist}</Text>
           <View style={styles.locationRow}>
-            <MapPin size={12} color={palette.textMuted}  />
+            <MapPin size={12} color={theme.colors.textMuted} />
             <Text style={styles.locationText}>{item.venue}, {item.city}</Text>
           </View>
         </View>
@@ -80,7 +80,7 @@ export default function FeedsScreen() {
       
       <View style={styles.concertFooter}>
         <View style={styles.dateInfo}>
-          <Calendar size={14} color={palette.accentPrimary}  />
+          <Calendar size={14} color={theme.colors.accentPrimary} />
           <Text style={styles.dateText}>{item.date}</Text>
         </View>
         {item.ticket_url && (
@@ -104,9 +104,8 @@ export default function FeedsScreen() {
       
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.accentPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.accentPrimary} />}
       >
-        {/* Tab Selector */}
         <View style={styles.tabBar}>
           <TouchableOpacity 
             onPress={() => setTab('tech')}
@@ -156,7 +155,7 @@ export default function FeedsScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: palette.bgPrimary,
+    backgroundColor: theme.colors.bgPrimary,
   },
   scrollContainer: {
     padding: spacing.md,
@@ -164,12 +163,12 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(26, 26, 26, 0.8)',
-    borderRadius: 16,
+    backgroundColor: theme.colors.bgCard,
+    borderRadius: theme.radii.md,
     padding: 6,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: 'rgba(0, 255, 255, 0.1)',
+    borderColor: theme.colors.borderColor,
   },
   tab: {
     flex: 1,
@@ -185,11 +184,11 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 13,
     fontWeight: '700',
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     letterSpacing: 0.5,
   },
   tabTextActive: {
-    color: palette.accentPrimary,
+    color: theme.colors.accentPrimary,
     fontWeight: '900',
   },
   sectionHeader: {
@@ -205,8 +204,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 255, 255, 0.4)',
   },
   sectionTitle: {
-    color: palette.textSecondary,
-    fontSize: 11,
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.caption,
     fontWeight: '900',
     textTransform: 'uppercase',
     letterSpacing: 2,
@@ -233,20 +232,21 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 255, 255, 0.2)',
   },
   categoryText: {
-    color: palette.accentPrimary,
+    color: theme.colors.accentPrimary,
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 1.2,
   },
   feedTime: {
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     fontSize: 11,
     fontWeight: '600',
   },
   feedTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#FFF',
+    fontSize: theme.typography.heading3,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.heading,
     lineHeight: 26,
     marginBottom: 16,
   },
@@ -265,14 +265,14 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: palette.accentPrimary,
+    backgroundColor: theme.colors.accentPrimary,
     shadowColor: '#00FFFF',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 4,
   },
   sourceText: {
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     fontSize: 13,
     fontWeight: '700',
   },
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 14,
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     fontWeight: '600',
   },
   genreBadge: {
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 255, 255, 0.3)',
   },
   ticketText: {
-    color: palette.accentPrimary,
+    color: theme.colors.accentPrimary,
     fontWeight: '900',
     fontSize: 13,
     letterSpacing: 0.5,
@@ -360,9 +360,8 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     fontSize: 15,
     fontWeight: '600',
   },
 });
-

@@ -1,17 +1,15 @@
 export const palette = {
-  bgPrimary: '#0A0A0A',      // Pure Deep Black
-  bgSecondary: '#1A1A1A',    // Deep Slate
-  bgCard: '#13131C',         // Figma AI Card Color
-  
-  accentPrimary: '#00FFFF',  // Super Cyan Pure
-  accentSecondary: '#A855F7', // Vibrant Purple
-  
-  textPrimary: '#FFFFFF',    // Pure White
-  textSecondary: '#BBC9CD',  // Muted Blue-Grey
-  textMuted: '#71717A',      // Figma Zinc-500
-  
-  borderColor: 'rgba(0, 255, 255, 0.2)', // Cyan Border
-  shadowColor: 'rgba(0, 255, 255, 0.3)', // Cyan Glow
+  bgPrimary: '#010106',
+  bgSecondary: '#0e0f1b',
+  bgCard: '#05060f',
+  overlay: 'rgba(1, 1, 4, 0.85)',
+  accentPrimary: '#00FFFF',
+  accentSecondary: '#A855F7',
+  textPrimary: '#F8FAFC',
+  textSecondary: '#BBC9CD',
+  textMuted: '#94A3B8',
+  borderColor: 'rgba(0, 255, 255, 0.2)',
+  glow: 'rgba(0, 255, 255, 0.3)',
 };
 
 export const spacing = {
@@ -22,7 +20,25 @@ export const spacing = {
   xl: 32,
 };
 
+export const typography = {
+  body: 16,
+  heading1: 26,
+  heading2: 22,
+  heading3: 18,
+  caption: 12,
+};
+
 export const theme = {
   colors: palette,
-  spacing: spacing,
+  spacing,
+  typography,
+  fonts: {
+    body: 'System',
+    heading: 'System',
+  },
+  radii: {
+    sm: 12,
+    md: 16,
+    lg: 20,
+  },
 };

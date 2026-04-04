@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '../components/Themed';
-import { palette, spacing } from '../theme';
+import { spacing, theme } from '../theme';
 import { fetchHealth } from '../services/api';
 import { MobileHeader } from '../components/MobileHeader';
 import { MobileCard } from '../components/MobileCard';
@@ -42,7 +42,7 @@ export default function HealthScreen() {
   if (loading) {
     return (
       <View style={[styles.root, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={palette.accentPrimary} />
+        <ActivityIndicator size="large" color={theme.colors.accentPrimary} />
       </View>
     );
   }
@@ -53,7 +53,7 @@ export default function HealthScreen() {
       
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.accentPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.accentPrimary} />}
       >
         <View style={styles.grid}>
           {healthStats.map((stat) => (
@@ -86,14 +86,14 @@ export default function HealthScreen() {
           />
           <View style={styles.analysisCover}>
              <View style={styles.analysisIconBox}>
-                <Moon size={28} color={palette.accentPrimary}  />
+                <Moon size={28} color={theme.colors.accentPrimary} />
              </View>
              <View style={{ flex: 1, marginLeft: 16 }}>
                 <Text style={styles.analysisTitle}>Sleep Analysis</Text>
                 <Text style={styles.analysisDesc}>Deep REM & recovery insights via Samsung Watch.</Text>
              </View>
              <TouchableOpacity style={styles.analysisButton}>
-                <ChevronRight size={18} color={palette.accentPrimary}  />
+                <ChevronRight size={18} color={theme.colors.accentPrimary} />
              </TouchableOpacity>
           </View>
         </MobileCard>
@@ -105,7 +105,7 @@ export default function HealthScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: palette.bgPrimary,
+    backgroundColor: theme.colors.bgPrimary,
   },
   scrollContainer: {
     padding: spacing.md,
@@ -139,18 +139,19 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statValue: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#FFF',
+    fontSize: theme.typography.heading2,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.heading,
   },
   statUnit: {
     fontSize: 12,
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     fontWeight: '700',
   },
   statLabel: {
     fontSize: 11,
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -169,8 +170,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 255, 255, 0.4)',
   },
   sectionTitle: {
-    color: palette.textSecondary,
-    fontSize: 11,
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.caption,
     fontWeight: '900',
     textTransform: 'uppercase',
     letterSpacing: 2,
@@ -196,13 +197,14 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 255, 255, 0.2)',
   },
   analysisTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#FFF',
+    fontSize: theme.typography.heading3,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.heading,
   },
   analysisDesc: {
     fontSize: 13,
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     marginTop: 2,
     fontWeight: '600',
   },
