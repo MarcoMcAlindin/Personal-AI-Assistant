@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 from typing import List, Dict, Optional
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -7,6 +8,8 @@ from supabase import create_client, Client
 from pydantic import BaseModel
 from email.mime.text import MIMEText
 import base64
+
+logger = logging.getLogger(__name__)
 
 class EmailItem(BaseModel):
     id: str
@@ -115,19 +118,29 @@ class EmailService:
         return creds
 
     def _save_google_tokens(self, user_id: str, creds: Credentials) -> None:
-        """Persist refreshed Google credentials back to users.oauth_tokens."""
+        """Persist refreshed Google credentials back to users.oauth_tokens.google.
+
+        Uses a read-merge-write pattern to avoid overwriting other provider
+        tokens (e.g. Spotify) stored in the same oauth_tokens JSONB column.
+        """
         if not self.supabase:
             return
         expiry_iso = creds.expiry.isoformat() if creds.expiry else None
+
+        # Fetch current oauth_tokens to preserve other provider keys
+        row = self.supabase.table("users") \
+            .select("oauth_tokens") \
+            .eq("id", user_id).single().execute()
+        current_tokens = row.data.get("oauth_tokens") or {}
+
+        current_tokens["google"] = {
+            "access_token": creds.token,
+            "refresh_token": creds.refresh_token,
+            "token_expiry": expiry_iso,
+            "scopes": list(creds.scopes) if creds.scopes else [],
+        }
         self.supabase.table("users").update({
-            "oauth_tokens": {
-                "google": {
-                    "access_token": creds.token,
-                    "refresh_token": creds.refresh_token,
-                    "token_expiry": expiry_iso,
-                    "scopes": list(creds.scopes) if creds.scopes else [],
-                }
-            }
+            "oauth_tokens": current_tokens
         }).eq("id", user_id).execute()
 
     async def fetch_inbox(self, user_id: str) -> List[Dict]:
@@ -202,8 +215,18 @@ class EmailService:
 
             return filtered_emails
         except Exception as e:
-            # Rule 11: Error Handling for external APIs
-            print(f"Error fetching Gmail: {e}")
+            # Surface token failures clearly — catch RefreshError explicitly and also
+            # inspect the message for 401 / invalid_grant signals from other layers.
+            from google.auth.exceptions import RefreshError
+            err_str = str(e)
+            if isinstance(e, RefreshError) or "401" in err_str or "unauthorized" in err_str.lower() or "invalid_grant" in err_str.lower():
+                logger.warning(
+                    "[EmailService] Gmail credential failure for user %s — token likely expired or revoked: %s",
+                    user_id,
+                    err_str,
+                )
+            else:
+                logger.error("[EmailService] Error fetching Gmail for user %s: %s", user_id, err_str)
             return []
 
     async def get_contacts(self, user_id: str, query: str) -> List[Dict]:
