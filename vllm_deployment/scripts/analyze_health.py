@@ -1,8 +1,9 @@
 import os
 import sys
 import json
-import subprocess
+import time
 import socket
+import subprocess
 from urllib.parse import urlparse
 from datetime import datetime, timedelta
 from supabase import create_client, Client
@@ -18,10 +19,10 @@ def get_identity_token(audience: str) -> str:
     return result.stdout.strip()
 
 
-import time
-
-def call_ai_with_retry(client, url, payload, headers, retries=3, backoff=[0, 30, 60]):
+def call_ai_with_retry(client, url, payload, headers, retries=3, backoff=None):
     """Call vLLM with retry for cold-start 503s or rate limit 429s."""
+    if backoff is None:
+        backoff = [0, 30, 60]
     last_error = None
     for attempt, delay in enumerate(backoff[:retries]):
         if delay > 0:
@@ -41,50 +42,44 @@ def call_ai_with_retry(client, url, payload, headers, retries=3, backoff=[0, 30,
             continue
     raise RuntimeError(f"AI call failed after {retries} attempts: {last_error}")
 
+
+def clean_env(val: str | None) -> str | None:
+    """Strip whitespace and quotation marks from environment variable values."""
+    if not val:
+        return None
+    cleaned = val.strip().strip('"').strip("'").replace('\n', '').replace('\r', '')
+    return cleaned or None
+
+
 def analyze_health():
-    supabase_url = os.environ.get("SUPABASE_URL", "").strip().strip('"') or None
-    supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip().strip('"') or None
-    qwen_endpoint_url = os.environ.get("QWEN_ENDPOINT_URL", "").strip().strip('"') or None
-    qwen_model_name = os.environ.get("QWEN_MODEL_NAME", "").strip().strip('"') or None
-
-    if not all([supabase_url, supabase_key, qwen_endpoint_url, qwen_model_name]):
-        print(f"DEBUG: SUPABASE_URL present: {bool(supabase_url)}")
-        print(f"DEBUG: SUPABASE_KEY present: {bool(supabase_key)}")
-        print(f"DEBUG: QWEN_ENDPOINT present: {bool(qwen_endpoint_url)}")
-        print(f"DEBUG: QWEN_MODEL present: {bool(qwen_model_name)}")
-        print("Missing required environment variables (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, QWEN_ENDPOINT_URL, QWEN_MODEL_NAME).")
-        sys.exit(1)
-
-    # Deeper debug
-    if supabase_url:
-        print(f"DEBUG: SUPABASE_URL repr: {repr(supabase_url)}")
-        u = urlparse(supabase_url)
-        print(f"DEBUG: SUPABASE_URL hostname: {repr(u.hostname)}")
-        if u.hostname:
-            try:
-                ip = socket.gethostbyname(u.hostname)
-                print(f"DEBUG: Hostname {u.hostname} resolved to {ip}")
-            except Exception as dna_err:
-                print(f"DEBUG: Hostname {u.hostname} resolution FAILED: {dna_err}")
-        else:
-            print("DEBUG: Hostname is NONE - URL malformed?")
-    
-    # Aggressive cleanup of ALL env vars
-    def clean_env(val):
-        if not val: return None
-        return val.strip().strip('"').strip("'").replace(' ', '').replace('\n', '').replace('\r', '')
-
     supabase_url = clean_env(os.environ.get("SUPABASE_URL"))
     supabase_key = clean_env(os.environ.get("SUPABASE_SERVICE_ROLE_KEY"))
     qwen_endpoint_url = clean_env(os.environ.get("QWEN_ENDPOINT_URL"))
     qwen_model_name = clean_env(os.environ.get("QWEN_MODEL_NAME"))
 
-    if not all([supabase_url, supabase_key, qwen_endpoint_url, qwen_model_name]):
-        print(f"DEBUG After Cleanup: SUPABASE_URL present: {bool(supabase_url)}")
-        print(f"DEBUG After Cleanup: SUPABASE_KEY present: {bool(supabase_key)}")
-        print(f"DEBUG After Cleanup: QWEN_ENDPOINT present: {bool(qwen_endpoint_url)}")
-        print(f"DEBUG After Cleanup: QWEN_MODEL present: {bool(qwen_model_name)}")
-        print("Missing required environment variables.")
+    missing = [
+        name for name, val in [
+            ("SUPABASE_URL", supabase_url),
+            ("SUPABASE_SERVICE_ROLE_KEY", supabase_key),
+            ("QWEN_ENDPOINT_URL", qwen_endpoint_url),
+            ("QWEN_MODEL_NAME", qwen_model_name),
+        ] if not val
+    ]
+    if missing:
+        print(f"FATAL: Missing required environment variables: {missing}")
+        sys.exit(1)
+
+    # Verify Supabase hostname is resolvable before attempting connection
+    parsed = urlparse(supabase_url)
+    if parsed.hostname:
+        try:
+            ip = socket.gethostbyname(parsed.hostname)
+            print(f"Supabase hostname resolved: {parsed.hostname} → {ip}")
+        except socket.gaierror as e:
+            print(f"FATAL: Cannot resolve Supabase hostname '{parsed.hostname}': {e}")
+            sys.exit(1)
+    else:
+        print(f"FATAL: SUPABASE_URL is malformed (no hostname): {supabase_url!r}")
         sys.exit(1)
 
     supabase: Client = create_client(supabase_url, supabase_key)
@@ -96,7 +91,7 @@ def analyze_health():
     metrics_list = response.data
 
     if not metrics_list:
-        print(f"No metrics found for {yesterday}. Failing workflow -- silent pass is not acceptable.")
+        print(f"No metrics found for {yesterday}. Failing workflow — silent pass is not acceptable.")
         sys.exit(1)
 
     prompt_path = os.path.join(os.path.dirname(__file__), "../system_prompts/health_scout.md")
@@ -121,15 +116,19 @@ def analyze_health():
         try:
             # Audience must be the bare Cloud Run service URL (no /v1 path suffix)
             # Cloud Run rejects identity tokens whose audience includes a path component
-            qwen_audience = qwen_endpoint_url.rstrip("/v1").rstrip("/")
+            qwen_audience = qwen_endpoint_url.rstrip("/")
+            if qwen_audience.endswith("/v1"):
+                qwen_audience = qwen_audience[:-3]
+
             identity_token = get_identity_token(qwen_audience)
+
             # 300s timeout: cold start ~15-30s for 9B, large buffer for safety
             with httpx.Client(timeout=300.0) as client:
-                # Normalize URL: ensure /v1 is always present regardless of what QWEN_ENDPOINT_URL contains
+                # Normalize URL: ensure /v1 is always present
                 qwen_base = qwen_endpoint_url.rstrip('/')
                 if not qwen_base.endswith('/v1'):
                     qwen_base = f"{qwen_base}/v1"
-                
+
                 payload = {
                     "model": qwen_model_name,
                     "messages": [
@@ -143,7 +142,7 @@ def analyze_health():
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {identity_token}"
                 }
-                
+
                 ai_response_json = call_ai_with_retry(client, f"{qwen_base}/chat/completions", payload, headers)
                 analysis_text = ai_response_json["choices"][0]["message"]["content"]
 
