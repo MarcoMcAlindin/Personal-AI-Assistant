@@ -8,7 +8,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '../components/Themed';
-import { palette, spacing } from '../theme';
+import { spacing, theme } from '../theme';
 import { fetchTasks, createTask, updateTask } from '../services/api';
 import { MobileHeader } from '../components/MobileHeader';
 import { MobileCard } from '../components/MobileCard';
@@ -92,8 +92,9 @@ export default function PlannerScreen() {
 
   const renderTaskItem = (item) => {
     const done = item.status === 'completed';
-    const priorityColor = item.priority === 'high' ? '#FF5555' : 
-                         item.priority === 'medium' ? '#FFCC00' : '#00FFFF';
+    const priority = item.urgency || item.priority || 'medium';
+    const priorityColor = priority === 'high' ? '#FF5555' : 
+                         priority === 'medium' ? '#FFCC00' : '#00FFFF';
 
     return (
       <MobileCard 
@@ -116,12 +117,12 @@ export default function PlannerScreen() {
             <View style={styles.taskMeta}>
               <View style={[styles.priorityBadge, { backgroundColor: `${priorityColor}15`, borderColor: `${priorityColor}30` }]}>
                 <Text style={{ color: priorityColor, fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 }}>
-                  {item.priority || 'medium'}
+                  {priority}
                 </Text>
               </View>
               {item.time && (
                 <View style={styles.timeInfo}>
-                  <Clock size={14} color={palette.textSecondary}  />
+                  <Clock size={14} color={theme.colors.textSecondary} />
                   <Text style={styles.timeText}>{formatTime12h(item.time)}</Text>
                 </View>
               )}
@@ -139,13 +140,13 @@ export default function PlannerScreen() {
       <MobileCard key={item.id} style={styles.scheduleCard}>
         <View style={styles.scheduleContent}>
           <View style={styles.scheduleIcon}>
-            <Video size={20} color={palette.accentPrimary}  />
+            <Video size={20} color={theme.colors.accentPrimary} />
           </View>
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.scheduleTitle}>{item.title}</Text>
-            <View style={styles.scheduleMeta}>
-              <Clock size={14} color={palette.textMuted}  />
-              <Text style={styles.scheduleTime}>{formatTime12h(item.time)}</Text>
+              <Text style={styles.scheduleTitle}>{item.title}</Text>
+              <View style={styles.scheduleMeta}>
+                <Clock size={14} color={theme.colors.textMuted} />
+                <Text style={styles.scheduleTime}>{formatTime12h(item.time)}</Text>
               <Text style={styles.scheduleDot}>•</Text>
               <Text style={styles.scheduleDuration}>{item.duration || '30m'}</Text>
             </View>
@@ -164,12 +165,11 @@ export default function PlannerScreen() {
       
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.accentPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.accentPrimary} />}
       >
-        {/* Stats Grid */}
         <View style={styles.statsGrid}>
           <MobileCard style={styles.statCard}>
-            <Text style={[styles.statValue, { color: palette.accentPrimary }]}>{pendingCount}</Text>
+            <Text style={[styles.statValue, { color: theme.colors.accentPrimary }]}>{pendingCount}</Text>
             <Text style={styles.statLabel}>Pending</Text>
           </MobileCard>
           <MobileCard style={styles.statCard}>
@@ -204,7 +204,7 @@ export default function PlannerScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.addButtonGradient}
           >
-            <Plus size={24} color={palette.accentPrimary}  />
+            <Plus size={24} color={theme.colors.accentPrimary} />
             <Text style={styles.addButtonText}>Add New {activeTab === 'tasks' ? 'Task' : 'Event'}</Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -259,7 +259,7 @@ export default function PlannerScreen() {
               <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>New Entry</Text>
               <TouchableOpacity onPress={() => setShowAddTask(false)} style={styles.modalClose}>
-                <X size={24} color={palette.textMuted}  />
+                <X size={24} color={theme.colors.textMuted} />
               </TouchableOpacity>
             </View>
 
@@ -268,7 +268,7 @@ export default function PlannerScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="What needs to be done?"
-                placeholderTextColor={palette.textMuted}
+                placeholderTextColor={theme.colors.textMuted}
                 value={newTitle}
                 onChangeText={setNewTitle}
               />
@@ -279,7 +279,7 @@ export default function PlannerScreen() {
                   <TextInput
                     style={styles.input}
                     placeholder="e.g., 14:00"
-                    placeholderTextColor={palette.textMuted}
+                    placeholderTextColor={theme.colors.textMuted}
                     value={newTime}
                     onChangeText={setNewTime}
                   />
@@ -293,10 +293,10 @@ export default function PlannerScreen() {
                         onPress={() => setNewPriority(p)}
                         style={[
                           styles.priorityOption, 
-                          newPriority === p && { borderColor: palette.accentPrimary, backgroundColor: 'rgba(0, 212, 255, 0.1)' }
+                          newPriority === p && { borderColor: theme.colors.accentPrimary, backgroundColor: 'rgba(0, 212, 255, 0.1)' }
                         ]}
                       >
-                        <Text style={[styles.priorityText, newPriority === p && { color: palette.accentPrimary }]}>
+                        <Text style={[styles.priorityText, newPriority === p && { color: theme.colors.accentPrimary }]}>
                           {p.charAt(0).toUpperCase()}
                         </Text>
                       </TouchableOpacity>
@@ -314,7 +314,7 @@ export default function PlannerScreen() {
                   colors={['rgba(0, 212, 255, 0.3)', 'rgba(0, 153, 204, 0.3)']}
                   style={styles.submitButtonGradient}
                 >
-                  <Calendar size={20} color={palette.accentPrimary} style={{ marginRight: 8 }}  />
+                  <Calendar size={20} color={theme.colors.accentPrimary} style={{ marginRight: 8 }} />
                   <Text style={styles.submitButtonText}>Add to Planner</Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -330,7 +330,7 @@ export default function PlannerScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: palette.bgPrimary,
+    backgroundColor: theme.colors.bgPrimary,
   },
   scrollContainer: {
     padding: spacing.md,
@@ -348,25 +348,26 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   statValue: {
-    fontSize: 28,
-    fontWeight: '900',
+    fontSize: theme.typography.heading2,
+    fontWeight: '700',
+    fontFamily: theme.fonts.heading,
     marginBottom: 4,
   },
   statLabel: {
-    fontSize: 11,
-    color: palette.textSecondary,
+    fontSize: theme.typography.caption,
+    color: theme.colors.textSecondary,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(26, 26, 26, 0.8)',
-    borderRadius: 16,
+    backgroundColor: theme.colors.bgCard,
+    borderRadius: theme.radii.md,
     padding: 6,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: 'rgba(0, 255, 255, 0.1)',
+    borderColor: theme.colors.borderColor,
   },
   tab: {
     flex: 1,
@@ -382,11 +383,11 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 13,
     fontWeight: '700',
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     letterSpacing: 0.5,
   },
   tabTextActive: {
-    color: palette.accentPrimary,
+    color: theme.colors.accentPrimary,
     fontWeight: '900',
   },
   addButton: {
@@ -405,7 +406,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 255, 255, 0.05)',
   },
   addButtonText: {
-    color: palette.accentPrimary,
+    color: theme.colors.accentPrimary,
     fontWeight: '900',
     fontSize: 16,
     letterSpacing: 0.5,
@@ -423,8 +424,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 255, 255, 0.4)',
   },
   sectionTitle: {
-    color: palette.textSecondary,
-    fontSize: 11,
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.caption,
     fontWeight: '900',
     textTransform: 'uppercase',
     letterSpacing: 2,
@@ -452,17 +453,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 255, 255, 0.05)',
   },
   checkboxDone: {
-    backgroundColor: palette.accentPrimary,
-    borderColor: palette.accentPrimary,
+    backgroundColor: theme.colors.accentPrimary,
+    borderColor: theme.colors.accentPrimary,
   },
   taskTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#FFF',
+    fontSize: theme.typography.body,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.heading,
     letterSpacing: 0.3,
   },
   taskTitleDone: {
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     textDecorationLine: 'line-through',
   },
   taskMeta: {
@@ -484,7 +486,7 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 12,
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     fontWeight: '700',
   },
   scheduleCard: {
@@ -507,9 +509,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scheduleTitle: {
-    fontSize: 17,
-    fontWeight: '900',
-    color: '#FFF',
+    fontSize: theme.typography.heading3,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.heading,
   },
   scheduleMeta: {
     flexDirection: 'row',
@@ -519,7 +522,7 @@ const styles = StyleSheet.create({
   },
   scheduleTime: {
     fontSize: 13,
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     fontWeight: '600',
   },
   scheduleDot: {
@@ -527,7 +530,7 @@ const styles = StyleSheet.create({
   },
   scheduleDuration: {
     fontSize: 13,
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     fontWeight: '600',
   },
   emptyContainer: {
@@ -535,7 +538,7 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -547,7 +550,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   modalContent: {
-    backgroundColor: '#0A0A0A',
+    backgroundColor: theme.colors.bgPrimary,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     borderTopWidth: 1,
@@ -567,9 +570,10 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   modalTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#FFF',
+    fontSize: theme.typography.heading2,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.heading,
     letterSpacing: 0.5,
   },
   modalClose: {
@@ -583,9 +587,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   inputLabel: {
-    fontSize: 11,
+    fontSize: theme.typography.caption,
     fontWeight: '900',
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
     marginBottom: 10,
@@ -593,10 +597,10 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 16,
+    borderRadius: theme.radii.md,
     paddingHorizontal: 18,
     paddingVertical: 16,
-    color: '#FFF',
+    color: theme.colors.textPrimary,
     fontSize: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
@@ -619,7 +623,7 @@ const styles = StyleSheet.create({
   priorityText: {
     fontSize: 14,
     fontWeight: '900',
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
   },
   submitButton: {
     borderRadius: 20,
@@ -636,10 +640,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 255, 255, 0.1)',
   },
   submitButtonText: {
-    color: palette.accentPrimary,
+    color: theme.colors.accentPrimary,
     fontWeight: '900',
     fontSize: 17,
     letterSpacing: 0.5,
   },
 });
-

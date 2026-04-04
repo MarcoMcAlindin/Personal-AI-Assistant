@@ -6,7 +6,20 @@ export type ViewProps = DefaultView['props'];
 
 export function Text(props: TextProps) {
   const { style, ...otherProps } = props;
-  return <DefaultText style={[{ color: theme.colors.textPrimary, fontFamily: 'System' }, style]} {...otherProps} />;
+  return (
+    <DefaultText
+      style={[
+        {
+          color: theme.colors.textPrimary,
+          fontFamily: theme.fonts.body,
+          fontSize: theme.typography.body,
+          lineHeight: theme.typography.body * 1.4,
+        },
+        style,
+      ]}
+      {...otherProps}
+    />
+  );
 }
 
 export function View(props: ViewProps) {
@@ -17,18 +30,23 @@ export function View(props: ViewProps) {
 export function Card(props: ViewProps) {
   const { style, ...otherProps } = props;
   return (
-    <DefaultView 
+    <DefaultView
       style={[
-        { 
-          backgroundColor: theme.colors.bgCard, 
-          borderRadius: 12, 
+        {
+          backgroundColor: theme.colors.bgCard,
+          borderRadius: theme.radii.md,
           padding: theme.spacing.md,
           borderWidth: 1,
-          borderColor: theme.colors.borderColor
-        }, 
-        style
-      ]} 
-      {...otherProps} 
+          borderColor: theme.colors.borderColor,
+          shadowColor: theme.colors.glow,
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.16,
+          shadowRadius: 22,
+          elevation: 7,
+        },
+        style,
+      ]}
+      {...otherProps}
     />
   );
 }
@@ -40,16 +58,19 @@ export const commonStyles = StyleSheet.create({
     padding: theme.spacing.md,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: theme.typography.heading2,
+    fontWeight: '600',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.heading,
     marginBottom: theme.spacing.md,
   },
   subtitle: {
-    fontSize: 16,
-    color: theme.colors.textMuted,
+    fontSize: theme.typography.caption,
+    color: theme.colors.textSecondary,
     marginBottom: theme.spacing.sm,
   },
   accentText: {
     color: theme.colors.accentPrimary,
-  }
+    fontFamily: theme.fonts.heading,
+  },
 });

@@ -52,7 +52,7 @@ const App = (): JSX.Element => {
             <Route path="money" element={<MoneyView />} />
             <Route path="email" element={<EmailView />} />
             <Route path="calendar" element={<CalendarView />} />
-            <Route path="planner" element={<Navigate to="/" replace />} />
+            <Route path="planner" element={<Navigate to="/calendar" replace />} />
             
             <Route path="todolist" element={<Navigate to="/tasks" replace />} />
             <Route path="internet-speed" element={<InternetSpeedView />} />

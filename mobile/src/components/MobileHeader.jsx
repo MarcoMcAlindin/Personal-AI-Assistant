@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, TouchableOpacity, Platform } from 'react-native';
 import { Text } from './Themed';
 import { Menu, Search, Bell, ArrowLeft } from 'lucide-react-native';
-import { palette } from '../theme';
+import { theme } from '../theme';
 import { MobileMenu } from './MobileMenu';
 import { BlurView } from 'expo-blur';
 
@@ -17,11 +17,11 @@ export const MobileHeader = ({ title, subtitle, showBack, onBack }) => {
             <View style={styles.leftSection}>
               {showBack ? (
                 <TouchableOpacity onPress={onBack} style={styles.iconButton}>
-                  <ArrowLeft size={24} color={palette.accentPrimary} />
+                  <ArrowLeft size={24} color={theme.colors.accentPrimary} />
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity onPress={() => setMenuOpen(true)} style={styles.iconButton}>
-                  <Menu size={24} color={palette.accentPrimary} />
+                  <Menu size={24} color={theme.colors.accentPrimary} />
                 </TouchableOpacity>
               )}
               <View>
@@ -31,11 +31,11 @@ export const MobileHeader = ({ title, subtitle, showBack, onBack }) => {
             </View>
             
             <View style={styles.rightSection}>
-              <TouchableOpacity style={styles.iconButtonSmall}>
-                <Search size={20} color={palette.textSecondary} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButtonSmallRelative}>
-                <Bell size={20} color={palette.textSecondary} />
+                <TouchableOpacity style={styles.iconButtonSmall}>
+                  <Search size={20} color={theme.colors.textSecondary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.iconButtonSmallRelative}>
+                  <Bell size={20} color={theme.colors.textSecondary} />
                 <View style={styles.notificationDot} />
               </TouchableOpacity>
             </View>
@@ -50,15 +50,15 @@ export const MobileHeader = ({ title, subtitle, showBack, onBack }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(26,26,26,0.95)',
+    backgroundColor: theme.colors.bgSecondary,
     zIndex: 30,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 255, 255, 0.2)',
-    shadowColor: '#00FFFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 5,
+    borderBottomColor: theme.colors.borderColor,
+    shadowColor: theme.colors.glow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 26,
+    elevation: 8,
   },
   blurContainer: {
     flexGrow: 1,
@@ -77,17 +77,18 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 8,
-    backgroundColor: 'rgba(10,10,10,0.5)',
-    borderRadius: 12,
+    backgroundColor: theme.colors.overlay,
+    borderRadius: theme.radii.sm,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontSize: theme.typography.heading3,
+    fontWeight: '600',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.heading,
   },
   subtitle: {
-    fontSize: 12,
-    color: palette.textSecondary,
+    fontSize: theme.typography.caption,
+    color: theme.colors.textSecondary,
   },
   rightSection: {
     flexDirection: 'row',
@@ -96,13 +97,13 @@ const styles = StyleSheet.create({
   },
   iconButtonSmall: {
     padding: 8,
-    backgroundColor: 'rgba(10,10,10,0.5)',
-    borderRadius: 12,
+    backgroundColor: theme.colors.overlay,
+    borderRadius: theme.radii.sm,
   },
   iconButtonSmallRelative: {
     padding: 8,
-    backgroundColor: 'rgba(10,10,10,0.5)',
-    borderRadius: 12,
+    backgroundColor: theme.colors.overlay,
+    borderRadius: theme.radii.sm,
     position: 'relative',
   },
   notificationDot: {
@@ -111,9 +112,9 @@ const styles = StyleSheet.create({
     right: 4,
     width: 8,
     height: 8,
-    backgroundColor: '#EF4444',
+    backgroundColor: '#F97316',
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#1A1A1A',
+    borderColor: theme.colors.bgSecondary,
   }
 });

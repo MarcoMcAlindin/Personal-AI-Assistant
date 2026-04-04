@@ -32,7 +32,6 @@ const SOURCE_META: Record<string, { label: string; color: string; bg: string; bo
   "adzuna":          { label: "Adzuna",             color: "#f97316",  bg: "rgba(249,115,22,0.12)",  border: "rgba(249,115,22,0.3)" },
   "jobicy":          { label: "Jobicy",             color: "#818cf8",  bg: "rgba(129,140,248,0.12)", border: "rgba(129,140,248,0.3)" },
   "himalayas":       { label: "Himalayas",          color: "#2dd4bf",  bg: "rgba(45,212,191,0.12)",  border: "rgba(45,212,191,0.3)" },
-  "reed":            { label: "Reed",               color: "#f87171",  bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.3)" },
 };
 
 function getSourceMeta(source?: string | null) {

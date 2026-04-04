@@ -19,7 +19,7 @@ import {
   User
 } from 'lucide-react-native';
 import { Text } from './Themed';
-import { palette, spacing } from '../theme';
+import { spacing, theme } from '../theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
@@ -31,7 +31,7 @@ const MENU_ITEMS = [
   { icon: Newspaper, label: "News", path: "Feeds" },
   { icon: Heart, label: "Health", path: "Health" },
   { icon: Mail, label: "Email", path: "Mail" },
-  { icon: Calendar, label: "Calendar", path: "Plan" },
+  { icon: Calendar, label: "Planner", path: "Plan" },
   { icon: CheckSquare, label: "Todo List", path: "Plan" },
   { icon: Cpu, label: "AI Tools", path: "AI" },
   { icon: Zap, label: "Internet Speed", path: "Home" },
@@ -101,7 +101,7 @@ export function MobileMenu({ isOpen, onClose }) {
               <View style={styles.headerTop}>
                 <View style={styles.brandRow}>
                   <LinearGradient
-                    colors={['#00FFFF', '#0099CC']}
+                    colors={[theme.colors.accentPrimary, theme.colors.accentSecondary]}
                     style={styles.logoBox}
                   >
                     <Cpu size={24} color="#0A0A0A" />
@@ -112,13 +112,13 @@ export function MobileMenu({ isOpen, onClose }) {
                   </View>
                 </View>
                 <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                  <X size={24} color={palette.textSecondary} />
+                  <X size={24} color={theme.colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
               <View style={styles.profileCard}>
                 <LinearGradient
-                  colors={['#00FFFF', '#0099CC']}
+                  colors={[theme.colors.accentPrimary, theme.colors.accentSecondary]}
                   style={styles.avatarBox}
                 >
                   <User size={20} color="#0A0A0A" />
@@ -144,7 +144,10 @@ export function MobileMenu({ isOpen, onClose }) {
                     style={[styles.menuItem, isActive && styles.menuItemActive]}
                     onPress={() => handleNavigate(item.path)}
                   >
-                    <Icon size={20} color={isActive ? palette.accentPrimary : palette.textSecondary} />
+                    <Icon
+                      size={20}
+                      color={isActive ? theme.colors.accentPrimary : theme.colors.textSecondary}
+                    />
                     <Text style={[styles.menuItemText, isActive && styles.menuItemTextActive]}>
                       {item.label}
                     </Text>
@@ -155,7 +158,7 @@ export function MobileMenu({ isOpen, onClose }) {
 
             <View style={styles.footer}>
               <TouchableOpacity style={styles.menuItem}>
-                <Settings size={20} color={palette.textSecondary} />
+                <Settings size={20} color={theme.colors.textSecondary} />
                 <Text style={styles.menuItemText}>Settings</Text>
               </TouchableOpacity>
             </View>
@@ -182,14 +185,14 @@ const styles = StyleSheet.create({
     left: 0,
     width: '85%',
     maxWidth: 320,
-    backgroundColor: 'rgba(26,26,26,0.98)',
+    backgroundColor: theme.colors.bgSecondary,
     borderRightWidth: 1,
-    borderRightColor: 'rgba(0, 255, 255, 0.2)',
-    shadowColor: '#00FFFF',
+    borderRightColor: theme.colors.borderColor,
+    shadowColor: theme.colors.glow,
     shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOpacity: 0.2,
+    shadowRadius: 28,
+    elevation: 12,
   },
   blurView: {
     flex: 1,
@@ -198,7 +201,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingTop: Platform.OS === 'ios' ? 60 : spacing.xl,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 255, 255, 0.2)',
+    borderBottomColor: theme.colors.borderColor,
   },
   headerTop: {
     flexDirection: 'row',
@@ -219,28 +222,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   brandTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontSize: theme.typography.heading3,
+    fontWeight: '600',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.heading,
   },
   brandSubtitle: {
-    fontSize: 12,
-    color: palette.textSecondary,
+    fontSize: theme.typography.caption,
+    color: theme.colors.textSecondary,
   },
   closeBtn: {
     padding: 8,
-    backgroundColor: 'rgba(10,10,10,0.5)',
-    borderRadius: 12,
+    backgroundColor: theme.colors.overlay,
+    borderRadius: theme.radii.sm,
   },
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     padding: 12,
-    backgroundColor: 'rgba(10,10,10,0.5)',
+    backgroundColor: theme.colors.overlay,
     borderWidth: 1,
-    borderColor: 'rgba(0, 255, 255, 0.2)',
-    borderRadius: 16,
+    borderColor: theme.colors.borderColor,
+    borderRadius: theme.radii.md,
   },
   avatarBox: {
     width: 40,
@@ -250,13 +254,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profileName: {
-    fontSize: 14,
+    fontSize: theme.typography.body,
     fontWeight: '600',
-    color: '#FFF',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.heading,
   },
   profileType: {
-    fontSize: 12,
-    color: palette.textSecondary,
+    fontSize: theme.typography.caption,
+    color: theme.colors.textSecondary,
   },
   scrollArea: {
     flex: 1,
@@ -271,24 +276,24 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: theme.radii.sm,
   },
   menuItemActive: {
     backgroundColor: 'rgba(0, 255, 255, 0.1)',
   },
   menuItemText: {
-    fontSize: 16,
+    fontSize: theme.typography.body,
     fontWeight: '600',
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
   },
   menuItemTextActive: {
-    color: palette.accentPrimary,
+    color: theme.colors.accentPrimary,
   },
   footer: {
     padding: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 255, 255, 0.2)',
-    backgroundColor: 'rgba(26,26,26,0.95)',
+    borderTopColor: theme.colors.borderColor,
+    backgroundColor: theme.colors.bgSecondary,
     paddingBottom: Platform.OS === 'ios' ? 40 : spacing.md,
   },
 });

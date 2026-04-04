@@ -8,7 +8,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Markdown from 'react-native-markdown-display';
-import { palette, spacing } from '../theme';
+import { spacing, theme } from '../theme';
 import { sendChat, fetchVllmStatus, triggerVllmWarmup } from '../services/api';
 import { MobileHeader } from '../components/MobileHeader';
 import { MobileCard } from '../components/MobileCard';
@@ -28,11 +28,16 @@ const AI_TOOLS = [
 ];
 
 const markdownStyles = {
-  body: { color: '#FFF', fontSize: 14, lineHeight: 22 },
-  code_inline: { backgroundColor: 'rgba(0, 212, 255, 0.1)', color: palette.accentPrimary, borderRadius: 4, paddingHorizontal: 4 },
+  body: { color: theme.colors.textPrimary, fontSize: 15, lineHeight: 24 },
+  paragraph: { marginTop: 0, marginBottom: 10 },
+  heading1: { color: theme.colors.textPrimary, fontSize: 22, marginBottom: 10 },
+  heading2: { color: theme.colors.textPrimary, fontSize: 20, marginBottom: 8 },
+  heading3: { color: theme.colors.textPrimary, fontSize: 18, marginBottom: 6 },
+  bullet_list: { marginBottom: 8 },
+  code_inline: { backgroundColor: 'rgba(0, 212, 255, 0.1)', color: theme.colors.accentPrimary, borderRadius: 4, paddingHorizontal: 4 },
   code_block: { backgroundColor: '#000', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: 12, padding: 12, marginVertical: 8 },
   fence: { backgroundColor: '#000', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: 12, padding: 12, marginVertical: 8 },
-  link: { color: palette.accentPrimary, textDecorationLine: 'underline' },
+  link: { color: theme.colors.accentPrimary, textDecorationLine: 'underline' },
 };
 
 export default function ChatScreen() {
@@ -153,7 +158,7 @@ export default function ChatScreen() {
 
           {loading && (
             <View style={styles.typingContainer}>
-              <ActivityIndicator size="small" color={palette.accentPrimary} />
+              <ActivityIndicator size="small" color={theme.colors.accentPrimary} />
               <Text style={styles.typingText}>AI is thinking...</Text>
             </View>
           )}
@@ -162,7 +167,7 @@ export default function ChatScreen() {
              <TextInput
                style={styles.input}
                placeholder="Message Qwen..."
-               placeholderTextColor={palette.textMuted}
+               placeholderTextColor={theme.colors.textMuted}
                value={input}
                onChangeText={setInput}
                multiline
@@ -176,7 +181,7 @@ export default function ChatScreen() {
                   colors={['rgba(0, 212, 255, 0.4)', 'rgba(0, 153, 204, 0.4)']}
                   style={styles.sendButtonGradient}
                 >
-                  <ArrowUp size={20} color={palette.accentPrimary}  />
+                  <ArrowUp size={20} color={theme.colors.accentPrimary}  />
                 </LinearGradient>
              </TouchableOpacity>
           </BlurView>
@@ -190,7 +195,6 @@ export default function ChatScreen() {
       <MobileHeader title="AI Tools" subtitle="AI Orchestration Hub" />
       
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* AI Assistant Status Card */}
         <TouchableOpacity 
           onPress={() => setView('chat')}
           activeOpacity={0.9}
@@ -253,7 +257,7 @@ export default function ChatScreen() {
                       <Text style={styles.toolName}>{tool.name}</Text>
                       <Text style={styles.toolDesc}>{tool.description}</Text>
                    </View>
-                   <ChevronRight size={20} color={palette.accentPrimary}  />
+                   <ChevronRight size={20} color={theme.colors.accentPrimary}  />
                 </View>
              </MobileCard>
            ))}
@@ -266,7 +270,7 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: palette.bgPrimary,
+    backgroundColor: theme.colors.bgPrimary,
   },
   scrollContainer: {
     padding: spacing.md,
@@ -297,9 +301,10 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
   },
   cpuTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#FFF',
+    fontSize: theme.typography.heading2,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.heading,
     letterSpacing: 0.5,
   },
   statusRow: {
@@ -327,7 +332,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 255, 255, 0.3)',
   },
   warmupText: {
-    color: palette.accentPrimary,
+    color: theme.colors.accentPrimary,
     fontWeight: '900',
     fontSize: 11,
     letterSpacing: 1,
@@ -345,8 +350,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 255, 255, 0.4)',
   },
   sectionTitle: {
-    color: palette.textSecondary,
-    fontSize: 11,
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.caption,
     fontWeight: '900',
     textTransform: 'uppercase',
     letterSpacing: 2,
@@ -372,13 +377,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toolName: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#FFF',
+    fontSize: theme.typography.heading3,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.heading,
   },
   toolDesc: {
     fontSize: 13,
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     marginTop: 2,
   },
   // Chat Styles
@@ -411,14 +417,14 @@ const styles = StyleSheet.create({
     borderRadius: 22,
   },
   bubbleUser: {
-    backgroundColor: palette.accentPrimary,
+    backgroundColor: theme.colors.accentPrimary,
     borderBottomRightRadius: 4,
   },
   bubbleAI: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: theme.colors.overlay,
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: 'rgba(0, 255, 255, 0.2)',
+    borderColor: theme.colors.borderColor,
   },
   bubbleTextUser: {
     color: '#000',
@@ -439,7 +445,7 @@ const styles = StyleSheet.create({
     marginTop: 100,
   },
   emptyText: {
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     fontSize: 15,
     marginTop: 16,
     fontWeight: '600',
@@ -453,7 +459,7 @@ const styles = StyleSheet.create({
   },
   typingText: {
     fontSize: 12,
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     fontStyle: 'italic',
   },
   inputWrapper: {
@@ -469,7 +475,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: '#FFF',
+    color: theme.colors.textPrimary,
     fontSize: 15,
     maxHeight: 120,
     paddingTop: 0,
@@ -487,4 +493,3 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 255, 255, 0.3)',
   },
 });
-

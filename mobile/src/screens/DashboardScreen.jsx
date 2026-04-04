@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-import { palette, spacing } from '../theme';
+import { spacing, theme } from '../theme';
 import { MobileHeader } from '../components/MobileHeader';
 import { MobileCard } from '../components/MobileCard';
 import { Text } from '../components/Themed';
@@ -76,7 +76,7 @@ const MAIN_FEATURES = [
     iconColor: "#A855F7"
   },
   { 
-    title: "Calendar", 
+    title: "Planner", 
     Icon: Calendar, 
     description: "Schedule & events",
     count: "3 meetings today",
@@ -119,9 +119,8 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <MobileHeader title="Super Cyan" subtitle="AI Orchestration Platform" />
-      
+
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {/* Quick Stats Grid */}
         <View style={styles.statsGrid}>
           {QUICK_STATS.map((stat, idx) => {
             const IconComponent = stat.Icon;
@@ -145,7 +144,6 @@ export default function DashboardScreen() {
           })}
         </View>
 
-        {/* Section Header */}
         <View style={styles.sectionHeader}>
           <LinearGradient
             colors={['#00FFFF', 'transparent']}
@@ -156,7 +154,6 @@ export default function DashboardScreen() {
           <Text style={styles.sectionTitle}>QUICK ACCESS</Text>
         </View>
 
-        {/* Main Features Grid */}
         <View style={styles.featuresGrid}>
           {MAIN_FEATURES.map((feature, idx) => {
             const IconComponent = feature.Icon;
@@ -204,11 +201,11 @@ const STAT_CARD_WIDTH = (width - spacing.md * 2 - spacing.sm) / 2;
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: palette.bgPrimary,
+    backgroundColor: theme.colors.bgPrimary,
   },
   scrollContainer: {
     padding: spacing.md,
-    paddingBottom: 100, // Bottom padding for TabBar
+    paddingBottom: 100,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -254,14 +251,15 @@ const styles = StyleSheet.create({
     color: '#4ADE80',
   },
   statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: palette.textPrimary,
+    fontSize: theme.typography.heading2,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.heading,
     marginBottom: 4,
   },
   statLabel: {
-    fontSize: 12,
-    color: palette.textSecondary,
+    fontSize: theme.typography.caption,
+    color: theme.colors.textSecondary,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -275,9 +273,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: theme.typography.caption,
     fontWeight: '600',
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     letterSpacing: 2,
   },
   featuresGrid: {
@@ -296,7 +294,7 @@ const styles = StyleSheet.create({
   featureIconContainer: {
     width: 56,
     height: 56,
-    borderRadius: 14,
+    borderRadius: theme.radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -305,14 +303,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   featureTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: palette.textPrimary,
+    fontSize: theme.typography.heading3,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.heading,
     marginBottom: 4,
   },
   featureDesc: {
     fontSize: 14,
-    color: palette.textSecondary,
+    color: theme.colors.textSecondary,
     marginBottom: 4,
   },
   featureCountRow: {
@@ -321,14 +320,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   featureCount: {
-    fontSize: 12,
+    fontSize: theme.typography.caption,
     fontWeight: '600',
-    color: palette.accentPrimary,
+    color: theme.colors.accentPrimary,
   },
   featureChevron: {
     width: 32,
     height: 32,
-    borderRadius: 8,
+    borderRadius: theme.radii.sm,
     backgroundColor: 'rgba(0, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
