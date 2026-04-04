@@ -189,7 +189,7 @@ async def get_email_body(message_id: str, user_id: str = Depends(get_current_use
 @router.post("/email/rewrite")
 async def rewrite_email(
     request: EmailRewriteRequest,
-    user_id: str = Depends(get_current_user),
+    _auth: str = Depends(get_current_user),
 ):
     """AI-powered email rewrite using Qwen."""
     qwen_url = os.environ.get("QWEN_ENDPOINT_URL")
@@ -335,7 +335,7 @@ async def create_task(
 @router.post("/tasks/parse-voice", response_model=VoiceParseResponse)
 async def parse_voice_task(
     request: VoiceParseRequest,
-    current_user: dict = Depends(get_current_user),
+    _auth: dict = Depends(get_current_user),
 ):
     """Extract structured task fields from a voice transcript using Qwen."""
     if not request.transcript.strip():
