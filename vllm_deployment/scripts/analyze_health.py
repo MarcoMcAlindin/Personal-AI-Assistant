@@ -40,10 +40,10 @@ def call_ai_with_retry(client, url, payload, headers, retries=3, backoff=[0, 30,
     raise RuntimeError(f"AI call failed after {retries} attempts: {last_error}")
 
 def analyze_health():
-    supabase_url = os.environ.get("SUPABASE_URL")
-    supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-    qwen_endpoint_url = os.environ.get("QWEN_ENDPOINT_URL")
-    qwen_model_name = os.environ.get("QWEN_MODEL_NAME")
+    supabase_url = os.environ.get("SUPABASE_URL", "").strip().strip('"') or None
+    supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip().strip('"') or None
+    qwen_endpoint_url = os.environ.get("QWEN_ENDPOINT_URL", "").strip().strip('"') or None
+    qwen_model_name = os.environ.get("QWEN_MODEL_NAME", "").strip().strip('"') or None
 
     if not all([supabase_url, supabase_key, qwen_endpoint_url, qwen_model_name]):
         print("Missing required environment variables (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, QWEN_ENDPOINT_URL, QWEN_MODEL_NAME).")
