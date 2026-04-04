@@ -2,6 +2,8 @@ import os
 import sys
 import json
 import subprocess
+import socket
+from urllib.parse import urlparse
 from datetime import datetime, timedelta
 from supabase import create_client, Client
 import httpx
@@ -53,16 +55,37 @@ def analyze_health():
         print("Missing required environment variables (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, QWEN_ENDPOINT_URL, QWEN_MODEL_NAME).")
         sys.exit(1)
 
-    # Safe debug: print URL structure without revealing the project ID fully
+    # Deeper debug
     if supabase_url:
-        parts = supabase_url.split('.')
-        masked_url = f"{parts[0][:8]}...{parts[-1]}" if len(parts) > 1 else "INVALID_URL_FORMAT"
-        print(f"DEBUG: SUPABASE_URL format: {masked_url} (length: {len(supabase_url)})")
-        print(f"DEBUG: SUPABASE_URL starts with: {supabase_url[:8]}...")
-        print(f"DEBUG: SUPABASE_URL ends with: ...{supabase_url[-8:]}")
-        # Detect check for hidden characters
-        if any(ord(c) < 32 or ord(c) > 126 for c in supabase_url):
-            print("WARNING: Non-printable characters detected in SUPABASE_URL!")
+        print(f"DEBUG: SUPABASE_URL repr: {repr(supabase_url)}")
+        u = urlparse(supabase_url)
+        print(f"DEBUG: SUPABASE_URL hostname: {repr(u.hostname)}")
+        if u.hostname:
+            try:
+                ip = socket.gethostbyname(u.hostname)
+                print(f"DEBUG: Hostname {u.hostname} resolved to {ip}")
+            except Exception as dna_err:
+                print(f"DEBUG: Hostname {u.hostname} resolution FAILED: {dna_err}")
+        else:
+            print("DEBUG: Hostname is NONE - URL malformed?")
+    
+    # Aggressive cleanup of ALL env vars
+    def clean_env(val):
+        if not val: return None
+        return val.strip().strip('"').strip("'").replace(' ', '').replace('\n', '').replace('\r', '')
+
+    supabase_url = clean_env(os.environ.get("SUPABASE_URL"))
+    supabase_key = clean_env(os.environ.get("SUPABASE_SERVICE_ROLE_KEY"))
+    qwen_endpoint_url = clean_env(os.environ.get("QWEN_ENDPOINT_URL"))
+    qwen_model_name = clean_env(os.environ.get("QWEN_MODEL_NAME"))
+
+    if not all([supabase_url, supabase_key, qwen_endpoint_url, qwen_model_name]):
+        print(f"DEBUG After Cleanup: SUPABASE_URL present: {bool(supabase_url)}")
+        print(f"DEBUG After Cleanup: SUPABASE_KEY present: {bool(supabase_key)}")
+        print(f"DEBUG After Cleanup: QWEN_ENDPOINT present: {bool(qwen_endpoint_url)}")
+        print(f"DEBUG After Cleanup: QWEN_MODEL present: {bool(qwen_model_name)}")
+        print("Missing required environment variables.")
+        sys.exit(1)
 
     supabase: Client = create_client(supabase_url, supabase_key)
 
