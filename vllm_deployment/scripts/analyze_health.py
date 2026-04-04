@@ -1,7 +1,10 @@
 import os
 import sys
 import json
+import time
+import socket
 import subprocess
+from urllib.parse import urlparse
 from datetime import datetime, timedelta
 from supabase import create_client, Client
 import httpx
@@ -16,13 +19,67 @@ def get_identity_token(audience: str) -> str:
     return result.stdout.strip()
 
 
-def analyze_health():
-    supabase_url = os.environ.get("SUPABASE_URL")
-    supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-    qwen_endpoint_url = os.environ.get("QWEN_ENDPOINT_URL")
+def call_ai_with_retry(client, url, payload, headers, retries=3, backoff=None):
+    """Call vLLM with retry for cold-start 503s or rate limit 429s."""
+    if backoff is None:
+        backoff = [0, 30, 60]
+    last_error = None
+    for attempt, delay in enumerate(backoff[:retries]):
+        if delay > 0:
+            print(f"Retry {attempt}/{retries - 1} after {delay}s...")
+            time.sleep(delay)
+        try:
+            r = client.post(url, json=payload, headers=headers)
+            r.raise_for_status()
+            return r.json()
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in (503, 429, 502):
+                last_error = e
+                continue  # Cold start, gateway, or rate limit — retry
+            raise  # 404, 401, etc. — don't retry
+        except (httpx.ConnectError, httpx.TimeoutException) as e:
+            last_error = e
+            continue
+    raise RuntimeError(f"AI call failed after {retries} attempts: {last_error}")
 
-    if not all([supabase_url, supabase_key, qwen_endpoint_url]):
-        print("Missing environment variables.")
+
+def clean_env(val: str | None) -> str | None:
+    """Strip whitespace and quotation marks from environment variable values."""
+    if not val:
+        return None
+    cleaned = val.strip().strip('"').strip("'").replace('\n', '').replace('\r', '')
+    return cleaned or None
+
+
+def analyze_health():
+    supabase_url = clean_env(os.environ.get("SUPABASE_URL"))
+    supabase_key = clean_env(os.environ.get("SUPABASE_SERVICE_ROLE_KEY"))
+    qwen_endpoint_url = clean_env(os.environ.get("QWEN_ENDPOINT_URL"))
+    qwen_model_name = clean_env(os.environ.get("QWEN_MODEL_NAME"))
+
+    missing = [
+        name for name, val in [
+            ("SUPABASE_URL", supabase_url),
+            ("SUPABASE_SERVICE_ROLE_KEY", supabase_key),
+            ("QWEN_ENDPOINT_URL", qwen_endpoint_url),
+            ("QWEN_MODEL_NAME", qwen_model_name),
+        ] if not val
+    ]
+    if missing:
+        print(f"FATAL: Missing required environment variables: {missing}")
+        sys.exit(1)
+
+    # Verify Supabase hostname is resolvable before attempting connection
+    parsed = urlparse(supabase_url)
+    if parsed.hostname:
+        try:
+            ip = socket.gethostbyname(parsed.hostname)
+            print(f"Supabase hostname resolved: {parsed.hostname} → {ip}")
+        except socket.gaierror as e:
+            print(f"FATAL: Cannot resolve Supabase hostname '{parsed.hostname}': {e}")
+            sys.exit(1)
+    else:
+        print(f"FATAL: SUPABASE_URL is malformed (no hostname): {supabase_url!r}")
         sys.exit(1)
 
     supabase: Client = create_client(supabase_url, supabase_key)
@@ -34,12 +91,14 @@ def analyze_health():
     metrics_list = response.data
 
     if not metrics_list:
-        print(f"No metrics found for {yesterday}. Failing workflow -- silent pass is not acceptable.")
+        print(f"No metrics found for {yesterday}. Failing workflow — silent pass is not acceptable.")
         sys.exit(1)
 
     prompt_path = os.path.join(os.path.dirname(__file__), "../system_prompts/health_scout.md")
     with open(prompt_path, "r") as f:
         system_prompt = f.read()
+
+    failed_users = []
 
     for metrics in metrics_list:
         user_id = metrics["user_id"]
@@ -57,39 +116,48 @@ def analyze_health():
         try:
             # Audience must be the bare Cloud Run service URL (no /v1 path suffix)
             # Cloud Run rejects identity tokens whose audience includes a path component
-            qwen_audience = qwen_endpoint_url.rstrip("/v1").rstrip("/")
+            qwen_audience = qwen_endpoint_url.rstrip("/")
+            if qwen_audience.endswith("/v1"):
+                qwen_audience = qwen_audience[:-3]
+
             identity_token = get_identity_token(qwen_audience)
+
             # 300s timeout: cold start ~15-30s for 9B, large buffer for safety
             with httpx.Client(timeout=300.0) as client:
-                qwen_model_name = os.environ.get("QWEN_MODEL_NAME", "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF")
-                # Normalize URL: ensure /v1 is always present regardless of what QWEN_ENDPOINT_URL contains
+                # Normalize URL: ensure /v1 is always present
                 qwen_base = qwen_endpoint_url.rstrip('/')
                 if not qwen_base.endswith('/v1'):
                     qwen_base = f"{qwen_base}/v1"
-                ai_response = client.post(
-                    f"{qwen_base}/chat/completions",
-                    json={
-                        "model": qwen_model_name,
-                        "messages": [
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": f"Analyze this biometric data: {json.dumps(data_summary)}"}
-                        ],
-                        "max_tokens": 512,
-                        "temperature": 0.7
-                    },
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {identity_token}"
-                    }
-                )
-                ai_response.raise_for_status()
-                analysis_text = ai_response.json()["choices"][0]["message"]["content"]
+
+                payload = {
+                    "model": qwen_model_name,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Analyze this biometric data: {json.dumps(data_summary)}"}
+                    ],
+                    "max_tokens": 512,
+                    "temperature": 0.7
+                }
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {identity_token}"
+                }
+
+                ai_response_json = call_ai_with_retry(client, f"{qwen_base}/chat/completions", payload, headers)
+                analysis_text = ai_response_json["choices"][0]["message"]["content"]
 
                 print(f"Analysis complete. Updating record {record_id}")
                 supabase.table("health_metrics").update({"ai_analysis": analysis_text}).eq("id", record_id).execute()
 
         except Exception as e:
             print(f"Error during AI analysis for user {user_id}: {e}")
+            failed_users.append(user_id)
+
+    if failed_users:
+        print(f"FAILED for {len(failed_users)} user(s): {failed_users}")
+        sys.exit(1)
+
+    print("All analyses complete.")
 
 
 if __name__ == "__main__":
