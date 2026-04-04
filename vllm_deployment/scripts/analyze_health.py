@@ -46,8 +46,23 @@ def analyze_health():
     qwen_model_name = os.environ.get("QWEN_MODEL_NAME", "").strip().strip('"') or None
 
     if not all([supabase_url, supabase_key, qwen_endpoint_url, qwen_model_name]):
+        print(f"DEBUG: SUPABASE_URL present: {bool(supabase_url)}")
+        print(f"DEBUG: SUPABASE_KEY present: {bool(supabase_key)}")
+        print(f"DEBUG: QWEN_ENDPOINT present: {bool(qwen_endpoint_url)}")
+        print(f"DEBUG: QWEN_MODEL present: {bool(qwen_model_name)}")
         print("Missing required environment variables (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, QWEN_ENDPOINT_URL, QWEN_MODEL_NAME).")
         sys.exit(1)
+
+    # Safe debug: print URL structure without revealing the project ID fully
+    if supabase_url:
+        parts = supabase_url.split('.')
+        masked_url = f"{parts[0][:8]}...{parts[-1]}" if len(parts) > 1 else "INVALID_URL_FORMAT"
+        print(f"DEBUG: SUPABASE_URL format: {masked_url} (length: {len(supabase_url)})")
+        print(f"DEBUG: SUPABASE_URL starts with: {supabase_url[:8]}...")
+        print(f"DEBUG: SUPABASE_URL ends with: ...{supabase_url[-8:]}")
+        # Detect check for hidden characters
+        if any(ord(c) < 32 or ord(c) > 126 for c in supabase_url):
+            print("WARNING: Non-printable characters detected in SUPABASE_URL!")
 
     supabase: Client = create_client(supabase_url, supabase_key)
 
