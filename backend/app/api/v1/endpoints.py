@@ -525,16 +525,20 @@ async def google_callback(
 
     expiry_iso = creds.expiry.isoformat() if creds.expiry else None
 
-    # Store tokens in users.oauth_tokens.google (service role key client)
+    # Store tokens in users.oauth_tokens.google (service role key client).
+    # Use read-merge-write to preserve other provider tokens (e.g. Spotify).
+    tokens_row = email_service.supabase.table("users") \
+        .select("oauth_tokens") \
+        .eq("id", user_id).single().execute()
+    current_tokens = tokens_row.data.get("oauth_tokens") or {}
+    current_tokens["google"] = {
+        "access_token": creds.token,
+        "refresh_token": creds.refresh_token,
+        "token_expiry": expiry_iso,
+        "scopes": list(creds.scopes) if creds.scopes else GOOGLE_SCOPES,
+    }
     email_service.supabase.table("users").update({
-        "oauth_tokens": {
-            "google": {
-                "access_token": creds.token,
-                "refresh_token": creds.refresh_token,
-                "token_expiry": expiry_iso,
-                "scopes": list(creds.scopes) if creds.scopes else GOOGLE_SCOPES,
-            }
-        }
+        "oauth_tokens": current_tokens
     }).eq("id", user_id).execute()
 
     # Clear the one-time CSRF state from settings
