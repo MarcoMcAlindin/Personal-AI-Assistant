@@ -14,6 +14,7 @@ from app.services.notification_service import NotificationService
 from app.services.rag_service import RAGService
 from app.services.task_service import TaskService
 from app.services.campaign_service import CampaignService
+from app.services.spotify_service import SpotifyService
 from app.models.schemas import (
     CampaignCreateRequest, CampaignUpdateRequest,
     InboxItemStatusUpdate, ApplicationCreateRequest, CoverLetterRequest,
@@ -21,7 +22,7 @@ from app.models.schemas import (
 )
 from app.services.ai_service import call_ollama, chat_with_tools, generate_cover_letter, generate_interview_questions_ai
 from app.services import cv_service
-from app.utils.auth import get_current_user
+from app.utils.auth import get_current_user, get_optional_user
 from app.utils.config import settings
 import httpx
 import json
@@ -36,6 +37,8 @@ notification_service = NotificationService()
 rag_service = RAGService()
 task_service = TaskService()
 campaign_service = CampaignService()
+
+spotify_service = SpotifyService(email_service.supabase)
 
 class EmailSendRequest(BaseModel):
     to: str
@@ -95,8 +98,20 @@ async def get_tech_feeds():
     return {"articles": news}
 
 @router.get("/feeds/concerts")
-async def get_concert_feeds():
-    concerts = await feed_service.get_concerts()
+async def get_concert_feeds(
+    my_artists: bool = Query(False, description="Filter concerts by Spotify top artists"),
+    user_id: Optional[str] = Depends(get_optional_user),
+):
+    # Resolve Spotify artist list when caller requests personalised filtering
+    spotify_artists = None
+    if my_artists and user_id and spotify_service.supabase:
+        cached = spotify_service.get_artist_list(user_id)
+        if cached:
+            spotify_artists = cached
+
+    # feed_service applies artist filter internally; falls back to STATIC_METAL_ARTISTS
+    # when spotify_artists is None so the response is always curated
+    concerts = await feed_service.get_concerts(artist_names=spotify_artists)
     return {"concerts": concerts}
 
 @router.get("/email/inbox")
@@ -580,6 +595,175 @@ async def google_disconnect(user_id: str = Depends(get_current_user)):
 
     email_service.supabase.table("users").update({
         "oauth_tokens": current_tokens
+    }).eq("id", user_id).execute()
+
+    return {"disconnected": True}
+
+
+# -- Spotify OAuth ----------------------------------------------------------
+
+SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
+SPOTIFY_SCOPES_LIST = ["user-top-read", "user-read-private"]
+
+
+@router.get("/auth/spotify/authorize")
+async def spotify_authorize(user_id: str = Depends(get_current_user)):
+    """Return a Spotify OAuth authorization URL for the current user."""
+    if not spotify_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+    if not settings.spotify_client_id:
+        raise HTTPException(status_code=503, detail="Spotify OAuth not configured")
+
+    random_token = secrets.token_urlsafe(32)
+    state_value = f"{user_id}:{random_token}"
+
+    # Persist CSRF token in users.settings.spotify_oauth_state
+    row = spotify_service.supabase.table("users") \
+        .select("settings").eq("id", user_id).single().execute()
+    current_settings = row.data.get("settings") or {}
+    current_settings["spotify_oauth_state"] = random_token
+    spotify_service.supabase.table("users").update({
+        "settings": current_settings
+    }).eq("id", user_id).execute()
+
+    import urllib.parse
+    params = {
+        "client_id": settings.spotify_client_id,
+        "response_type": "code",
+        "redirect_uri": settings.spotify_redirect_uri,
+        "scope": " ".join(SPOTIFY_SCOPES_LIST),
+        "state": state_value,
+    }
+    authorization_url = f"{SPOTIFY_AUTH_URL}?{urllib.parse.urlencode(params)}"
+    return {"authorization_url": authorization_url, "state": state_value}
+
+
+@router.get("/auth/spotify/callback")
+async def spotify_callback(
+    code: str = Query(...),
+    state: str = Query(...),
+    error: Optional[str] = Query(None),
+):
+    """
+    Spotify OAuth callback -- browser redirect from Spotify.
+    State format: "{user_id}:{random_token}"
+    """
+    if error:
+        redirect_target = f"{settings.frontend_url}/integrations?error=spotify_{error}"
+        return RedirectResponse(url=redirect_target)
+
+    if not spotify_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    parts = state.split(":", 1)
+    if len(parts) != 2:
+        raise HTTPException(status_code=400, detail="Invalid state parameter")
+    user_id, random_token = parts
+
+    # CSRF check
+    row = spotify_service.supabase.table("users") \
+        .select("settings").eq("id", user_id).single().execute()
+    stored_state = (row.data.get("settings") or {}).get("spotify_oauth_state")
+    if not stored_state or stored_state != random_token:
+        raise HTTPException(status_code=400, detail="OAuth state mismatch -- possible CSRF")
+
+    # Exchange code for tokens
+    try:
+        import time as _time
+        token_data = await spotify_service.exchange_code(
+            code=code,
+            redirect_uri=settings.spotify_redirect_uri,
+            client_id=settings.spotify_client_id,
+            client_secret=settings.spotify_client_secret,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Spotify token exchange failed: {e}")
+
+    spotify_tokens = {
+        "access_token": token_data["access_token"],
+        "refresh_token": token_data.get("refresh_token", ""),
+        "expires_at": int(__import__("time").time()) + token_data.get("expires_in", 3600),
+        "provider": "spotify",
+    }
+    spotify_service._save_tokens(user_id, spotify_tokens)
+
+    # Clear CSRF state
+    current_settings = (row.data.get("settings") or {})
+    current_settings.pop("spotify_oauth_state", None)
+    spotify_service.supabase.table("users").update({
+        "settings": current_settings
+    }).eq("id", user_id).execute()
+
+    # Immediately fetch and cache top artists
+    try:
+        artist_names = await spotify_service.fetch_top_artists(spotify_tokens["access_token"])
+        if artist_names:
+            spotify_service.save_artist_list(user_id, artist_names)
+    except Exception as e:
+        # Non-fatal — tokens are stored; artists will refresh on next call
+        import logging
+        logging.getLogger(__name__).warning("[Spotify] initial artist fetch failed: %s", e)
+
+    redirect_target = f"{settings.frontend_url}/integrations?connected=spotify"
+    return RedirectResponse(url=redirect_target)
+
+
+@router.get("/auth/spotify/status")
+async def spotify_status(user_id: str = Depends(get_current_user)):
+    """Return Spotify connection status for the current user."""
+    if not spotify_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    tokens = spotify_service._get_stored_tokens(user_id)
+    connected = bool(tokens and tokens.get("refresh_token"))
+    artist_names = spotify_service.get_artist_list(user_id) if connected else []
+
+    return {
+        "spotify": {
+            "connected": connected,
+            "artist_count": len(artist_names),
+            "artists": artist_names,
+        }
+    }
+
+
+@router.post("/auth/spotify/refresh-artists")
+async def spotify_refresh_artists(user_id: str = Depends(get_current_user)):
+    """Re-fetch the user's top artists from Spotify and update the cache."""
+    if not spotify_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    access_token = await spotify_service.get_valid_access_token(
+        user_id,
+        settings.spotify_client_id,
+        settings.spotify_client_secret,
+    )
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Spotify not connected or token expired")
+
+    artist_names = await spotify_service.fetch_top_artists(access_token)
+    spotify_service.save_artist_list(user_id, artist_names)
+
+    return {"artists": artist_names, "count": len(artist_names)}
+
+
+@router.delete("/auth/spotify/disconnect")
+async def spotify_disconnect(user_id: str = Depends(get_current_user)):
+    """Remove stored Spotify tokens and artist list for the current user."""
+    if not spotify_service.supabase:
+        raise HTTPException(status_code=503, detail="Supabase not initialised")
+
+    row = spotify_service.supabase.table("users") \
+        .select("oauth_tokens, settings").eq("id", user_id).single().execute()
+
+    current_tokens = row.data.get("oauth_tokens") or {}
+    current_tokens.pop("spotify", None)
+    current_settings = row.data.get("settings") or {}
+    current_settings.pop("spotify_artists", None)
+
+    spotify_service.supabase.table("users").update({
+        "oauth_tokens": current_tokens,
+        "settings": current_settings,
     }).eq("id", user_id).execute()
 
     return {"disconnected": True}

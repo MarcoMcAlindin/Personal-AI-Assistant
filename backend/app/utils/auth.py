@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt, jwk
 from jose.utils import base64url_decode
+from typing import Optional
 from app.utils.config import settings
 
 _bearer = HTTPBearer(auto_error=False)
@@ -102,3 +103,21 @@ def get_current_user(
             detail="Token payload missing 'sub' field.",
         )
     return user_id
+
+
+def get_optional_user(
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer),
+) -> Optional[str]:
+    """
+    Like get_current_user but returns None instead of raising 401 when
+    no token is provided. Use for endpoints that are public but can
+    optionally personalise their response for authenticated users.
+    """
+    if credentials is None:
+        if settings.vibeos_dev_mode:
+            return settings.vibeos_dev_user_id
+        return None
+    try:
+        return get_current_user(credentials)
+    except HTTPException:
+        return None
