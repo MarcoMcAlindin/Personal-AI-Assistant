@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
     vibeos_dev_mode: bool = False
     vibeos_dev_user_id: str = "ceo-dev-user"
+    spotify_client_id: str = ""
+    spotify_client_secret: str = ""
+    spotify_redirect_uri: str = "http://localhost:8000/api/v1/auth/spotify/callback"
 
     class Config:
         env_file = ".env"

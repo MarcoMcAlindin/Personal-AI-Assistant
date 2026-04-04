@@ -1,7 +1,33 @@
 import feedparser
 import httpx
-from typing import List, Dict
+from typing import List, Dict, Optional
 import os
+
+# Static whitelist of well-known metal/rock artists used when Spotify is not
+# connected or the caller does not pass my_artists=True.  Matching is
+# case-insensitive substring against the event name returned by Ticketmaster.
+STATIC_METAL_ARTISTS = [
+    "metallica", "slipknot", "tool", "system of a down", "pantera",
+    "iron maiden", "judas priest", "black sabbath", "ozzy", "megadeth",
+    "anthrax", "testament", "exodus", "slayer", "sepultura",
+    "lamb of god", "mastodon", "gojira", "opeth", "neurosis",
+    "converge", "deftones", "korn", "disturbed", "five finger death punch",
+    "avenged sevenfold", "bring me the horizon", "parkway drive",
+    "trivium", "bullet for my valentine", "killswitch engage",
+    "architects", "while she sleeps", "spiritbox", "babymetal",
+    "nightwish", "within temptation", "epica", "lacuna coil",
+    "dimmu borgir", "cradle of filth", "behemoth", "cannibal corpse",
+    "death", "morbid angel", "deicide", "obituary", "napalm death",
+    "carcass", "arch enemy", "children of bodom", "amon amarth",
+    "in flames", "dark tranquillity", "soilwork", "hatebreed",
+    "thy art is murder", "whitechapel", "suicide silence",
+    "devildriver", "machine head", "biohazard", "prong",
+    "alice in chains", "soundgarden", "pearl jam", "nirvana",
+    "foo fighters", "queens of the stone age", "rage against the machine",
+    "audioslave", "stone sour", "volbeat", "ghost", "royal blood",
+    "rival sons", "black stone cherry", "alter bridge", "shinedown",
+    "breaking benjamin", "halestorm", "evanescence",
+]
 
 
 class FeedService:
@@ -29,8 +55,20 @@ class FeedService:
                 print(f"Error parsing RSS {url}: {e}")
         return all_articles
 
-    async def get_concerts(self) -> List[Dict]:
-        """Fetch Scottish Rock/Metal concerts from Ticketmaster Discovery API."""
+    async def get_concerts(
+        self,
+        artist_names: Optional[List[str]] = None,
+    ) -> List[Dict]:
+        """Fetch Scottish Rock/Metal concerts from Ticketmaster Discovery API.
+
+        Args:
+            artist_names: Optional list of artist names to filter by (e.g. from
+                Spotify top artists).  When provided the results are narrowed to
+                events whose name contains at least one of these artists.  When
+                None or empty the static STATIC_METAL_ARTISTS whitelist is used
+                as the fallback filter so the caller always gets relevant results
+                rather than raw unfiltered Ticketmaster output.
+        """
         api_key = os.environ.get("TICKETMASTER_API_KEY")
         if not api_key:
             print("[FeedService] TICKETMASTER_API_KEY not set -- returning empty")
@@ -75,12 +113,21 @@ class FeedService:
                     "ticket_url": event.get("url", ""),
                 })
 
+            # Genre keyword filter — always applied as primary pass
             metal_keywords = ["metal", "rock", "heavy", "hardcore", "punk", "metalcore",
                               "doom", "thrash", "death", "black metal", "grunge", "stoner"]
-            filtered = [c for c in concerts if any(k in c["genre"].lower() for k in metal_keywords)]
+            by_genre = [c for c in concerts if any(k in c["genre"].lower() for k in metal_keywords)]
+            # Fall back to all Ticketmaster results if genre filter is too aggressive
+            candidates = by_genre if by_genre else concerts
 
-            # If strict filter removes everything, return all (Ticketmaster already filtered by classification)
-            return filtered if filtered else concerts
+            # Artist name filter — Spotify list takes priority, then static whitelist
+            filter_list = [a.lower() for a in artist_names] if artist_names else STATIC_METAL_ARTISTS
+            by_artist = [
+                c for c in candidates
+                if any(a in c["artist"].lower() for a in filter_list)
+            ]
+            # Only apply artist filter if it yields results; otherwise return genre-filtered list
+            return by_artist if by_artist else candidates
 
         except Exception as e:
             print(f"[FeedService] Ticketmaster API error: {e}")
