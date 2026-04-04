@@ -215,11 +215,13 @@ class EmailService:
 
             return filtered_emails
         except Exception as e:
-            # Surface token failures clearly — 401 usually means stale/revoked credentials
+            # Surface token failures clearly — catch RefreshError explicitly and also
+            # inspect the message for 401 / invalid_grant signals from other layers.
+            from google.auth.exceptions import RefreshError
             err_str = str(e)
-            if "401" in err_str or "unauthorized" in err_str.lower() or "invalid_grant" in err_str.lower():
+            if isinstance(e, RefreshError) or "401" in err_str or "unauthorized" in err_str.lower() or "invalid_grant" in err_str.lower():
                 logger.warning(
-                    "[EmailService] Gmail API returned 401 for user %s — token likely expired or revoked: %s",
+                    "[EmailService] Gmail credential failure for user %s — token likely expired or revoked: %s",
                     user_id,
                     err_str,
                 )
